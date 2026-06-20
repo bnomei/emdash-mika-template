@@ -1,0 +1,1377 @@
+{
+  "$schema": "https://emdashcms.com/seed.schema.json",
+  "version": "1",
+  "meta": {
+    "name": "Mika Actions Template",
+    "description": "Resettable peanut-themed EmDash seed for testing Mika action fields across catalog, session, account, ledger, and ops records.",
+    "author": "emdash-mika-template"
+  },
+  "settings": {
+    "title": "Mika Actions Template",
+    "tagline": "Local action runner smoke project",
+    "postsPerPage": 12,
+    "dateFormat": "yyyy-MM-dd",
+    "timezone": "Europe/Dublin",
+    "seo": {
+      "titleSeparator": " | "
+    }
+  },
+  "collections": [
+    {
+      "slug": "products",
+      "label": "Products",
+      "labelSingular": "Product",
+      "description": "Catalog products with variants and catalog sync actions.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "preview",
+        "search"
+      ],
+      "urlPattern": "/products/{slug}",
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "description",
+          "label": "Description",
+          "type": "text",
+          "searchable": true
+        },
+        {
+          "slug": "commerce_ref",
+          "label": "Commerce reference",
+          "type": "json"
+        },
+        {
+          "slug": "variants",
+          "label": "Variants",
+          "type": "json"
+        },
+        {
+          "slug": "mika_catalog_sync",
+          "label": "Sync commerce",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.catalog.syncEntry",
+            "contextKey": "context",
+            "label": "Sync commerce",
+            "cooldownMs": 3500,
+            "icon": "refresh",
+            "tone": "info",
+            "payload": {
+              "mode": "dry_run",
+              "scope": "entry"
+            },
+            "feedback": {
+              "progress": "Syncing commerce data...",
+              "success": "Commerce data synced.",
+              "error": "Commerce sync failed."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "stock_items",
+      "label": "Stock Items",
+      "labelSingular": "Stock Item",
+      "description": "Stock records for adjustment and reservation tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "stock_ref",
+          "label": "Stock reference",
+          "type": "json"
+        },
+        {
+          "slug": "quantities",
+          "label": "Quantities",
+          "type": "json"
+        },
+        {
+          "slug": "stock_adjust",
+          "label": "Adjust stock",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.stock.adjust",
+            "contextKey": "context",
+            "label": "Adjust stock",
+            "cooldownMs": 3500,
+            "icon": "plus-minus",
+            "tone": "warning",
+            "confirm": "Adjust stock for this fixture item?",
+            "payload": {
+              "quantityDelta": 1,
+              "reason": "fixture_adjustment"
+            },
+            "feedback": {
+              "progress": "Adjusting stock...",
+              "success": "Stock adjusted.",
+              "error": "Stock adjustment failed."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "customers",
+      "label": "Customers",
+      "labelSingular": "Customer",
+      "description": "Fake customers and provider customer refs.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "customer_ref",
+          "label": "Customer reference",
+          "type": "json"
+        },
+        {
+          "slug": "entitlement_grant",
+          "label": "Grant entitlement",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.entitlement.grant",
+            "contextKey": "context",
+            "label": "Grant entitlement",
+            "cooldownMs": 3500,
+            "icon": "key",
+            "tone": "positive",
+            "confirm": "Grant an entitlement to this fixture customer?",
+            "payload": {
+              "entitlementKey": "peanut_fixture_access"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "orders",
+      "label": "Orders",
+      "labelSingular": "Order",
+      "description": "Orders for refund, cancel, download, and webhook relationships.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Order number",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "order_ref",
+          "label": "Order reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "payment_status",
+          "label": "Payment status",
+          "type": "string"
+        },
+        {
+          "slug": "total_amount",
+          "label": "Total amount",
+          "type": "integer"
+        },
+        {
+          "slug": "lines",
+          "label": "Lines",
+          "type": "json"
+        },
+        {
+          "slug": "order_refund",
+          "label": "Refund order",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.order.refund",
+            "contextKey": "context",
+            "label": "Refund order",
+            "cooldownMs": 3500,
+            "icon": "arrow-counter-clockwise",
+            "tone": "danger",
+            "confirm": "Refund this fixture order?",
+            "payload": {
+              "amount": 100,
+              "reason": "fixture_refund"
+            }
+          }
+        },
+        {
+          "slug": "order_cancel",
+          "label": "Cancel order",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.order.cancel",
+            "contextKey": "context",
+            "label": "Cancel order",
+            "cooldownMs": 3500,
+            "icon": "x",
+            "tone": "danger",
+            "confirm": "Cancel this fixture order?",
+            "payload": {
+              "reason": "fixture_cancel"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "checkout_sessions",
+      "label": "Checkout Sessions",
+      "labelSingular": "Checkout Session",
+      "description": "Checkout/session references for webhook and order flows.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "checkout_ref",
+          "label": "Checkout reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "provider_status",
+          "label": "Provider status",
+          "type": "string"
+        },
+        {
+          "slug": "redirect_url",
+          "label": "Redirect URL",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "slug": "webhooks",
+      "label": "Webhook Events",
+      "labelSingular": "Webhook Event",
+      "description": "Webhook event fixtures for replay tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Event",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "webhook_ref",
+          "label": "Webhook reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "webhook_replay",
+          "label": "Replay webhook",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.webhook.replay",
+            "contextKey": "context",
+            "label": "Replay webhook",
+            "cooldownMs": 3500,
+            "icon": "repeat",
+            "tone": "warning",
+            "confirm": "Replay this fixture webhook?"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "entitlements",
+      "label": "Entitlements",
+      "labelSingular": "Entitlement",
+      "description": "Entitlements for revoke and download tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "entitlement_ref",
+          "label": "Entitlement reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "entitlement_revoke",
+          "label": "Revoke entitlement",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.entitlement.revoke",
+            "contextKey": "context",
+            "label": "Revoke entitlement",
+            "cooldownMs": 3500,
+            "icon": "keyhole",
+            "tone": "danger",
+            "confirm": "Revoke this fixture entitlement?",
+            "payload": {
+              "reason": "fixture_revoke"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "emails",
+      "label": "Emails",
+      "labelSingular": "Email",
+      "description": "Email messages for resend tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "email_ref",
+          "label": "Email reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "email_resend",
+          "label": "Resend email",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.email.resend",
+            "contextKey": "context",
+            "label": "Resend email",
+            "cooldownMs": 3500,
+            "icon": "envelope",
+            "tone": "info",
+            "confirm": "Resend this fixture email?"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "licenses",
+      "label": "Licenses",
+      "labelSingular": "License",
+      "description": "License keys for revoke tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "license_ref",
+          "label": "License reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "license_revoke",
+          "label": "Revoke license",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.license.revoke",
+            "contextKey": "context",
+            "label": "Revoke license",
+            "cooldownMs": 3500,
+            "icon": "lock",
+            "tone": "danger",
+            "confirm": "Revoke this fixture license?",
+            "payload": {
+              "reason": "fixture_revoke"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "downloads",
+      "label": "Downloads",
+      "labelSingular": "Download",
+      "description": "Download issue targets for entitlement/order-line tests.",
+      "supports": [
+        "drafts",
+        "revisions",
+        "search"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "download_ref",
+          "label": "Download reference",
+          "type": "json"
+        },
+        {
+          "slug": "fixture_status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "slug": "download_issue",
+          "label": "Issue download",
+          "type": "json",
+          "widget": "actions:button",
+          "options": {
+            "mode": "run",
+            "provider": "mika",
+            "providerLabel": "Mika",
+            "manifestRoute": ".well-known/actions",
+            "runnerRoute": ".well-known/actions/run",
+            "action": "mika.download.issue",
+            "contextKey": "context",
+            "label": "Issue download",
+            "cooldownMs": 3500,
+            "icon": "download",
+            "tone": "info",
+            "confirm": "Issue a new fixture download?",
+            "payload": {
+              "expiresAt": "2026-07-20T12:00:00.000Z"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "content": {
+    "products": [
+      {
+        "id": "products:crunchy-peanut-butter:en",
+        "slug": "crunchy-peanut-butter",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Crunchy Peanut Butter",
+          "description": "Roasted peanut spread for catalog and stock action testing.",
+          "commerce_ref": {
+            "sellableId": "sellable_pb_250",
+            "providerProductId": "prod_peanut_butter",
+            "providerPriceId": "price_provider_pb_250"
+          },
+          "variants": [
+            {
+              "variantKey": "pb_250",
+              "label": "250g jar",
+              "sku": "PEANUT-PB_250",
+              "sellableId": "sellable_pb_250",
+              "priceId": "price_pb_250",
+              "stockItemId": "stock_pb_250",
+              "providerPriceId": "price_provider_pb_250",
+              "amount": 499,
+              "currency": "EUR",
+              "sortOrder": 0
+            },
+            {
+              "variantKey": "pb_500",
+              "label": "500g jar",
+              "sku": "PEANUT-PB_500",
+              "sellableId": "sellable_pb_500",
+              "priceId": "price_pb_500",
+              "stockItemId": "stock_pb_500",
+              "providerPriceId": "price_provider_pb_500",
+              "amount": 799,
+              "currency": "EUR",
+              "sortOrder": 1
+            },
+            {
+              "variantKey": "pb_1000",
+              "label": "1kg tub",
+              "sku": "PEANUT-PB_1000",
+              "sellableId": "sellable_pb_1000",
+              "priceId": "price_pb_1000",
+              "stockItemId": "stock_pb_1000",
+              "providerPriceId": "price_provider_pb_1000",
+              "amount": 1399,
+              "currency": "EUR",
+              "sortOrder": 2
+            }
+          ],
+          "mika_catalog_sync": {
+            "provider": "stripe_test",
+            "sellableId": "sellable_pb_250",
+            "providerProductId": "prod_peanut_butter"
+          }
+        }
+      },
+      {
+        "id": "products:roasted-peanut-snacks:en",
+        "slug": "roasted-peanut-snacks",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Roasted Peanut Snacks",
+          "description": "Snack packs with flavor variants.",
+          "commerce_ref": {
+            "sellableId": "sellable_rp_salt",
+            "providerProductId": "prod_roasted_peanuts",
+            "providerPriceId": "price_provider_rp_salt"
+          },
+          "variants": [
+            {
+              "variantKey": "rp_salt",
+              "label": "Sea salt",
+              "sku": "PEANUT-RP_SALT",
+              "sellableId": "sellable_rp_salt",
+              "priceId": "price_rp_salt",
+              "stockItemId": "stock_rp_salt",
+              "providerPriceId": "price_provider_rp_salt",
+              "amount": 299,
+              "currency": "EUR",
+              "sortOrder": 0
+            },
+            {
+              "variantKey": "rp_honey",
+              "label": "Honey roast",
+              "sku": "PEANUT-RP_HONEY",
+              "sellableId": "sellable_rp_honey",
+              "priceId": "price_rp_honey",
+              "stockItemId": "stock_rp_honey",
+              "providerPriceId": "price_provider_rp_honey",
+              "amount": 349,
+              "currency": "EUR",
+              "sortOrder": 1
+            },
+            {
+              "variantKey": "rp_chili",
+              "label": "Chili lime",
+              "sku": "PEANUT-RP_CHILI",
+              "sellableId": "sellable_rp_chili",
+              "priceId": "price_rp_chili",
+              "stockItemId": "stock_rp_chili",
+              "providerPriceId": "price_provider_rp_chili",
+              "amount": 349,
+              "currency": "EUR",
+              "sortOrder": 2
+            }
+          ],
+          "mika_catalog_sync": {
+            "provider": "stripe_test",
+            "sellableId": "sellable_rp_salt",
+            "providerProductId": "prod_roasted_peanuts"
+          }
+        }
+      },
+      {
+        "id": "products:cold-pressed-peanut-oil:en",
+        "slug": "cold-pressed-peanut-oil",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Cold-Pressed Peanut Oil",
+          "description": "Peanut oil sizes for download/license/order fixture paths.",
+          "commerce_ref": {
+            "sellableId": "sellable_po_250",
+            "providerProductId": "prod_peanut_oil",
+            "providerPriceId": "price_provider_po_250"
+          },
+          "variants": [
+            {
+              "variantKey": "po_250",
+              "label": "250ml bottle",
+              "sku": "PEANUT-PO_250",
+              "sellableId": "sellable_po_250",
+              "priceId": "price_po_250",
+              "stockItemId": "stock_po_250",
+              "providerPriceId": "price_provider_po_250",
+              "amount": 699,
+              "currency": "EUR",
+              "sortOrder": 0
+            },
+            {
+              "variantKey": "po_500",
+              "label": "500ml bottle",
+              "sku": "PEANUT-PO_500",
+              "sellableId": "sellable_po_500",
+              "priceId": "price_po_500",
+              "stockItemId": "stock_po_500",
+              "providerPriceId": "price_provider_po_500",
+              "amount": 1099,
+              "currency": "EUR",
+              "sortOrder": 1
+            },
+            {
+              "variantKey": "po_1000",
+              "label": "1l tin",
+              "sku": "PEANUT-PO_1000",
+              "sellableId": "sellable_po_1000",
+              "priceId": "price_po_1000",
+              "stockItemId": "stock_po_1000",
+              "providerPriceId": "price_provider_po_1000",
+              "amount": 1899,
+              "currency": "EUR",
+              "sortOrder": 2
+            }
+          ],
+          "mika_catalog_sync": {
+            "provider": "stripe_test",
+            "sellableId": "sellable_po_250",
+            "providerProductId": "prod_peanut_oil"
+          }
+        }
+      }
+    ],
+    "stock_items": [
+      {
+        "id": "stock_items:peanut-butter-250g-stock:en",
+        "slug": "peanut-butter-250g-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Crunchy Peanut Butter 250g Stock",
+          "stock_ref": {
+            "stockItemId": "stock_pb_250",
+            "sellableId": "sellable_pb_250",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 42,
+            "quantityReserved": 3,
+            "lowStockThreshold": 8
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_pb_250",
+            "quantityOnHand": 42
+          }
+        }
+      },
+      {
+        "id": "stock_items:honey-roast-stock:en",
+        "slug": "honey-roast-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Honey Roast Peanut Stock",
+          "stock_ref": {
+            "stockItemId": "stock_rp_honey",
+            "sellableId": "sellable_rp_honey",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 18,
+            "quantityReserved": 6,
+            "lowStockThreshold": 10
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_rp_honey",
+            "quantityOnHand": 18
+          }
+        }
+      },
+      {
+        "id": "stock_items:peanut-oil-500ml-stock:en",
+        "slug": "peanut-oil-500ml-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Peanut Oil 500ml Stock",
+          "stock_ref": {
+            "stockItemId": "stock_po_500",
+            "sellableId": "sellable_po_500",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 9,
+            "quantityReserved": 1,
+            "lowStockThreshold": 5
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_po_500",
+            "quantityOnHand": 9
+          }
+        }
+      }
+    ],
+    "customers": [
+      {
+        "id": "customers:ada-shell:en",
+        "slug": "ada-shell",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ada Shell",
+          "customer_ref": {
+            "customerId": "customer_ada_shell",
+            "email": "ada.shell@example.test",
+            "providerCustomerId": "cus_ada_shell"
+          },
+          "entitlement_grant": {
+            "customerId": "customer_ada_shell",
+            "email": "ada.shell@example.test",
+            "entitlementKey": "peanut_recipe_club"
+          }
+        }
+      },
+      {
+        "id": "customers:ben-kernel:en",
+        "slug": "ben-kernel",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ben Kernel",
+          "customer_ref": {
+            "customerId": "customer_ben_kernel",
+            "email": "ben.kernel@example.test",
+            "providerCustomerId": "cus_ben_kernel"
+          },
+          "entitlement_grant": {
+            "customerId": "customer_ben_kernel",
+            "email": "ben.kernel@example.test",
+            "entitlementKey": "peanut_wholesale_portal"
+          }
+        }
+      },
+      {
+        "id": "customers:cora-grove:en",
+        "slug": "cora-grove",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Cora Grove",
+          "customer_ref": {
+            "customerId": "customer_cora_grove",
+            "email": "cora.grove@example.test",
+            "providerCustomerId": "cus_cora_grove"
+          },
+          "entitlement_grant": {
+            "customerId": "customer_cora_grove",
+            "email": "cora.grove@example.test",
+            "entitlementKey": "peanut_archive"
+          }
+        }
+      }
+    ],
+    "orders": [
+      {
+        "id": "orders:order-peanut-1001:en",
+        "slug": "order-peanut-1001",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Order PEANUT-1001",
+          "order_ref": {
+            "orderId": "order_peanut_1001",
+            "orderNumber": "PEANUT-1001",
+            "customerId": "customer_ada_shell",
+            "providerPaymentId": "pi_peanut_1001",
+            "providerOrderId": "po_peanut_1001"
+          },
+          "lines": [
+            {
+              "orderLineId": "line_pb_500",
+              "sellableId": "sellable_pb_500",
+              "priceId": "price_pb_500",
+              "quantity": 1,
+              "totalAmount": 799
+            }
+          ],
+          "order_refund": {
+            "orderId": "order_peanut_1001",
+            "amount": 499,
+            "reason": "fixture_refund"
+          },
+          "order_cancel": {
+            "orderId": "order_peanut_1001",
+            "reason": "fixture_cancel"
+          },
+          "payment_status": "paid",
+          "fixture_status": "paid",
+          "total_amount": 1298
+        }
+      },
+      {
+        "id": "orders:order-peanut-1002:en",
+        "slug": "order-peanut-1002",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Order PEANUT-1002",
+          "order_ref": {
+            "orderId": "order_peanut_1002",
+            "orderNumber": "PEANUT-1002",
+            "customerId": "customer_ben_kernel",
+            "providerPaymentId": "pi_peanut_1002",
+            "providerOrderId": "po_peanut_1002"
+          },
+          "lines": [
+            {
+              "orderLineId": "line_rp_honey",
+              "sellableId": "sellable_rp_honey",
+              "priceId": "price_rp_honey",
+              "quantity": 3,
+              "totalAmount": 1047
+            }
+          ],
+          "order_refund": {
+            "orderId": "order_peanut_1002",
+            "amount": 349,
+            "reason": "fixture_refund"
+          },
+          "order_cancel": {
+            "orderId": "order_peanut_1002",
+            "reason": "fixture_cancel"
+          },
+          "payment_status": "paid",
+          "fixture_status": "fulfilled",
+          "total_amount": 1047
+        }
+      },
+      {
+        "id": "orders:order-peanut-1003:en",
+        "slug": "order-peanut-1003",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Order PEANUT-1003",
+          "order_ref": {
+            "orderId": "order_peanut_1003",
+            "orderNumber": "PEANUT-1003",
+            "customerId": "customer_cora_grove",
+            "providerPaymentId": "pi_peanut_1003",
+            "providerOrderId": "po_peanut_1003"
+          },
+          "lines": [
+            {
+              "orderLineId": "line_po_500",
+              "sellableId": "sellable_po_500",
+              "priceId": "price_po_500",
+              "quantity": 1,
+              "totalAmount": 1099
+            }
+          ],
+          "order_refund": {
+            "orderId": "order_peanut_1003",
+            "amount": 1099,
+            "reason": "fixture_refund"
+          },
+          "order_cancel": {
+            "orderId": "order_peanut_1003",
+            "reason": "fixture_cancel"
+          },
+          "payment_status": "pending",
+          "fixture_status": "pending",
+          "total_amount": 1099
+        }
+      }
+    ],
+    "checkout_sessions": [
+      {
+        "id": "checkout_sessions:checkout-peanut-1001:en",
+        "slug": "checkout-peanut-1001",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Checkout PEANUT-1001",
+          "checkout_ref": {
+            "checkoutId": "checkout_peanut_1001",
+            "providerCheckoutId": "cs_peanut_1001",
+            "orderId": "order_peanut_1001",
+            "customerId": "customer_ada_shell"
+          },
+          "provider_status": "paid",
+          "redirect_url": "https://checkout.example.test/peanut-1001",
+          "fixture_status": "completed"
+        }
+      },
+      {
+        "id": "checkout_sessions:checkout-peanut-1002:en",
+        "slug": "checkout-peanut-1002",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Checkout PEANUT-1002",
+          "checkout_ref": {
+            "checkoutId": "checkout_peanut_1002",
+            "providerCheckoutId": "cs_peanut_1002",
+            "orderId": "order_peanut_1002",
+            "customerId": "customer_ben_kernel"
+          },
+          "provider_status": "paid",
+          "redirect_url": "https://checkout.example.test/peanut-1002",
+          "fixture_status": "completed"
+        }
+      },
+      {
+        "id": "checkout_sessions:checkout-peanut-1003:en",
+        "slug": "checkout-peanut-1003",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Checkout PEANUT-1003",
+          "checkout_ref": {
+            "checkoutId": "checkout_peanut_1003",
+            "providerCheckoutId": "cs_peanut_1003",
+            "orderId": "order_peanut_1003",
+            "customerId": "customer_cora_grove"
+          },
+          "provider_status": "open",
+          "redirect_url": "https://checkout.example.test/peanut-1003",
+          "fixture_status": "open"
+        }
+      }
+    ],
+    "webhooks": [
+      {
+        "id": "webhooks:payment-succeeded-1001:en",
+        "slug": "payment-succeeded-1001",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "payment_intent.succeeded 1001",
+          "webhook_ref": {
+            "webhookId": "webhook_peanut_paid_1001",
+            "provider": "stripe_test",
+            "providerEventId": "evt_peanut_paid_1001",
+            "eventType": "payment_intent.succeeded",
+            "relatedOrderId": "order_peanut_1001"
+          },
+          "webhook_replay": {
+            "webhookId": "webhook_peanut_paid_1001"
+          },
+          "fixture_status": "processed"
+        }
+      },
+      {
+        "id": "webhooks:refund-failed-1002:en",
+        "slug": "refund-failed-1002",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "refund.failed 1002",
+          "webhook_ref": {
+            "webhookId": "webhook_peanut_refund_failed_1002",
+            "provider": "stripe_test",
+            "providerEventId": "evt_peanut_refund_failed_1002",
+            "eventType": "refund.failed",
+            "relatedOrderId": "order_peanut_1002"
+          },
+          "webhook_replay": {
+            "webhookId": "webhook_peanut_refund_failed_1002"
+          },
+          "fixture_status": "failed"
+        }
+      },
+      {
+        "id": "webhooks:checkout-expired-1003:en",
+        "slug": "checkout-expired-1003",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "checkout.session.expired 1003",
+          "webhook_ref": {
+            "webhookId": "webhook_peanut_checkout_expired_1003",
+            "provider": "stripe_test",
+            "providerEventId": "evt_peanut_checkout_expired_1003",
+            "eventType": "checkout.session.expired",
+            "relatedOrderId": "order_peanut_1003"
+          },
+          "webhook_replay": {
+            "webhookId": "webhook_peanut_checkout_expired_1003"
+          },
+          "fixture_status": "retrying"
+        }
+      }
+    ],
+    "entitlements": [
+      {
+        "id": "entitlements:ada-recipe-club:en",
+        "slug": "ada-recipe-club",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ada Recipe Club Entitlement",
+          "entitlement_ref": {
+            "entitlementId": "ent_peanut_recipe_ada",
+            "customerId": "customer_ada_shell",
+            "entitlementKey": "peanut_recipe_club",
+            "orderId": "order_peanut_1001"
+          },
+          "entitlement_revoke": {
+            "entitlementId": "ent_peanut_recipe_ada",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "active"
+        }
+      },
+      {
+        "id": "entitlements:ben-wholesale-portal:en",
+        "slug": "ben-wholesale-portal",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ben Wholesale Portal Entitlement",
+          "entitlement_ref": {
+            "entitlementId": "ent_peanut_wholesale_ben",
+            "customerId": "customer_ben_kernel",
+            "entitlementKey": "peanut_wholesale_portal",
+            "orderId": "order_peanut_1002"
+          },
+          "entitlement_revoke": {
+            "entitlementId": "ent_peanut_wholesale_ben",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "active"
+        }
+      },
+      {
+        "id": "entitlements:cora-archive:en",
+        "slug": "cora-archive",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Cora Archive Entitlement",
+          "entitlement_ref": {
+            "entitlementId": "ent_peanut_archive_cora",
+            "customerId": "customer_cora_grove",
+            "entitlementKey": "peanut_archive",
+            "orderId": "order_peanut_1003"
+          },
+          "entitlement_revoke": {
+            "entitlementId": "ent_peanut_archive_cora",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "expired"
+        }
+      }
+    ],
+    "emails": [
+      {
+        "id": "emails:order-confirmation-1001:en",
+        "slug": "order-confirmation-1001",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Order Confirmation PEANUT-1001",
+          "email_ref": {
+            "emailId": "email_order_1001",
+            "customerId": "customer_ada_shell",
+            "orderId": "order_peanut_1001",
+            "toEmail": "ada.shell@example.test"
+          },
+          "email_resend": {
+            "emailId": "email_order_1001"
+          },
+          "fixture_status": "sent"
+        }
+      },
+      {
+        "id": "emails:download-email-1002:en",
+        "slug": "download-email-1002",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Download Email PEANUT-1002",
+          "email_ref": {
+            "emailId": "email_download_1002",
+            "customerId": "customer_ben_kernel",
+            "orderId": "order_peanut_1002",
+            "toEmail": "ben.kernel@example.test"
+          },
+          "email_resend": {
+            "emailId": "email_download_1002"
+          },
+          "fixture_status": "failed"
+        }
+      },
+      {
+        "id": "emails:magic-link-cora:en",
+        "slug": "magic-link-cora",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Magic Link Cora Grove",
+          "email_ref": {
+            "emailId": "email_magic_cora",
+            "customerId": "customer_cora_grove",
+            "toEmail": "cora.grove@example.test"
+          },
+          "email_resend": {
+            "emailId": "email_magic_cora"
+          },
+          "fixture_status": "queued"
+        }
+      }
+    ],
+    "licenses": [
+      {
+        "id": "licenses:ada-recipe-license:en",
+        "slug": "ada-recipe-license",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ada Recipe License",
+          "license_ref": {
+            "licenseId": "license_recipe_ada",
+            "entitlementId": "ent_peanut_recipe_ada",
+            "orderId": "order_peanut_1001",
+            "displayKeySuffix": "ADA1"
+          },
+          "license_revoke": {
+            "licenseId": "license_recipe_ada",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "active"
+        }
+      },
+      {
+        "id": "licenses:ben-wholesale-license:en",
+        "slug": "ben-wholesale-license",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ben Wholesale License",
+          "license_ref": {
+            "licenseId": "license_wholesale_ben",
+            "entitlementId": "ent_peanut_wholesale_ben",
+            "orderId": "order_peanut_1002",
+            "displayKeySuffix": "BEN2"
+          },
+          "license_revoke": {
+            "licenseId": "license_wholesale_ben",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "active"
+        }
+      },
+      {
+        "id": "licenses:cora-archive-license:en",
+        "slug": "cora-archive-license",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Cora Archive License",
+          "license_ref": {
+            "licenseId": "license_archive_cora",
+            "entitlementId": "ent_peanut_archive_cora",
+            "orderId": "order_peanut_1003",
+            "displayKeySuffix": "CORA"
+          },
+          "license_revoke": {
+            "licenseId": "license_archive_cora",
+            "reason": "fixture_revoke"
+          },
+          "fixture_status": "revoked"
+        }
+      }
+    ],
+    "downloads": [
+      {
+        "id": "downloads:ada-recipe-download:en",
+        "slug": "ada-recipe-download",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ada Recipe Download",
+          "download_ref": {
+            "entitlementId": "ent_peanut_recipe_ada",
+            "orderId": "order_peanut_1001",
+            "orderLineId": "line_pb_500",
+            "downloadRef": "download_recipe_ada"
+          },
+          "download_issue": {
+            "entitlementId": "ent_peanut_recipe_ada",
+            "orderId": "order_peanut_1001",
+            "orderLineId": "line_pb_500",
+            "expiresAt": "2026-07-20T12:00:00.000Z"
+          },
+          "fixture_status": "ready"
+        }
+      },
+      {
+        "id": "downloads:ben-roast-guide-download:en",
+        "slug": "ben-roast-guide-download",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Ben Roast Guide Download",
+          "download_ref": {
+            "entitlementId": "ent_peanut_wholesale_ben",
+            "orderId": "order_peanut_1002",
+            "orderLineId": "line_rp_honey",
+            "downloadRef": "download_roast_ben"
+          },
+          "download_issue": {
+            "entitlementId": "ent_peanut_wholesale_ben",
+            "orderId": "order_peanut_1002",
+            "orderLineId": "line_rp_honey",
+            "expiresAt": "2026-07-20T12:00:00.000Z"
+          },
+          "fixture_status": "ready"
+        }
+      },
+      {
+        "id": "downloads:cora-oil-sheet-download:en",
+        "slug": "cora-oil-sheet-download",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Cora Oil Sheet Download",
+          "download_ref": {
+            "entitlementId": "ent_peanut_archive_cora",
+            "orderId": "order_peanut_1003",
+            "orderLineId": "line_po_500",
+            "downloadRef": "download_oil_cora"
+          },
+          "download_issue": {
+            "entitlementId": "ent_peanut_archive_cora",
+            "orderId": "order_peanut_1003",
+            "orderLineId": "line_po_500",
+            "expiresAt": "2026-07-20T12:00:00.000Z"
+          },
+          "fixture_status": "expired"
+        }
+      }
+    ]
+  },
+  "menus": [],
+  "taxonomies": [],
+  "widgetAreas": []
+}

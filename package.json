@@ -1,0 +1,43 @@
+{
+  "name": "emdash-mika-template",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "seed:apply": "mkdir -p ./.emdash/uploads && emdash seed seed/mika-actions.seed.json -d ./.emdash/mika-template.sqlite --uploads-dir ./.emdash/uploads --on-conflict update",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/patch-emdash-dev-bypass.mjs",
+    "fixture:reset": "node scripts/reset-fixture.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.1.3",
+    "@astrojs/react": "^5.0.7",
+    "@bnomei/emdash-actions": "file:../emdash-actions",
+    "@bnomei/emdash-mika": "file:../emdash-mika",
+    "@cloudflare/kumo": "^2.5.2",
+    "@phosphor-icons/react": "^2.1.10",
+    "astro": "^6.4.4",
+    "emdash": "^0.21.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "packageManager": "npm@11.16.0",
+  "emdash": {
+    "seed": "seed/mika-actions.seed.json"
+  },
+  "imports": {
+    "#mika-template-plugin": "./src/plugins/mika-template-plugin.ts"
+  }
+}
