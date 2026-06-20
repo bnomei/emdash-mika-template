@@ -182,10 +182,7 @@
             "cooldownMs": 3500,
             "icon": "key",
             "tone": "positive",
-            "confirm": "Grant an entitlement to this fixture customer?",
-            "payload": {
-              "entitlementKey": "peanut_fixture_access"
-            }
+            "confirm": "Grant an entitlement to this fixture customer?"
           }
         }
       ]

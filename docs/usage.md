@@ -9,7 +9,7 @@ The template uses path dependencies:
 - `@bnomei/emdash-mika` -> `../emdash-mika`
 - `@bnomei/emdash-actions` -> `../emdash-actions`
 
-Build those source repos first after changing their exported `dist` files.
+The template lifecycle scripts run `npm run local:build` before dev, build, typecheck, test, preview, and seed commands so clean local checkouts do not depend on stale ignored `dist` folders. Set `EMDASH_MIKA_TEMPLATE_SKIP_LOCAL_BUILD=1` only when you intentionally want to skip that preflight.
 
 ## Run
 

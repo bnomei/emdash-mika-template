@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -50,6 +50,19 @@ after(() => {
 });
 
 describe("Mika template action overrides", { concurrency: false }, () => {
+  it("lets customer grant buttons resolve entitlement keys from row values", () => {
+    const seed = JSON.parse(readFileSync(join(root, "seed/mika-actions.seed.json"), "utf8"));
+    const customers = seed.collections.find((collection) => collection.slug === "customers");
+    const grantField = customers.fields.find((field) => field.slug === "entitlement_grant");
+
+    assert.equal(grantField.options.action, "mika.entitlement.grant");
+    assert.equal(grantField.options.payload?.entitlementKey, undefined);
+    assert.equal(
+      seed.content.customers[0].data.entitlement_grant.entitlementKey,
+      "peanut_recipe_club",
+    );
+  });
+
   it("syncs product fixture state for entry-scoped provider sync", async () => {
     const result = await api.admin.providerSync({
       contentRef: {
