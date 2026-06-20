@@ -105,10 +105,13 @@ describe("Mika template action overrides", { concurrency: false }, () => {
 
     assertCompleted(result);
     assert.equal(result.data.affected.releasedReservations, 10);
-    assert.equal(
-      jsonBySlug("ec_stock_items", "peanut-butter-250g-stock", "quantities").quantityReserved,
-      0,
+    const peanutButterQuantities = jsonBySlug(
+      "ec_stock_items",
+      "peanut-butter-250g-stock",
+      "quantities",
     );
+    assert.equal(peanutButterQuantities.quantityReserved, 0);
+    assert.equal(peanutButterQuantities.availableQuantity, 47);
     assert.equal(
       jsonBySlug("ec_stock_items", "honey-roast-stock", "quantities").quantityReserved,
       0,
@@ -127,7 +130,7 @@ describe("Mika template action overrides", { concurrency: false }, () => {
       reason: "fixture_refund",
     });
     assertCompleted(refund);
-    assert.equal(rowBySlug("ec_orders", "order-peanut-1001").payment_status, "refunded");
+    assert.equal(rowBySlug("ec_orders", "order-peanut-1001").payment_status, "partially_refunded");
 
     assertCompleted(
       await api.admin.orderCancel({
@@ -139,16 +142,17 @@ describe("Mika template action overrides", { concurrency: false }, () => {
   });
 
   it("mutates customer, entitlement, email, license, and download fixtures", async () => {
-    assertCompleted(
-      await api.admin.entitlementGrant({
-        customerId: "customer_ada_shell",
-        entitlementKey: "peanut_recipe_club",
-      }),
-    );
+    const grant = await api.admin.entitlementGrant({
+      customerId: "customer_ada_shell",
+      entitlementKey: "peanut_recipe_club",
+    });
+    assertCompleted(grant);
+    assert.equal(grant.data.affected.entitlements, 1);
     assert.deepEqual(
       jsonBySlug("ec_customers", "ada-shell", "customer_ref").entitlementKeys,
       ["peanut_recipe_club"],
     );
+    assert.equal(jsonBySlug("ec_entitlements", "ada-recipe-club", "entitlement_ref").grantCount, 1);
 
     assertCompleted(
       await api.admin.entitlementRevoke({

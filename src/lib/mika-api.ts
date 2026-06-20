@@ -338,6 +338,7 @@ export const mikaApiOverrides = {
 
           stockItems += 1;
           releasedReservations += quantityReserved;
+          const quantityOnHand = numberValue(quantities["quantityOnHand"]);
           updateFixtureRow(
             db,
             fixtureTables.stockItems,
@@ -346,6 +347,7 @@ export const mikaApiOverrides = {
               quantities: writeJson({
                 ...quantities,
                 quantityReserved: 0,
+                availableQuantity: Math.max(0, quantityOnHand),
               }),
               stock_adjust: writeJson({
                 ...stockAdjust,
@@ -426,13 +428,15 @@ export const mikaApiOverrides = {
 
         const orderRef = readJsonObject(row["order_ref"]);
         const orderRefund = readJsonObject(row["order_refund"]);
-        const refundAmount = input.amount ?? numberValue(orderRefund["amount"], numberValue(row["total_amount"]));
+        const totalAmount = numberValue(row["total_amount"]);
+        const refundAmount = input.amount ?? numberValue(orderRefund["amount"], totalAmount);
+        const refundStatus = refundAmount >= totalAmount ? "refunded" : "partially_refunded";
         updateFixtureRow(
           db,
           fixtureTables.orders,
           row.id,
           {
-            fixture_status: "refunded",
+            fixture_status: refundStatus,
             order_ref: writeJson({
               ...orderRef,
               refundedAt: now,
@@ -447,7 +451,7 @@ export const mikaApiOverrides = {
               lastRefundAmount: refundAmount,
               lastReason: input.reason ?? orderRefund["reason"] ?? "fixture_refund",
             }),
-            payment_status: "refunded",
+            payment_status: refundStatus,
           },
           now,
         );
@@ -518,7 +522,7 @@ export const mikaApiOverrides = {
     async entitlementGrant(input) {
       const now = currentISODateTime();
       const updated = withFixtureDb((db) => {
-        const row = findRowByJson(
+        const customerRow = findRowByJson(
           db,
           fixtureTables.customers,
           ["customer_ref", "entitlement_grant"],
@@ -536,10 +540,11 @@ export const mikaApiOverrides = {
             );
           },
         );
-        if (!row) return false;
+        if (!customerRow) return { customers: 0, entitlements: 0 };
 
-        const customerRef = readJsonObject(row["customer_ref"]);
-        const entitlementGrant = readJsonObject(row["entitlement_grant"]);
+        const customerRef = readJsonObject(customerRow["customer_ref"]);
+        const entitlementGrant = readJsonObject(customerRow["entitlement_grant"]);
+        const customerId = input.customerId ?? optionalString(customerRef["customerId"]);
         const entitlementKeys = uniqueStrings([
           ...readJsonArray(customerRef["entitlementKeys"]),
           input.entitlementKey,
@@ -547,7 +552,7 @@ export const mikaApiOverrides = {
         updateFixtureRow(
           db,
           fixtureTables.customers,
-          row.id,
+          customerRow.id,
           {
             customer_ref: writeJson({
               ...customerRef,
@@ -565,10 +570,41 @@ export const mikaApiOverrides = {
           },
           now,
         );
-        return true;
+
+        const entitlementRow = findRowByJson(
+          db,
+          fixtureTables.entitlements,
+          ["entitlement_ref", "entitlement_revoke"],
+          (values) => {
+            const ref = values["entitlement_ref"];
+            return (
+              ref?.["entitlementKey"] === input.entitlementKey &&
+              (!customerId || ref["customerId"] === customerId)
+            );
+          },
+        );
+        if (!entitlementRow) return { customers: 1, entitlements: 0 };
+
+        const entitlementRef = readJsonObject(entitlementRow["entitlement_ref"]);
+        updateFixtureRow(
+          db,
+          fixtureTables.entitlements,
+          entitlementRow.id,
+          {
+            entitlement_ref: writeJson({
+              ...entitlementRef,
+              grantedAt: now,
+              grantCount: numberValue(entitlementRef["grantCount"]) + 1,
+              ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
+            }),
+            fixture_status: "active",
+          },
+          now,
+        );
+        return { customers: 1, entitlements: 1 };
       });
 
-      if (!updated) {
+      if (updated.customers === 0) {
         return failed(
           actionId("entitlement_grant"),
           "No template customer matched the entitlement grant target.",
@@ -577,8 +613,8 @@ export const mikaApiOverrides = {
       }
 
       return completed(actionId("entitlement_grant"), "Template entitlement grant completed.", {
-        customers: 1,
-        entitlements: input.entitlementKey ? 1 : 0,
+        customers: updated.customers,
+        entitlements: updated.entitlements,
       });
     },
 
