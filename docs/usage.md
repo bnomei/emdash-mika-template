@@ -35,7 +35,7 @@ The action fields are normal EmDash JSON fields with `widget: "actions:button"`:
 - `license_revoke` runs `mika.license.revoke` and reads `licenseId` from the field value.
 - `download_issue` runs `mika.download.issue` and reads `orderId`, `entitlementId`, or `orderLineId` from the field value.
 
-The current Mika API overrides in `src/lib/mika-api.ts` is a deterministic smoke stub. Replace the admin overrides with your real provider/repository-backed implementation when this becomes an integration app.
+The current Mika API overrides in `src/lib/mika-api.ts` are a resettable fixture adapter. They mutate the local SQLite seed rows so admin action buttons have visible effects; replace the admin overrides with your real provider/repository-backed implementation when this becomes an integration app.
 
 ## Contract check
 
