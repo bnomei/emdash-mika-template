@@ -6,11 +6,6 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packages = [
   {
-    name: "@bnomei/emdash-actions",
-    dir: resolve(root, "../emdash-actions"),
-    required: ["dist/index.mjs", "dist/admin.mjs"],
-  },
-  {
     name: "@bnomei/emdash-mika",
     dir: resolve(root, "../emdash-mika"),
     required: ["dist/index.mjs", "dist/server.mjs", "dist/admin.mjs", "dist/types/index.mjs"],

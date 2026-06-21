@@ -1,4 +1,6 @@
 ---
+import { Badge, Link, Text } from "@cloudflare/kumo";
+import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { templateProductSummaries } from "../lib/mika-api";
 
 const products = templateProductSummaries();
@@ -13,145 +15,28 @@ const smokeLinks = [
 ];
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Mika Storefront Template</title>
-    <style>
-      :root {
-        color-scheme: light;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #17201b;
-        background: #f7f8f4;
-      }
+<MikaKumoPage
+  title="Mika Storefront Template"
+  description="A runnable Astro and EmDash storefront starter with Mika product forms, cart, wishlist, checkout, account surfaces, agent-readable metadata, and the admin action fixture in one resettable app."
+>
+  <section class="mika-kumo-grid" aria-label="Products">
+    {products.map((product) => (
+      <article class="mika-kumo-card">
+        <div class="mika-kumo-stack">
+          <Text as="h2" variant="heading3">
+            <Link href={product.href}>{product.title}</Link>
+          </Text>
+          <Text as="p" variant="secondary">{product.description}</Text>
+          <div class="mika-kumo-meta-row">
+            <Badge variant="secondary">{product.priceLabel}</Badge>
+            <span class="mika-kumo-muted">{product.variantCount} variants</span>
+          </div>
+        </div>
+      </article>
+    ))}
+  </section>
 
-      body {
-        margin: 0;
-      }
-
-      main {
-        width: min(1080px, calc(100% - 40px));
-        margin: 40px auto 64px;
-      }
-
-      header {
-        display: grid;
-        gap: 14px;
-        margin-bottom: 28px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: clamp(2rem, 6vw, 4.25rem);
-        line-height: 1;
-        letter-spacing: 0;
-      }
-
-      p {
-        margin: 0;
-        max-width: 760px;
-        color: #4b5a50;
-        line-height: 1.6;
-      }
-
-      .products {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px;
-        margin: 28px 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .product {
-        display: grid;
-        min-height: 180px;
-        padding: 18px;
-        border: 1px solid #c9d2ca;
-        border-radius: 8px;
-        background: #ffffff;
-      }
-
-      .product h2 {
-        margin: 0 0 8px;
-        font-size: 1.15rem;
-        letter-spacing: 0;
-      }
-
-      .product p {
-        font-size: 0.95rem;
-      }
-
-      .meta {
-        align-self: end;
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 18px;
-        color: #2f5f46;
-        font-weight: 650;
-      }
-
-      a {
-        color: #174f38;
-        text-decoration-thickness: 1px;
-        text-underline-offset: 3px;
-      }
-
-      nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 28px;
-      }
-
-      nav a {
-        display: inline-flex;
-        align-items: center;
-        min-height: 38px;
-        padding: 0 12px;
-        border: 1px solid #b6c3ba;
-        border-radius: 6px;
-        color: #17201b;
-        text-decoration: none;
-        background: #ffffff;
-      }
-
-      nav a:hover {
-        border-color: #4f735f;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <h1>Mika Storefront Template</h1>
-        <p>
-          A runnable Astro and EmDash storefront starter with Mika product forms, cart,
-          wishlist, checkout, account surfaces, agent-readable metadata, and the admin
-          action fixture in one resettable app.
-        </p>
-      </header>
-
-      <ul class="products" aria-label="Products">
-        {products.map((product) => (
-          <li class="product">
-            <article>
-              <h2><a href={product.href}>{product.title}</a></h2>
-              <p>{product.description}</p>
-              <div class="meta">
-                <span>{product.priceLabel}</span>
-                <span>{product.variantCount} variants</span>
-              </div>
-            </article>
-          </li>
-        ))}
-      </ul>
-
-      <nav aria-label="Template smoke checks">
-        {smokeLinks.map((link) => <a href={link.href}>{link.label}</a>)}
-      </nav>
-    </main>
-  </body>
-</html>
+  <nav class="mika-kumo-actions" aria-label="Template smoke checks">
+    {smokeLinks.map((link) => <Link href={link.href}>{link.label}</Link>)}
+  </nav>
+</MikaKumoPage>
