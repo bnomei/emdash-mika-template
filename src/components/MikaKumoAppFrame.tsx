@@ -60,7 +60,7 @@ export default function MikaKumoAppFrame({
       peekable
       resizable
     >
-      <Sidebar className="mika-kumo-sidebar">
+      <Sidebar aria-label={`${title} navigation`} className="mika-kumo-sidebar">
         <Sidebar.Header>
           <a className="mika-kumo-brand" href="/">
             <span className="mika-kumo-brand-mark" aria-hidden="true">
@@ -199,8 +199,8 @@ export default function MikaKumoAppFrame({
         <footer className="mika-kumo-footer">
           <div className="mika-kumo-footer-copy">
             <Text as="p" variant="secondary" size="sm">
-              Resettable Mika fixture storefront with purchases, stock,
-              subscriptions, licenses, downloads, webhooks, and admin actions.
+              Resettable Mika fixture storefront with purchases, stock, subscriptions, licenses,
+              downloads, webhooks, and admin actions.
             </Text>
           </div>
           <nav aria-label="Template resources" className="mika-kumo-footer-links">

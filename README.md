@@ -66,8 +66,7 @@ This development checkout intentionally uses one local path dependency:
 
 - `@bnomei/emdash-mika` -> `../emdash-mika`
 
-`@bnomei/emdash-actions` is installed from the public
-`https://github.com/bnomei/emdash-actions` repository.
+`@bnomei/emdash-actions` is installed from the public npm package.
 
 The lifecycle scripts run `npm run local:build` before dev, build, preview,
 typecheck, test, and seed commands. Set
