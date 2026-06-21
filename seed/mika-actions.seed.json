@@ -3,7 +3,7 @@
   "version": "1",
   "meta": {
     "name": "Mika Actions Template",
-    "description": "Resettable peanut-themed EmDash seed for testing Mika action fields across catalog, session, account, ledger, and ops records.",
+    "description": "Resettable Buttonwood Lot-themed EmDash seed for testing Mika action fields across catalog, session, account, ledger, and ops records.",
     "author": "emdash-mika-template"
   },
   "settings": {
@@ -582,51 +582,51 @@
   "content": {
     "products": [
       {
-        "id": "products:crunchy-peanut-butter:en",
-        "slug": "crunchy-peanut-butter",
+        "id": "products:mira-field-clipboard:en",
+        "slug": "mira-field-clipboard",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Crunchy Peanut Butter",
-          "description": "Roasted peanut spread for catalog and stock action testing.",
+          "title": "Mira Field Clipboard",
+          "description": "Checklist clipboard from Mira Monday's neighborhood planning desk.",
           "commerce_ref": {
-            "sellableId": "sellable_pb_250",
-            "providerProductId": "prod_peanut_butter",
-            "providerPriceId": "price_provider_pb_250"
+            "sellableId": "sellable_bw_clip_mini",
+            "providerProductId": "prod_mira_clipboard",
+            "providerPriceId": "price_provider_bw_clip_mini"
           },
           "variants": [
             {
-              "variantKey": "pb_250",
-              "label": "250g jar",
-              "sku": "PEANUT-PB_250",
-              "sellableId": "sellable_pb_250",
-              "priceId": "price_pb_250",
-              "stockItemId": "stock_pb_250",
-              "providerPriceId": "price_provider_pb_250",
+              "variantKey": "bw_clip_mini",
+              "label": "Pocket checklist",
+              "sku": "BUTTONWOOD-CLIP_MINI",
+              "sellableId": "sellable_bw_clip_mini",
+              "priceId": "price_bw_clip_mini",
+              "stockItemId": "stock_bw_clip_mini",
+              "providerPriceId": "price_provider_bw_clip_mini",
               "amount": 499,
               "currency": "EUR",
               "sortOrder": 0
             },
             {
-              "variantKey": "pb_500",
-              "label": "500g jar",
-              "sku": "PEANUT-PB_500",
-              "sellableId": "sellable_pb_500",
-              "priceId": "price_pb_500",
-              "stockItemId": "stock_pb_500",
-              "providerPriceId": "price_provider_pb_500",
+              "variantKey": "bw_clip_standard",
+              "label": "Field clipboard",
+              "sku": "BUTTONWOOD-CLIP_STANDARD",
+              "sellableId": "sellable_bw_clip_standard",
+              "priceId": "price_bw_clip_standard",
+              "stockItemId": "stock_bw_clip_standard",
+              "providerPriceId": "price_provider_bw_clip_standard",
               "amount": 799,
               "currency": "EUR",
               "sortOrder": 1
             },
             {
-              "variantKey": "pb_1000",
-              "label": "1kg tub",
-              "sku": "PEANUT-PB_1000",
-              "sellableId": "sellable_pb_1000",
-              "priceId": "price_pb_1000",
-              "stockItemId": "stock_pb_1000",
-              "providerPriceId": "price_provider_pb_1000",
+              "variantKey": "bw_clip_bundle",
+              "label": "Meeting bundle",
+              "sku": "BUTTONWOOD-CLIP_BUNDLE",
+              "sellableId": "sellable_bw_clip_bundle",
+              "priceId": "price_bw_clip_bundle",
+              "stockItemId": "stock_bw_clip_bundle",
+              "providerPriceId": "price_provider_bw_clip_bundle",
               "amount": 1399,
               "currency": "EUR",
               "sortOrder": 2
@@ -634,57 +634,57 @@
           ],
           "mika_catalog_sync": {
             "provider": "stripe_test",
-            "sellableId": "sellable_pb_250",
-            "providerProductId": "prod_peanut_butter"
+            "sellableId": "sellable_bw_clip_mini",
+            "providerProductId": "prod_mira_clipboard"
           }
         }
       },
       {
-        "id": "products:roasted-peanut-snacks:en",
-        "slug": "roasted-peanut-snacks",
+        "id": "products:thirdbase-team-pennants:en",
+        "slug": "thirdbase-team-pennants",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Roasted Peanut Snacks",
-          "description": "Snack packs with flavor variants.",
+          "title": "Thirdbase Team Pennants",
+          "description": "Neighborhood team pennants for Theo Thirdbase's almost-championship roster.",
           "commerce_ref": {
-            "sellableId": "sellable_rp_salt",
-            "providerProductId": "prod_roasted_peanuts",
-            "providerPriceId": "price_provider_rp_salt"
+            "sellableId": "sellable_bw_pennant_home",
+            "providerProductId": "prod_thirdbase_pennants",
+            "providerPriceId": "price_provider_bw_pennant_home"
           },
           "variants": [
             {
-              "variantKey": "rp_salt",
-              "label": "Sea salt",
-              "sku": "PEANUT-RP_SALT",
-              "sellableId": "sellable_rp_salt",
-              "priceId": "price_rp_salt",
-              "stockItemId": "stock_rp_salt",
-              "providerPriceId": "price_provider_rp_salt",
+              "variantKey": "bw_pennant_home",
+              "label": "Home diamond",
+              "sku": "BUTTONWOOD-PENNANT_HOME",
+              "sellableId": "sellable_bw_pennant_home",
+              "priceId": "price_bw_pennant_home",
+              "stockItemId": "stock_bw_pennant_home",
+              "providerPriceId": "price_provider_bw_pennant_home",
               "amount": 299,
               "currency": "EUR",
               "sortOrder": 0
             },
             {
-              "variantKey": "rp_honey",
-              "label": "Honey roast",
-              "sku": "PEANUT-RP_HONEY",
-              "sellableId": "sellable_rp_honey",
-              "priceId": "price_rp_honey",
-              "stockItemId": "stock_rp_honey",
-              "providerPriceId": "price_provider_rp_honey",
+              "variantKey": "bw_pennant_rain",
+              "label": "Rain-delay",
+              "sku": "BUTTONWOOD-PENNANT_RAIN",
+              "sellableId": "sellable_bw_pennant_rain",
+              "priceId": "price_bw_pennant_rain",
+              "stockItemId": "stock_bw_pennant_rain",
+              "providerPriceId": "price_provider_bw_pennant_rain",
               "amount": 349,
               "currency": "EUR",
               "sortOrder": 1
             },
             {
-              "variantKey": "rp_chili",
-              "label": "Chili lime",
-              "sku": "PEANUT-RP_CHILI",
-              "sellableId": "sellable_rp_chili",
-              "priceId": "price_rp_chili",
-              "stockItemId": "stock_rp_chili",
-              "providerPriceId": "price_provider_rp_chili",
+              "variantKey": "bw_pennant_extra",
+              "label": "Extra-inning",
+              "sku": "BUTTONWOOD-PENNANT_EXTRA",
+              "sellableId": "sellable_bw_pennant_extra",
+              "priceId": "price_bw_pennant_extra",
+              "stockItemId": "stock_bw_pennant_extra",
+              "providerPriceId": "price_provider_bw_pennant_extra",
               "amount": 349,
               "currency": "EUR",
               "sortOrder": 2
@@ -692,57 +692,57 @@
           ],
           "mika_catalog_sync": {
             "provider": "stripe_test",
-            "sellableId": "sellable_rp_salt",
-            "providerProductId": "prod_roasted_peanuts"
+            "sellableId": "sellable_bw_pennant_home",
+            "providerProductId": "prod_thirdbase_pennants"
           }
         }
       },
       {
-        "id": "products:cold-pressed-peanut-oil:en",
-        "slug": "cold-pressed-peanut-oil",
+        "id": "products:junie-sidewalk-zine-kit:en",
+        "slug": "junie-sidewalk-zine-kit",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Cold-Pressed Peanut Oil",
-          "description": "Peanut oil sizes for download/license/order fixture paths.",
+          "title": "Junie Sidewalk Zine Kit",
+          "description": "Printable zine kits from Junie Chalk's sidewalk publishing table.",
           "commerce_ref": {
-            "sellableId": "sellable_po_250",
-            "providerProductId": "prod_peanut_oil",
-            "providerPriceId": "price_provider_po_250"
+            "sellableId": "sellable_bw_zine_starter",
+            "providerProductId": "prod_junie_zine_kit",
+            "providerPriceId": "price_provider_bw_zine_starter"
           },
           "variants": [
             {
-              "variantKey": "po_250",
-              "label": "250ml bottle",
-              "sku": "PEANUT-PO_250",
-              "sellableId": "sellable_po_250",
-              "priceId": "price_po_250",
-              "stockItemId": "stock_po_250",
-              "providerPriceId": "price_provider_po_250",
+              "variantKey": "bw_zine_starter",
+              "label": "Starter pages",
+              "sku": "BUTTONWOOD-ZINE_STARTER",
+              "sellableId": "sellable_bw_zine_starter",
+              "priceId": "price_bw_zine_starter",
+              "stockItemId": "stock_bw_zine_starter",
+              "providerPriceId": "price_provider_bw_zine_starter",
               "amount": 699,
               "currency": "EUR",
               "sortOrder": 0
             },
             {
-              "variantKey": "po_500",
-              "label": "500ml bottle",
-              "sku": "PEANUT-PO_500",
-              "sellableId": "sellable_po_500",
-              "priceId": "price_po_500",
-              "stockItemId": "stock_po_500",
-              "providerPriceId": "price_provider_po_500",
+              "variantKey": "bw_zine_workshop",
+              "label": "Workshop pack",
+              "sku": "BUTTONWOOD-ZINE_WORKSHOP",
+              "sellableId": "sellable_bw_zine_workshop",
+              "priceId": "price_bw_zine_workshop",
+              "stockItemId": "stock_bw_zine_workshop",
+              "providerPriceId": "price_provider_bw_zine_workshop",
               "amount": 1099,
               "currency": "EUR",
               "sortOrder": 1
             },
             {
-              "variantKey": "po_1000",
-              "label": "1l tin",
-              "sku": "PEANUT-PO_1000",
-              "sellableId": "sellable_po_1000",
-              "priceId": "price_po_1000",
-              "stockItemId": "stock_po_1000",
-              "providerPriceId": "price_provider_po_1000",
+              "variantKey": "bw_zine_archive",
+              "label": "Archive box",
+              "sku": "BUTTONWOOD-ZINE_ARCHIVE",
+              "sellableId": "sellable_bw_zine_archive",
+              "priceId": "price_bw_zine_archive",
+              "stockItemId": "stock_bw_zine_archive",
+              "providerPriceId": "price_provider_bw_zine_archive",
               "amount": 1899,
               "currency": "EUR",
               "sortOrder": 2
@@ -750,23 +750,89 @@
           ],
           "mika_catalog_sync": {
             "provider": "stripe_test",
-            "sellableId": "sellable_po_250",
-            "providerProductId": "prod_peanut_oil"
+            "sellableId": "sellable_bw_zine_starter",
+            "providerProductId": "prod_junie_zine_kit"
+          }
+        }
+      },
+      {
+        "id": "products:buttonwood-creator-bundle:en",
+        "slug": "buttonwood-creator-bundle",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Buttonwood Creator Bundle",
+          "description": "Comic creator bundle covering panel downloads, monthly strip-club access, and lettering license fulfillment.",
+          "commerce_ref": {
+            "sellableId": "sellable_bw_panel_pack",
+            "providerProductId": "prod_buttonwood_creator_bundle",
+            "providerPriceId": "price_provider_bw_panel_pack"
+          },
+          "variants": [
+            {
+              "variantKey": "bw_panel_pack",
+              "label": "Panel Pack Download",
+              "sku": "BUTTONWOOD-PANEL_PACK",
+              "sellableId": "sellable_bw_panel_pack",
+              "priceId": "price_bw_panel_pack",
+              "stockItemId": "stock_bw_panel_pack",
+              "providerPriceId": "price_provider_bw_panel_pack",
+              "amount": 1299,
+              "currency": "EUR",
+              "mode": "payment",
+              "fulfillmentKind": "download",
+              "sortOrder": 0
+            },
+            {
+              "variantKey": "bw_sunday_club",
+              "label": "Sunday Strip Club",
+              "sku": "BUTTONWOOD-SUNDAY_CLUB",
+              "sellableId": "sellable_bw_sunday_club",
+              "priceId": "price_bw_sunday_club",
+              "stockItemId": "stock_bw_sunday_club",
+              "providerPriceId": "price_provider_bw_sunday_club",
+              "amount": 900,
+              "currency": "EUR",
+              "mode": "subscription",
+              "fulfillmentKind": "entitlement",
+              "interval": "month",
+              "intervalCount": 1,
+              "sortOrder": 1
+            },
+            {
+              "variantKey": "bw_lettering_license",
+              "label": "Lettering Brush Pro License",
+              "sku": "BUTTONWOOD-LETTERING_LICENSE",
+              "sellableId": "sellable_bw_lettering_license",
+              "priceId": "price_bw_lettering_license",
+              "stockItemId": "stock_bw_lettering_license",
+              "providerPriceId": "price_provider_bw_lettering_license",
+              "amount": 4900,
+              "currency": "EUR",
+              "mode": "payment",
+              "fulfillmentKind": "license",
+              "sortOrder": 2
+            }
+          ],
+          "mika_catalog_sync": {
+            "provider": "stripe_test",
+            "sellableId": "sellable_bw_panel_pack",
+            "providerProductId": "prod_buttonwood_creator_bundle"
           }
         }
       }
     ],
     "stock_items": [
       {
-        "id": "stock_items:peanut-butter-250g-stock:en",
-        "slug": "peanut-butter-250g-stock",
+        "id": "stock_items:mira-clipboard-stock:en",
+        "slug": "mira-clipboard-stock",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Crunchy Peanut Butter 250g Stock",
+          "title": "Mira Field Clipboard Stock",
           "stock_ref": {
-            "stockItemId": "stock_pb_250",
-            "sellableId": "sellable_pb_250",
+            "stockItemId": "stock_bw_clip_mini",
+            "sellableId": "sellable_bw_clip_mini",
             "policy": "finite"
           },
           "quantities": {
@@ -775,21 +841,21 @@
             "lowStockThreshold": 8
           },
           "stock_adjust": {
-            "stockItemId": "stock_pb_250",
+            "stockItemId": "stock_bw_clip_mini",
             "quantityOnHand": 42
           }
         }
       },
       {
-        "id": "stock_items:honey-roast-stock:en",
-        "slug": "honey-roast-stock",
+        "id": "stock_items:thirdbase-rain-pennant-stock:en",
+        "slug": "thirdbase-rain-pennant-stock",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Honey Roast Peanut Stock",
+          "title": "Thirdbase Rain Pennant Stock",
           "stock_ref": {
-            "stockItemId": "stock_rp_honey",
-            "sellableId": "sellable_rp_honey",
+            "stockItemId": "stock_bw_pennant_rain",
+            "sellableId": "sellable_bw_pennant_rain",
             "policy": "finite"
           },
           "quantities": {
@@ -798,21 +864,21 @@
             "lowStockThreshold": 10
           },
           "stock_adjust": {
-            "stockItemId": "stock_rp_honey",
+            "stockItemId": "stock_bw_pennant_rain",
             "quantityOnHand": 18
           }
         }
       },
       {
-        "id": "stock_items:peanut-oil-500ml-stock:en",
-        "slug": "peanut-oil-500ml-stock",
+        "id": "stock_items:junie-workshop-zine-stock:en",
+        "slug": "junie-workshop-zine-stock",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Peanut Oil 500ml Stock",
+          "title": "Junie Workshop Zine Stock",
           "stock_ref": {
-            "stockItemId": "stock_po_500",
-            "sellableId": "sellable_po_500",
+            "stockItemId": "stock_bw_zine_workshop",
+            "sellableId": "sellable_bw_zine_workshop",
             "policy": "finite"
           },
           "quantities": {
@@ -821,102 +887,171 @@
             "lowStockThreshold": 5
           },
           "stock_adjust": {
-            "stockItemId": "stock_po_500",
+            "stockItemId": "stock_bw_zine_workshop",
             "quantityOnHand": 9
+          }
+        }
+      },
+      {
+        "id": "stock_items:panel-pack-download-stock:en",
+        "slug": "panel-pack-download-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Panel Pack Download Stock",
+          "stock_ref": {
+            "stockItemId": "stock_bw_panel_pack",
+            "sellableId": "sellable_bw_panel_pack",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 12,
+            "quantityReserved": 0,
+            "lowStockThreshold": 3
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_bw_panel_pack",
+            "quantityOnHand": 12
+          }
+        }
+      },
+      {
+        "id": "stock_items:sunday-club-seat-stock:en",
+        "slug": "sunday-club-seat-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Sunday Club Seat Stock",
+          "stock_ref": {
+            "stockItemId": "stock_bw_sunday_club",
+            "sellableId": "sellable_bw_sunday_club",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 2,
+            "quantityReserved": 1,
+            "lowStockThreshold": 3
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_bw_sunday_club",
+            "quantityOnHand": 2
+          }
+        }
+      },
+      {
+        "id": "stock_items:lettering-license-seat-stock:en",
+        "slug": "lettering-license-seat-stock",
+        "status": "published",
+        "locale": "en",
+        "data": {
+          "title": "Lettering License Seat Stock",
+          "stock_ref": {
+            "stockItemId": "stock_bw_lettering_license",
+            "sellableId": "sellable_bw_lettering_license",
+            "policy": "finite"
+          },
+          "quantities": {
+            "quantityOnHand": 0,
+            "quantityReserved": 0,
+            "lowStockThreshold": 3
+          },
+          "stock_adjust": {
+            "stockItemId": "stock_bw_lettering_license",
+            "quantityOnHand": 0
           }
         }
       }
     ],
     "customers": [
       {
-        "id": "customers:ada-shell:en",
-        "slug": "ada-shell",
+        "id": "customers:mira-monday:en",
+        "slug": "mira-monday",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ada Shell",
+          "title": "Mira Monday",
           "customer_ref": {
-            "customerId": "customer_ada_shell",
-            "email": "ada.shell@example.test",
-            "providerCustomerId": "cus_ada_shell"
+            "customerId": "customer_mira_monday",
+            "email": "mira.monday@example.test",
+            "providerCustomerId": "cus_mira_monday"
           },
           "entitlement_grant": {
-            "customerId": "customer_ada_shell",
-            "email": "ada.shell@example.test",
-            "entitlementKey": "peanut_recipe_club"
+            "customerId": "customer_mira_monday",
+            "email": "mira.monday@example.test",
+            "entitlementKey": "buttonwood_panel_club"
           }
         }
       },
       {
-        "id": "customers:ben-kernel:en",
-        "slug": "ben-kernel",
+        "id": "customers:theo-thirdbase:en",
+        "slug": "theo-thirdbase",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ben Kernel",
+          "title": "Theo Thirdbase",
           "customer_ref": {
-            "customerId": "customer_ben_kernel",
-            "email": "ben.kernel@example.test",
-            "providerCustomerId": "cus_ben_kernel"
+            "customerId": "customer_theo_thirdbase",
+            "email": "theo.thirdbase@example.test",
+            "providerCustomerId": "cus_theo_thirdbase"
           },
           "entitlement_grant": {
-            "customerId": "customer_ben_kernel",
-            "email": "ben.kernel@example.test",
-            "entitlementKey": "peanut_wholesale_portal"
+            "customerId": "customer_theo_thirdbase",
+            "email": "theo.thirdbase@example.test",
+            "entitlementKey": "buttonwood_dugout_archive"
           }
         }
       },
       {
-        "id": "customers:cora-grove:en",
-        "slug": "cora-grove",
+        "id": "customers:nell-notebook:en",
+        "slug": "nell-notebook",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Cora Grove",
+          "title": "Nell Notebook",
           "customer_ref": {
-            "customerId": "customer_cora_grove",
-            "email": "cora.grove@example.test",
-            "providerCustomerId": "cus_cora_grove"
+            "customerId": "customer_nell_notebook",
+            "email": "nell.notebook@example.test",
+            "providerCustomerId": "cus_nell_notebook"
           },
           "entitlement_grant": {
-            "customerId": "customer_cora_grove",
-            "email": "cora.grove@example.test",
-            "entitlementKey": "peanut_archive"
+            "customerId": "customer_nell_notebook",
+            "email": "nell.notebook@example.test",
+            "entitlementKey": "buttonwood_notebook_archive"
           }
         }
       }
     ],
     "orders": [
       {
-        "id": "orders:order-peanut-1001:en",
-        "slug": "order-peanut-1001",
+        "id": "orders:order-buttonwood-1001:en",
+        "slug": "order-buttonwood-1001",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Order PEANUT-1001",
+          "title": "Order BUTTONWOOD-1001",
           "order_ref": {
-            "orderId": "order_peanut_1001",
-            "orderNumber": "PEANUT-1001",
-            "customerId": "customer_ada_shell",
-            "providerPaymentId": "pi_peanut_1001",
-            "providerOrderId": "po_peanut_1001"
+            "orderId": "order_buttonwood_1001",
+            "orderNumber": "BUTTONWOOD-1001",
+            "customerId": "customer_mira_monday",
+            "providerPaymentId": "pi_buttonwood_1001",
+            "providerOrderId": "po_buttonwood_1001"
           },
           "lines": [
             {
-              "orderLineId": "line_pb_500",
-              "sellableId": "sellable_pb_500",
-              "priceId": "price_pb_500",
+              "orderLineId": "line_bw_clip_standard",
+              "sellableId": "sellable_bw_clip_standard",
+              "priceId": "price_bw_clip_standard",
               "quantity": 1,
               "totalAmount": 799
             }
           ],
           "order_refund": {
-            "orderId": "order_peanut_1001",
+            "orderId": "order_buttonwood_1001",
             "amount": 499,
             "reason": "fixture_refund"
           },
           "order_cancel": {
-            "orderId": "order_peanut_1001",
+            "orderId": "order_buttonwood_1001",
             "reason": "fixture_cancel"
           },
           "payment_status": "paid",
@@ -925,35 +1060,35 @@
         }
       },
       {
-        "id": "orders:order-peanut-1002:en",
-        "slug": "order-peanut-1002",
+        "id": "orders:order-buttonwood-1002:en",
+        "slug": "order-buttonwood-1002",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Order PEANUT-1002",
+          "title": "Order BUTTONWOOD-1002",
           "order_ref": {
-            "orderId": "order_peanut_1002",
-            "orderNumber": "PEANUT-1002",
-            "customerId": "customer_ben_kernel",
-            "providerPaymentId": "pi_peanut_1002",
-            "providerOrderId": "po_peanut_1002"
+            "orderId": "order_buttonwood_1002",
+            "orderNumber": "BUTTONWOOD-1002",
+            "customerId": "customer_theo_thirdbase",
+            "providerPaymentId": "pi_buttonwood_1002",
+            "providerOrderId": "po_buttonwood_1002"
           },
           "lines": [
             {
-              "orderLineId": "line_rp_honey",
-              "sellableId": "sellable_rp_honey",
-              "priceId": "price_rp_honey",
+              "orderLineId": "line_bw_pennant_rain",
+              "sellableId": "sellable_bw_pennant_rain",
+              "priceId": "price_bw_pennant_rain",
               "quantity": 3,
               "totalAmount": 1047
             }
           ],
           "order_refund": {
-            "orderId": "order_peanut_1002",
+            "orderId": "order_buttonwood_1002",
             "amount": 349,
             "reason": "fixture_refund"
           },
           "order_cancel": {
-            "orderId": "order_peanut_1002",
+            "orderId": "order_buttonwood_1002",
             "reason": "fixture_cancel"
           },
           "payment_status": "paid",
@@ -962,35 +1097,35 @@
         }
       },
       {
-        "id": "orders:order-peanut-1003:en",
-        "slug": "order-peanut-1003",
+        "id": "orders:order-buttonwood-1003:en",
+        "slug": "order-buttonwood-1003",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Order PEANUT-1003",
+          "title": "Order BUTTONWOOD-1003",
           "order_ref": {
-            "orderId": "order_peanut_1003",
-            "orderNumber": "PEANUT-1003",
-            "customerId": "customer_cora_grove",
-            "providerPaymentId": "pi_peanut_1003",
-            "providerOrderId": "po_peanut_1003"
+            "orderId": "order_buttonwood_1003",
+            "orderNumber": "BUTTONWOOD-1003",
+            "customerId": "customer_nell_notebook",
+            "providerPaymentId": "pi_buttonwood_1003",
+            "providerOrderId": "po_buttonwood_1003"
           },
           "lines": [
             {
-              "orderLineId": "line_po_500",
-              "sellableId": "sellable_po_500",
-              "priceId": "price_po_500",
+              "orderLineId": "line_bw_zine_workshop",
+              "sellableId": "sellable_bw_zine_workshop",
+              "priceId": "price_bw_zine_workshop",
               "quantity": 1,
               "totalAmount": 1099
             }
           ],
           "order_refund": {
-            "orderId": "order_peanut_1003",
+            "orderId": "order_buttonwood_1003",
             "amount": 1099,
             "reason": "fixture_refund"
           },
           "order_cancel": {
-            "orderId": "order_peanut_1003",
+            "orderId": "order_buttonwood_1003",
             "reason": "fixture_cancel"
           },
           "payment_status": "pending",
@@ -1001,56 +1136,56 @@
     ],
     "checkout_sessions": [
       {
-        "id": "checkout_sessions:checkout-peanut-1001:en",
-        "slug": "checkout-peanut-1001",
+        "id": "checkout_sessions:checkout-buttonwood-1001:en",
+        "slug": "checkout-buttonwood-1001",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Checkout PEANUT-1001",
+          "title": "Checkout BUTTONWOOD-1001",
           "checkout_ref": {
-            "checkoutId": "checkout_peanut_1001",
-            "providerCheckoutId": "cs_peanut_1001",
-            "orderId": "order_peanut_1001",
-            "customerId": "customer_ada_shell"
+            "checkoutId": "checkout_buttonwood_1001",
+            "providerCheckoutId": "cs_buttonwood_1001",
+            "orderId": "order_buttonwood_1001",
+            "customerId": "customer_mira_monday"
           },
           "provider_status": "paid",
-          "redirect_url": "https://checkout.example.test/peanut-1001",
+          "redirect_url": "https://checkout.example.test/buttonwood-1001",
           "fixture_status": "completed"
         }
       },
       {
-        "id": "checkout_sessions:checkout-peanut-1002:en",
-        "slug": "checkout-peanut-1002",
+        "id": "checkout_sessions:checkout-buttonwood-1002:en",
+        "slug": "checkout-buttonwood-1002",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Checkout PEANUT-1002",
+          "title": "Checkout BUTTONWOOD-1002",
           "checkout_ref": {
-            "checkoutId": "checkout_peanut_1002",
-            "providerCheckoutId": "cs_peanut_1002",
-            "orderId": "order_peanut_1002",
-            "customerId": "customer_ben_kernel"
+            "checkoutId": "checkout_buttonwood_1002",
+            "providerCheckoutId": "cs_buttonwood_1002",
+            "orderId": "order_buttonwood_1002",
+            "customerId": "customer_theo_thirdbase"
           },
           "provider_status": "paid",
-          "redirect_url": "https://checkout.example.test/peanut-1002",
+          "redirect_url": "https://checkout.example.test/buttonwood-1002",
           "fixture_status": "completed"
         }
       },
       {
-        "id": "checkout_sessions:checkout-peanut-1003:en",
-        "slug": "checkout-peanut-1003",
+        "id": "checkout_sessions:checkout-buttonwood-1003:en",
+        "slug": "checkout-buttonwood-1003",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Checkout PEANUT-1003",
+          "title": "Checkout BUTTONWOOD-1003",
           "checkout_ref": {
-            "checkoutId": "checkout_peanut_1003",
-            "providerCheckoutId": "cs_peanut_1003",
-            "orderId": "order_peanut_1003",
-            "customerId": "customer_cora_grove"
+            "checkoutId": "checkout_buttonwood_1003",
+            "providerCheckoutId": "cs_buttonwood_1003",
+            "orderId": "order_buttonwood_1003",
+            "customerId": "customer_nell_notebook"
           },
           "provider_status": "open",
-          "redirect_url": "https://checkout.example.test/peanut-1003",
+          "redirect_url": "https://checkout.example.test/buttonwood-1003",
           "fixture_status": "open"
         }
       }
@@ -1064,14 +1199,14 @@
         "data": {
           "title": "payment_intent.succeeded 1001",
           "webhook_ref": {
-            "webhookId": "webhook_peanut_paid_1001",
+            "webhookId": "webhook_buttonwood_paid_1001",
             "provider": "stripe_test",
-            "providerEventId": "evt_peanut_paid_1001",
+            "providerEventId": "evt_buttonwood_paid_1001",
             "eventType": "payment_intent.succeeded",
-            "relatedOrderId": "order_peanut_1001"
+            "relatedOrderId": "order_buttonwood_1001"
           },
           "webhook_replay": {
-            "webhookId": "webhook_peanut_paid_1001"
+            "webhookId": "webhook_buttonwood_paid_1001"
           },
           "fixture_status": "processed"
         }
@@ -1084,14 +1219,14 @@
         "data": {
           "title": "refund.failed 1002",
           "webhook_ref": {
-            "webhookId": "webhook_peanut_refund_failed_1002",
+            "webhookId": "webhook_buttonwood_refund_failed_1002",
             "provider": "stripe_test",
-            "providerEventId": "evt_peanut_refund_failed_1002",
+            "providerEventId": "evt_buttonwood_refund_failed_1002",
             "eventType": "refund.failed",
-            "relatedOrderId": "order_peanut_1002"
+            "relatedOrderId": "order_buttonwood_1002"
           },
           "webhook_replay": {
-            "webhookId": "webhook_peanut_refund_failed_1002"
+            "webhookId": "webhook_buttonwood_refund_failed_1002"
           },
           "fixture_status": "failed"
         }
@@ -1104,14 +1239,14 @@
         "data": {
           "title": "checkout.session.expired 1003",
           "webhook_ref": {
-            "webhookId": "webhook_peanut_checkout_expired_1003",
+            "webhookId": "webhook_buttonwood_checkout_expired_1003",
             "provider": "stripe_test",
-            "providerEventId": "evt_peanut_checkout_expired_1003",
+            "providerEventId": "evt_buttonwood_checkout_expired_1003",
             "eventType": "checkout.session.expired",
-            "relatedOrderId": "order_peanut_1003"
+            "relatedOrderId": "order_buttonwood_1003"
           },
           "webhook_replay": {
-            "webhookId": "webhook_peanut_checkout_expired_1003"
+            "webhookId": "webhook_buttonwood_checkout_expired_1003"
           },
           "fixture_status": "retrying"
         }
@@ -1119,60 +1254,60 @@
     ],
     "entitlements": [
       {
-        "id": "entitlements:ada-recipe-club:en",
-        "slug": "ada-recipe-club",
+        "id": "entitlements:mira-panel-club:en",
+        "slug": "mira-panel-club",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ada Recipe Club Entitlement",
+          "title": "Mira Panel Club Entitlement",
           "entitlement_ref": {
-            "entitlementId": "ent_peanut_recipe_ada",
-            "customerId": "customer_ada_shell",
-            "entitlementKey": "peanut_recipe_club",
-            "orderId": "order_peanut_1001"
+            "entitlementId": "ent_buttonwood_panel_mira",
+            "customerId": "customer_mira_monday",
+            "entitlementKey": "buttonwood_panel_club",
+            "orderId": "order_buttonwood_1001"
           },
           "entitlement_revoke": {
-            "entitlementId": "ent_peanut_recipe_ada",
+            "entitlementId": "ent_buttonwood_panel_mira",
             "reason": "fixture_revoke"
           },
           "fixture_status": "active"
         }
       },
       {
-        "id": "entitlements:ben-wholesale-portal:en",
-        "slug": "ben-wholesale-portal",
+        "id": "entitlements:theo-dugout-archive:en",
+        "slug": "theo-dugout-archive",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ben Wholesale Portal Entitlement",
+          "title": "Theo Dugout Archive Entitlement",
           "entitlement_ref": {
-            "entitlementId": "ent_peanut_wholesale_ben",
-            "customerId": "customer_ben_kernel",
-            "entitlementKey": "peanut_wholesale_portal",
-            "orderId": "order_peanut_1002"
+            "entitlementId": "ent_buttonwood_dugout_theo",
+            "customerId": "customer_theo_thirdbase",
+            "entitlementKey": "buttonwood_dugout_archive",
+            "orderId": "order_buttonwood_1002"
           },
           "entitlement_revoke": {
-            "entitlementId": "ent_peanut_wholesale_ben",
+            "entitlementId": "ent_buttonwood_dugout_theo",
             "reason": "fixture_revoke"
           },
           "fixture_status": "active"
         }
       },
       {
-        "id": "entitlements:cora-archive:en",
-        "slug": "cora-archive",
+        "id": "entitlements:nell-notebook-archive:en",
+        "slug": "nell-notebook-archive",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Cora Archive Entitlement",
+          "title": "Nell Notebook Archive Entitlement",
           "entitlement_ref": {
-            "entitlementId": "ent_peanut_archive_cora",
-            "customerId": "customer_cora_grove",
-            "entitlementKey": "peanut_archive",
-            "orderId": "order_peanut_1003"
+            "entitlementId": "ent_buttonwood_archive_nell",
+            "customerId": "customer_nell_notebook",
+            "entitlementKey": "buttonwood_notebook_archive",
+            "orderId": "order_buttonwood_1003"
           },
           "entitlement_revoke": {
-            "entitlementId": "ent_peanut_archive_cora",
+            "entitlementId": "ent_buttonwood_archive_nell",
             "reason": "fixture_revoke"
           },
           "fixture_status": "expired"
@@ -1181,57 +1316,57 @@
     ],
     "emails": [
       {
-        "id": "emails:order-confirmation-1001:en",
-        "slug": "order-confirmation-1001",
+        "id": "emails:field-report-confirmation-1001:en",
+        "slug": "field-report-confirmation-1001",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Order Confirmation PEANUT-1001",
+          "title": "Field Report Confirmation BUTTONWOOD-1001",
           "email_ref": {
-            "emailId": "email_order_1001",
-            "customerId": "customer_ada_shell",
-            "orderId": "order_peanut_1001",
-            "toEmail": "ada.shell@example.test"
+            "emailId": "email_buttonwood_order_1001",
+            "customerId": "customer_mira_monday",
+            "orderId": "order_buttonwood_1001",
+            "toEmail": "mira.monday@example.test"
           },
           "email_resend": {
-            "emailId": "email_order_1001"
+            "emailId": "email_buttonwood_order_1001"
           },
           "fixture_status": "sent"
         }
       },
       {
-        "id": "emails:download-email-1002:en",
-        "slug": "download-email-1002",
+        "id": "emails:zine-download-email-1002:en",
+        "slug": "zine-download-email-1002",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Download Email PEANUT-1002",
+          "title": "Zine Download Email BUTTONWOOD-1002",
           "email_ref": {
-            "emailId": "email_download_1002",
-            "customerId": "customer_ben_kernel",
-            "orderId": "order_peanut_1002",
-            "toEmail": "ben.kernel@example.test"
+            "emailId": "email_buttonwood_download_1002",
+            "customerId": "customer_theo_thirdbase",
+            "orderId": "order_buttonwood_1002",
+            "toEmail": "theo.thirdbase@example.test"
           },
           "email_resend": {
-            "emailId": "email_download_1002"
+            "emailId": "email_buttonwood_download_1002"
           },
           "fixture_status": "failed"
         }
       },
       {
-        "id": "emails:magic-link-cora:en",
-        "slug": "magic-link-cora",
+        "id": "emails:magic-link-nell:en",
+        "slug": "magic-link-nell",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Magic Link Cora Grove",
+          "title": "Magic Link Nell Notebook",
           "email_ref": {
-            "emailId": "email_magic_cora",
-            "customerId": "customer_cora_grove",
-            "toEmail": "cora.grove@example.test"
+            "emailId": "email_magic_nell",
+            "customerId": "customer_nell_notebook",
+            "toEmail": "nell.notebook@example.test"
           },
           "email_resend": {
-            "emailId": "email_magic_cora"
+            "emailId": "email_magic_nell"
           },
           "fixture_status": "queued"
         }
@@ -1239,60 +1374,60 @@
     ],
     "licenses": [
       {
-        "id": "licenses:ada-recipe-license:en",
-        "slug": "ada-recipe-license",
+        "id": "licenses:mira-panel-license:en",
+        "slug": "mira-panel-license",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ada Recipe License",
+          "title": "Mira Panel License",
           "license_ref": {
-            "licenseId": "license_recipe_ada",
-            "entitlementId": "ent_peanut_recipe_ada",
-            "orderId": "order_peanut_1001",
-            "displayKeySuffix": "ADA1"
+            "licenseId": "license_buttonwood_panel_mira",
+            "entitlementId": "ent_buttonwood_panel_mira",
+            "orderId": "order_buttonwood_1001",
+            "displayKeySuffix": "MIRA"
           },
           "license_revoke": {
-            "licenseId": "license_recipe_ada",
+            "licenseId": "license_buttonwood_panel_mira",
             "reason": "fixture_revoke"
           },
           "fixture_status": "active"
         }
       },
       {
-        "id": "licenses:ben-wholesale-license:en",
-        "slug": "ben-wholesale-license",
+        "id": "licenses:theo-dugout-license:en",
+        "slug": "theo-dugout-license",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ben Wholesale License",
+          "title": "Theo Dugout License",
           "license_ref": {
-            "licenseId": "license_wholesale_ben",
-            "entitlementId": "ent_peanut_wholesale_ben",
-            "orderId": "order_peanut_1002",
-            "displayKeySuffix": "BEN2"
+            "licenseId": "license_buttonwood_dugout_theo",
+            "entitlementId": "ent_buttonwood_dugout_theo",
+            "orderId": "order_buttonwood_1002",
+            "displayKeySuffix": "THEO"
           },
           "license_revoke": {
-            "licenseId": "license_wholesale_ben",
+            "licenseId": "license_buttonwood_dugout_theo",
             "reason": "fixture_revoke"
           },
           "fixture_status": "active"
         }
       },
       {
-        "id": "licenses:cora-archive-license:en",
-        "slug": "cora-archive-license",
+        "id": "licenses:nell-notebook-license:en",
+        "slug": "nell-notebook-license",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Cora Archive License",
+          "title": "Nell Notebook License",
           "license_ref": {
-            "licenseId": "license_archive_cora",
-            "entitlementId": "ent_peanut_archive_cora",
-            "orderId": "order_peanut_1003",
-            "displayKeySuffix": "CORA"
+            "licenseId": "license_buttonwood_archive_nell",
+            "entitlementId": "ent_buttonwood_archive_nell",
+            "orderId": "order_buttonwood_1003",
+            "displayKeySuffix": "NELL"
           },
           "license_revoke": {
-            "licenseId": "license_archive_cora",
+            "licenseId": "license_buttonwood_archive_nell",
             "reason": "fixture_revoke"
           },
           "fixture_status": "revoked"
@@ -1301,66 +1436,66 @@
     ],
     "downloads": [
       {
-        "id": "downloads:ada-recipe-download:en",
-        "slug": "ada-recipe-download",
+        "id": "downloads:mira-panel-pack-download:en",
+        "slug": "mira-panel-pack-download",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ada Recipe Download",
+          "title": "Mira Panel Pack Download",
           "download_ref": {
-            "entitlementId": "ent_peanut_recipe_ada",
-            "orderId": "order_peanut_1001",
-            "orderLineId": "line_pb_500",
-            "downloadRef": "download_recipe_ada"
+            "entitlementId": "ent_buttonwood_panel_mira",
+            "orderId": "order_buttonwood_1001",
+            "orderLineId": "line_bw_clip_standard",
+            "downloadRef": "download_panel_pack_mira"
           },
           "download_issue": {
-            "entitlementId": "ent_peanut_recipe_ada",
-            "orderId": "order_peanut_1001",
-            "orderLineId": "line_pb_500",
+            "entitlementId": "ent_buttonwood_panel_mira",
+            "orderId": "order_buttonwood_1001",
+            "orderLineId": "line_bw_clip_standard",
             "expiresAt": "2026-07-20T12:00:00.000Z"
           },
           "fixture_status": "ready"
         }
       },
       {
-        "id": "downloads:ben-roast-guide-download:en",
-        "slug": "ben-roast-guide-download",
+        "id": "downloads:theo-dugout-zine-download:en",
+        "slug": "theo-dugout-zine-download",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Ben Roast Guide Download",
+          "title": "Theo Dugout Zine Download",
           "download_ref": {
-            "entitlementId": "ent_peanut_wholesale_ben",
-            "orderId": "order_peanut_1002",
-            "orderLineId": "line_rp_honey",
-            "downloadRef": "download_roast_ben"
+            "entitlementId": "ent_buttonwood_dugout_theo",
+            "orderId": "order_buttonwood_1002",
+            "orderLineId": "line_bw_pennant_rain",
+            "downloadRef": "download_dugout_zine_theo"
           },
           "download_issue": {
-            "entitlementId": "ent_peanut_wholesale_ben",
-            "orderId": "order_peanut_1002",
-            "orderLineId": "line_rp_honey",
+            "entitlementId": "ent_buttonwood_dugout_theo",
+            "orderId": "order_buttonwood_1002",
+            "orderLineId": "line_bw_pennant_rain",
             "expiresAt": "2026-07-20T12:00:00.000Z"
           },
           "fixture_status": "ready"
         }
       },
       {
-        "id": "downloads:cora-oil-sheet-download:en",
-        "slug": "cora-oil-sheet-download",
+        "id": "downloads:nell-archive-download:en",
+        "slug": "nell-archive-download",
         "status": "published",
         "locale": "en",
         "data": {
-          "title": "Cora Oil Sheet Download",
+          "title": "Nell Archive Download",
           "download_ref": {
-            "entitlementId": "ent_peanut_archive_cora",
-            "orderId": "order_peanut_1003",
-            "orderLineId": "line_po_500",
-            "downloadRef": "download_oil_cora"
+            "entitlementId": "ent_buttonwood_archive_nell",
+            "orderId": "order_buttonwood_1003",
+            "orderLineId": "line_bw_zine_workshop",
+            "downloadRef": "download_archive_nell"
           },
           "download_issue": {
-            "entitlementId": "ent_peanut_archive_cora",
-            "orderId": "order_peanut_1003",
-            "orderLineId": "line_po_500",
+            "entitlementId": "ent_buttonwood_archive_nell",
+            "orderId": "order_buttonwood_1003",
+            "orderLineId": "line_bw_zine_workshop",
             "expiresAt": "2026-07-20T12:00:00.000Z"
           },
           "fixture_status": "expired"

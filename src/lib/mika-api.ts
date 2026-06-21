@@ -4,6 +4,9 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { createMikaApi, type MikaApiOverrides } from "@bnomei/emdash-mika/server";
 import { createISODateTime } from "@bnomei/emdash-mika/types";
+import { mikaStorefrontApiOverrides } from "./mika-fixture-storefront.ts";
+export { templateProductBySlug, templateProductSummaries } from "./mika-fixture-storefront.ts";
+
 import type {
   AdminActionResultDTO,
   MikaApiResult,
@@ -199,6 +202,7 @@ function matchJsonId(
 }
 
 export const mikaApiOverrides = {
+  ...mikaStorefrontApiOverrides,
   admin: {
     async providerHealth(input = {}): Promise<MikaApiResult<ProviderHealthDTO>> {
       return ok({

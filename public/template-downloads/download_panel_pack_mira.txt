@@ -1,0 +1,3 @@
+Mika template download fixture: Mira Panel Pack Download
+
+This file exists so /download/download_panel_pack_mira redirects to a runnable local asset.

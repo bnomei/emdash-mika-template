@@ -1,0 +1,176 @@
+---
+import { actions } from "astro:actions";
+import { createMika } from "@bnomei/emdash-mika/astro";
+import ProductPurchase from "../../components/ProductPurchase.astro";
+import ProductStructuredData from "../../components/ProductStructuredData.astro";
+import { templateProductBySlug } from "../../lib/mika-api";
+
+export const prerender = false;
+
+const checkoutResult = Astro.getActionResult(actions.mika.checkout.start);
+if (checkoutResult?.data?.redirectUrl) {
+  return Astro.redirect(checkoutResult.data.redirectUrl);
+}
+
+const slug = Astro.params["slug"];
+if (!slug) return Astro.redirect("/");
+
+const product = templateProductBySlug(slug);
+if (!product) return Astro.redirect("/");
+
+const Mika = createMika(Astro);
+const sellablesResult = await Mika.catalog.sellables("products", product.id);
+const sellables = sellablesResult.ok ? sellablesResult.data : product.sellables;
+const addResult = Astro.getActionResult(actions.mika.cart.add);
+const wishlistResult = Astro.getActionResult(actions.mika.wishlist.add);
+const formError = checkoutResult?.error?.message ?? addResult?.error?.message ?? wishlistResult?.error?.message;
+const formStatus = addResult?.data
+  ? "Added to cart."
+  : wishlistResult?.data
+    ? "Saved to wishlist."
+    : null;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{product.title} | Mika Storefront Template</title>
+    <ProductStructuredData
+      sellables={sellables}
+      product={{
+        name: product.title,
+        description: product.description,
+        url: Astro.url,
+        brand: "Mika Template Pantry",
+        category: "Buttonwood fixtures",
+      }}
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #17201b;
+        background: #f7f8f4;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(980px, calc(100% - 40px));
+        margin: 40px auto 64px;
+      }
+
+      .back {
+        display: inline-flex;
+        margin-bottom: 24px;
+        color: #174f38;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+        gap: 28px;
+        align-items: start;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0 0 18px;
+        color: #4b5a50;
+        line-height: 1.6;
+      }
+
+      [role="alert"] {
+        color: #8a1f1f;
+      }
+
+      [role="status"] {
+        color: #245d41;
+      }
+
+      .purchase {
+        padding: 18px;
+        border: 1px solid #c9d2ca;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      :global(form) {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 14px;
+      }
+
+      :global(fieldset) {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 12px;
+        border: 1px solid #d7ded8;
+        border-radius: 6px;
+      }
+
+      :global(label) {
+        display: grid;
+        gap: 4px;
+      }
+
+      :global(input),
+      :global(button) {
+        min-height: 38px;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      :global(input) {
+        border: 1px solid #b6c3ba;
+        padding: 0 10px;
+      }
+
+      :global(button) {
+        border: 1px solid #285b41;
+        padding: 0 12px;
+        color: #ffffff;
+        background: #285b41;
+      }
+
+      :global(button:disabled) {
+        border-color: #b6c3ba;
+        color: #6c776f;
+        background: #edf1ee;
+      }
+
+      @media (max-width: 760px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="/">Back to products</a>
+      <div class="layout">
+        <section>
+          <h1>{product.title}</h1>
+          <p>{product.description}</p>
+          <p>{product.variantCount} fixture variants powered by Mika sellables and stock.</p>
+          {formError && <p role="alert">{formError}</p>}
+          {formStatus && <p role="status">{formStatus}</p>}
+        </section>
+        <aside class="purchase" aria-label="Purchase">
+          <ProductPurchase sellables={sellables} />
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>

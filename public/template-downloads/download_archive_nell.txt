@@ -1,0 +1,3 @@
+Mika template download fixture: Nell Archive Download
+
+This file exists so /download/download_archive_nell redirects to a runnable local asset.

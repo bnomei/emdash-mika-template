@@ -1,0 +1,44 @@
+---
+interface AccountLicenseDisplay {
+  readonly id: string;
+  readonly title: string;
+  readonly status: string;
+  readonly displayKeySuffix?: string;
+}
+
+interface Props {
+  licenses: readonly AccountLicenseDisplay[];
+  headingLabel?: string;
+  emptyLabel?: string;
+  class?: string;
+  [attribute: string]: unknown;
+}
+
+const {
+  licenses,
+  headingLabel = "Licenses",
+  emptyLabel = "No licenses.",
+  class: className,
+  ...attrs
+} = Astro.props;
+const hasEmptySlot = Astro.slots.has("empty");
+---
+
+<section {...attrs} data-mika-account-licenses class={className}>
+  <h2><slot name="heading">{headingLabel}</slot></h2>
+  {licenses.length ? (
+    <ul>
+      {licenses.map((license) => (
+        <li>
+          <strong>{license.title}</strong>
+          <span>{license.status}</span>
+          {license.displayKeySuffix && <span>Key ending {license.displayKeySuffix}</span>}
+        </li>
+      ))}
+    </ul>
+  ) : hasEmptySlot ? (
+    <slot name="empty" />
+  ) : (
+    <p>{emptyLabel}</p>
+  )}
+</section>

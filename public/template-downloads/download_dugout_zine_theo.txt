@@ -1,0 +1,3 @@
+Mika template download fixture: Theo Dugout Zine Download
+
+This file exists so /download/download_dugout_zine_theo redirects to a runnable local asset.
