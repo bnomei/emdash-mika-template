@@ -127,6 +127,7 @@ interface TemplateSessionState {
   readonly checkouts: Map<string, CheckoutSessionDTO>;
   couponCode?: string;
   accountEmail?: string;
+  subscriptionStatus?: SubscriptionDTO["status"];
 }
 
 const seed = readSeed();
@@ -360,13 +361,19 @@ export const mikaStorefrontApiOverrides = {
   },
   subscription: {
     async cancel(ctx) {
-      return ok(accountFor(sessionState(ctx), "cancel_at_period_end"));
+      const state = sessionState(ctx);
+      state.subscriptionStatus = "cancel_at_period_end";
+      return ok(accountFor(state));
     },
     async change(ctx) {
-      return ok(accountFor(sessionState(ctx)));
+      const state = sessionState(ctx);
+      state.subscriptionStatus = "active";
+      return ok(accountFor(state));
     },
     async renew(ctx) {
-      return ok(accountFor(sessionState(ctx), "active"));
+      const state = sessionState(ctx);
+      state.subscriptionStatus = "active";
+      return ok(accountFor(state));
     },
   },
   download: {
@@ -741,7 +748,7 @@ function checkoutMode(lines: readonly SessionCartItem[]): PurchaseMode {
 
 function accountFor(
   state: TemplateSessionState,
-  subscriptionStatus: SubscriptionDTO["status"] = "active",
+  subscriptionStatus: SubscriptionDTO["status"] = state.subscriptionStatus ?? "active",
 ): TemplateAccountDTO {
   const customer = defaultCustomer();
   const email = state.accountEmail ?? customer.email;

@@ -355,6 +355,22 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(license.displayKeySuffix, "MIRA");
     assert.equal("key" in license, false);
 
+    const cancelSubscription = await api.subscription.cancel(ctx, {
+      subscriptionId: "sub_template_buttonwood_club",
+    });
+    assert.equal(cancelSubscription.ok, true);
+    assert.equal(cancelSubscription.data.subscriptions[0].status, "cancel_at_period_end");
+
+    const accountAfterCancel = await api.account.get(ctx);
+    assert.equal(accountAfterCancel.ok, true);
+    assert.equal(accountAfterCancel.data.subscriptions[0].status, "cancel_at_period_end");
+
+    const renewSubscription = await api.subscription.renew(ctx, {
+      subscriptionId: "sub_template_buttonwood_club",
+    });
+    assert.equal(renewSubscription.ok, true);
+    assert.equal(renewSubscription.data.subscriptions[0].status, "active");
+
     for (const token of seededDownloadTokens()) {
       const download = await api.download.resolve({ token });
       assert.equal(download.ok, true);

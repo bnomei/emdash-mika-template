@@ -47,8 +47,9 @@ type AccountLicenseDisplay = {
   readonly status: string;
   readonly displayKeySuffix?: string;
 };
+const subscriptionAccount = cancelResult?.data ?? renewResult?.data ?? changeResult?.data;
 const account = accountResult.ok
-  ? accountResult.data as typeof accountResult.data & { readonly licenses?: readonly AccountLicenseDisplay[] }
+  ? (subscriptionAccount ?? accountResult.data) as typeof accountResult.data & { readonly licenses?: readonly AccountLicenseDisplay[] }
   : null;
 const accountLoadError =
   !accountResult.ok && accountResult.error.code !== "AUTH_REQUIRED"
