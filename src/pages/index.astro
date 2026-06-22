@@ -1,23 +1,17 @@
 ---
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
+import { mikaTemplateCurrentCartItemCount } from "../lib/cart";
 import { templateProductSummaries } from "../lib/mika-api";
 
 const products = templateProductSummaries();
-const smokeLinks = [
-  { label: "Cart", href: "/cart" },
-  { label: "Wishlist", href: "/wishlist" },
-  { label: "Account", href: "/account" },
-  { label: "Agent manifest", href: "/.well-known/mika-agent.json" },
-  { label: "llms.txt", href: "/llms.txt" },
-  { label: "Admin", href: "/_emdash/admin" },
-  { label: "Action contract", href: "/api/mika-action-contract.json" },
-];
+const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 ---
 
 <MikaKumoPage
   title="Mika Storefront Template"
   description="A runnable Astro and EmDash storefront starter with Mika product forms, cart, wishlist, checkout, account surfaces, agent-readable metadata, and the admin action fixture in one resettable app."
+  cartItemCount={cartItemCount}
 >
   <section class="mika-kumo-grid" aria-label="Products">
     {products.map((product) => (
@@ -35,8 +29,4 @@ const smokeLinks = [
       </article>
     ))}
   </section>
-
-  <nav class="mika-kumo-actions" aria-label="Template smoke checks">
-    {smokeLinks.map((link) => <Link href={link.href}>{link.label}</Link>)}
-  </nav>
 </MikaKumoPage>

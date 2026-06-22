@@ -5,7 +5,8 @@ import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
-import { mikaTemplatePlural } from "../../lib/display";
+import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
+import { mikaTemplateCartItemCount, mikaTemplatePlural } from "../../lib/display";
 import { templateProductBySlug } from "../../lib/mika-api";
 import { mikaTemplateRoutes } from "../../lib/routes";
 
@@ -34,6 +35,9 @@ const cartProductQuantity =
     (total, line) => total + (productSellableIds.has(line.sellableId) ? line.quantity : 0),
     0,
   ) ?? 0;
+const cartItemCount = addResult?.data
+  ? mikaTemplateCartItemCount(addResult.data)
+  : await mikaTemplateCurrentCartItemCount(Astro);
 const formStatus = addResult?.data
   ? {
       message:
@@ -59,6 +63,7 @@ const formStatus = addResult?.data
   eyebrow="Buttonwood Lot Press"
   backHref="/"
   backLabel="Back to products"
+  cartItemCount={cartItemCount}
 >
   <ProductStructuredData
     slot="head"
