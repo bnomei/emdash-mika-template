@@ -5,6 +5,7 @@ import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
+import { mikaTemplatePlural } from "../../lib/display";
 import { templateProductBySlug } from "../../lib/mika-api";
 import { mikaTemplateRoutes } from "../../lib/routes";
 
@@ -27,9 +28,18 @@ const sellables = sellablesResult.ok ? sellablesResult.data : product.sellables;
 const addResult = Astro.getActionResult(actions.mika.cart.add);
 const wishlistResult = Astro.getActionResult(actions.mika.wishlist.add);
 const formError = checkoutResult?.error?.message ?? addResult?.error?.message ?? wishlistResult?.error?.message;
+const productSellableIds = new Set(sellables.map((sellable) => sellable.id));
+const cartProductQuantity =
+  addResult?.data?.items.reduce(
+    (total, line) => total + (productSellableIds.has(line.sellableId) ? line.quantity : 0),
+    0,
+  ) ?? 0;
 const formStatus = addResult?.data
   ? {
-      message: "Added 1 item to cart.",
+      message:
+        cartProductQuantity > 0
+          ? `Added to cart. Cart now has ${mikaTemplatePlural(cartProductQuantity, "item")} from this product.`
+          : "Added to cart.",
       href: mikaTemplateRoutes.cart,
       label: "View cart",
     }
