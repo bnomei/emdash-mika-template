@@ -1,7 +1,6 @@
 ---
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import MikaKumoAppFrame from "./MikaKumoAppFrame";
-import { templateProductSummaries } from "../lib/mika-api";
 import "../styles/kumo.css";
 
 interface Props {
@@ -29,10 +28,6 @@ const {
 } = Astro.props;
 const hasHeaderSlot = Astro.slots.has("header");
 const currentPath = Astro.url.pathname;
-const productNavItems = templateProductSummaries().map((product) => ({
-  label: product.title,
-  href: product.href,
-}));
 ---
 
 <html lang="en" data-theme="kumo">
@@ -47,7 +42,6 @@ const productNavItems = templateProductSummaries().map((product) => ({
       client:load
       title={title}
       currentPath={currentPath}
-      productNavItems={productNavItems}
     >
       <main
         {...attrs}

@@ -1,11 +1,12 @@
 ---
-import { Badge, Text } from "@cloudflare/kumo";
+import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
 import { templateProductBySlug } from "../../lib/mika-api";
+import { mikaTemplateRoutes } from "../../lib/routes";
 
 export const prerender = false;
 
@@ -27,9 +28,17 @@ const addResult = Astro.getActionResult(actions.mika.cart.add);
 const wishlistResult = Astro.getActionResult(actions.mika.wishlist.add);
 const formError = checkoutResult?.error?.message ?? addResult?.error?.message ?? wishlistResult?.error?.message;
 const formStatus = addResult?.data
-  ? "Added to cart."
+  ? {
+      message: "Added 1 item to cart.",
+      href: mikaTemplateRoutes.cart,
+      label: "View cart",
+    }
   : wishlistResult?.data
-    ? "Saved to wishlist."
+    ? {
+        message: "Saved to wishlist.",
+        href: mikaTemplateRoutes.wishlist,
+        label: "View wishlist",
+      }
     : null;
 ---
 
@@ -65,7 +74,12 @@ const formStatus = addResult?.data
         subscriptions, and license fulfillment fixtures.
       </Text>
       {formError && <Text as="p" variant="error" role="alert">{formError}</Text>}
-      {formStatus && <Text as="p" variant="success" role="status">{formStatus}</Text>}
+      {formStatus && (
+        <div class="mika-kumo-stack mika-kumo-stack-tight" role="status" aria-live="polite">
+          <Text as="p" variant="success">{formStatus.message}</Text>
+          <Link href={formStatus.href}>{formStatus.label}</Link>
+        </div>
+      )}
     </section>
 
     <aside class="mika-kumo-panel" aria-label="Purchase">

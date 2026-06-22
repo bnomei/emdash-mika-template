@@ -10,8 +10,8 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   if (!provider) return new Response("Missing provider.", { status: 400 });
 
   const Mika = createMika({ request, url }, { includeWebhook: true });
-  const rawBody = await request.text();
-  const payloadHash = "sha256:" + createHash("sha256").update(rawBody).digest("hex");
+  const rawBody = await request.clone().arrayBuffer();
+  const payloadHash = "sha256:" + createHash("sha256").update(Buffer.from(rawBody)).digest("hex");
   const signatureHeaderPresent =
     request.headers.has("stripe-signature") ||
     request.headers.has("paddle-signature") ||
@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   const receiveInput = {
     provider: createProviderName(provider),
     payloadHash,
-    rawBodyLength: rawBody.length,
+    rawBodyLength: rawBody.byteLength,
     signatureHeaderPresent,
     ...(eventType ? { eventType } : {}),
     ...(providerEventId ? { providerEventId } : {}),
