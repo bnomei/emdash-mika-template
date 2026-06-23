@@ -1,6 +1,8 @@
 ---
-import { Badge, Link, Text } from "@cloudflare/kumo";
+import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
+import BuyerAssurance from "../../components/BuyerAssurance.astro";
+import CheckoutSteps from "../../components/CheckoutSteps.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
 import { mikaApiOverrides } from "../../lib/mika-api";
@@ -19,24 +21,33 @@ const checkoutId =
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 const result = checkoutId ? await Mika.checkout.status(checkoutId) : null;
 const checkout = result?.ok ? result.data : null;
-const status = checkout?.status ?? "pending";
+const lookupError = result && !result.ok ? result.error.message : null;
+const status = !checkoutId
+  ? "missing"
+  : checkout?.status ?? (lookupError ? "expired" : "pending");
 const accountResult = checkout?.orderId ? await Mika.account.get() : null;
 const order = accountResult?.ok
   ? accountResult.data.orders.find((candidate) => candidate.id === checkout?.orderId)
   : undefined;
 const orderLabel = order?.orderNumber ?? checkout?.orderId;
 const messageByStatus: Record<string, string> = {
+  missing: "No checkout reference was provided. Return to the cart if you were trying to finish an order.",
+  created: "Checkout was created and is waiting for the payment handoff.",
+  redirected: "Checkout was opened with the provider and is waiting for a final result.",
   pending: "Checkout is still being confirmed. Refresh this page in a moment for the latest status.",
   completed: "Payment is confirmed. Your order and fulfillment details are ready in your account.",
   cancelled: "Checkout was cancelled. No payment was completed.",
-  expired: "Checkout expired before payment was completed.",
+  expired: "Checkout could not be found or expired before payment was completed.",
   failed: "Checkout failed. Return to the cart to review your items or try again.",
   binding_mismatch: "Checkout could not be verified for this session. Contact the seller if you expected an order.",
 };
+const progressStep = status === "completed" ? "fulfillment" : "confirmation";
 const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 ---
 
 <MikaKumoPage title="Checkout status" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-success>
+  <CheckoutSteps current={progressStep} />
+
   <section class="mika-kumo-panel mika-kumo-stack">
     <div class="mika-kumo-title-row">
       <Text as="h2" variant="heading2">Order status</Text>
@@ -45,6 +56,7 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
       </Badge>
     </div>
     <Text as="p" aria-live="polite" variant="secondary">{messageByStatus[status] ?? "Checkout received."}</Text>
+    {lookupError && <Banner variant="error" title="Checkout lookup failed" description={lookupError} role="alert" />}
 
     <dl class="mika-kumo-summary">
       {checkoutId && (
@@ -59,16 +71,34 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
           <dd>{orderLabel}</dd>
         </div>
       )}
+      {checkout?.provider && (
+        <div>
+          <dt>Provider</dt>
+          <dd>{checkout.provider}</dd>
+        </div>
+      )}
     </dl>
 
     <div class="mika-kumo-actions">
-      {status === "pending" && checkoutId && (
+      {(["created", "redirected", "pending"].includes(status)) && checkoutId && (
         <Link href={mikaTemplateCheckoutSuccessHref(checkoutId)}>Refresh status</Link>
       )}
       {checkout?.orderId && <Link href={`${mikaTemplateRoutes.accountOrders}#order-${checkout.orderId}`}>View order</Link>}
       {status === "completed" && <Link href={mikaTemplateRoutes.accountDownloads}>Downloads</Link>}
       {status === "completed" && <Link href={mikaTemplateRoutes.accountLicenses}>Licenses</Link>}
-      {!checkout?.orderId && <Link href={mikaTemplateRoutes.cart}>Return to cart</Link>}
+      {status !== "completed" && <Link href={mikaTemplateRoutes.cart}>Return to cart</Link>}
+      <Link href={mikaTemplateRoutes.products}>Continue shopping</Link>
     </div>
   </section>
+
+  <BuyerAssurance
+    class="mika-kumo-panel"
+    title="What happens next"
+    items={[
+      { title: "Orders", description: "Receipts and invoice links stay on the Orders page." },
+      { title: "Downloads", description: "Ready files appear with expiry dates when checkout completes." },
+      { title: "Licenses", description: "License status and suffixes are available without exposing raw keys." },
+      { title: "Subscriptions", description: "Renewal and cancel-at-period-end state lives in the account area." },
+    ]}
+  />
 </MikaKumoPage>

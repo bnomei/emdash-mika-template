@@ -1,5 +1,6 @@
 ---
 import { actions, isInputError } from "astro:actions";
+import { Banner, Link } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountOrders from "../../components/AccountOrders.astro";
 import AccountSignInPanel from "../../components/AccountSignInPanel.astro";
@@ -18,6 +19,8 @@ const magicLinkInputErrors = isInputError(magicLinkResult?.error)
 const magicLinkError = isInputError(magicLinkResult?.error)
   ? null
   : magicLinkResult?.error?.message;
+const invoiceOrderId = Astro.url.searchParams.get("invoice");
+const invoiceResult = invoiceOrderId ? await Mika.order.invoice(invoiceOrderId) : null;
 const accountResult = await Mika.account.get();
 const account = accountResult.ok ? accountResult.data : null;
 const accountLoadError =
@@ -37,7 +40,15 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
       emailError={magicLinkInputErrors.email?.join(", ")}
     />
   ) : (
-    <section class="mika-kumo-panel">
+    <section class="mika-kumo-panel mika-kumo-stack">
+      {invoiceResult?.ok && (
+        <Banner variant="default" title="Invoice ready">
+          <Link href={invoiceResult.data.href}>Open invoice for {invoiceResult.data.orderId}</Link>
+        </Banner>
+      )}
+      {invoiceResult && !invoiceResult.ok && (
+        <Banner variant="error" title="Invoice unavailable" description={invoiceResult.error.message} role="alert" />
+      )}
       <AccountOrders orders={account.orders} />
     </section>
   )}

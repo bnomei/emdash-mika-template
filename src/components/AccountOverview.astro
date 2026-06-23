@@ -1,0 +1,46 @@
+---
+import { Badge, Link, Text } from "@cloudflare/kumo";
+import { mikaTemplateRoutes } from "../lib/routes";
+
+interface AccountOverviewDTO {
+  readonly orders?: readonly unknown[];
+  readonly downloads?: readonly { readonly status?: string }[];
+  readonly licenses?: readonly { readonly status?: string }[];
+  readonly subscriptions?: readonly { readonly status?: string }[];
+}
+
+interface Props {
+  account: AccountOverviewDTO;
+  class?: string;
+  [attribute: string]: unknown;
+}
+
+const { account, class: className, ...attrs } = Astro.props;
+const readyDownloads = account.downloads?.filter((download) => download.status !== "expired").length ?? 0;
+const activeLicenses = account.licenses?.filter((license) => license.status === "active").length ?? 0;
+const activeSubscriptions = account.subscriptions?.filter((subscription) => subscription.status === "active").length ?? 0;
+const cards = [
+  { href: mikaTemplateRoutes.accountOrders, label: "Orders", count: account.orders?.length ?? 0, description: "Receipts, invoices, and fulfillment links" },
+  { href: mikaTemplateRoutes.accountDownloads, label: "Downloads", count: readyDownloads, description: "Ready files and expiry dates" },
+  { href: mikaTemplateRoutes.accountLicenses, label: "Licenses", count: activeLicenses, description: "Active status and key suffixes" },
+  { href: mikaTemplateRoutes.accountSubscriptions, label: "Subscriptions", count: activeSubscriptions, description: "Renewal state and billing actions" },
+];
+---
+
+<section {...attrs} class:list={["mika-kumo-stack", className]} aria-labelledby="account-overview-title">
+  <div class="mika-kumo-stack mika-kumo-stack-tight">
+    <Text as="h2" id="account-overview-title" variant="heading2">Account overview</Text>
+    <Text as="p" variant="secondary">Jump to the task you need after checkout.</Text>
+  </div>
+  <div class="mika-kumo-task-grid">
+    {cards.map((card) => (
+      <Link href={card.href} class="mika-kumo-task-card">
+        <span class="mika-kumo-task-card-title">
+          <Text as="strong">{card.label}</Text>
+          <Badge variant="secondary">{card.count}</Badge>
+        </span>
+        <Text as="span" variant="secondary" size="sm">{card.description}</Text>
+      </Link>
+    ))}
+  </div>
+</section>

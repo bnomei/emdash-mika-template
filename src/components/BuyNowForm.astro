@@ -15,6 +15,7 @@ interface Props {
   label?: string;
   disabled?: boolean;
   buttonClass?: string;
+  buttonVariant?: "primary" | "secondary";
   class?: string;
   [attribute: string]: unknown;
 }
@@ -29,6 +30,7 @@ const {
   label = "Buy now",
   disabled = false,
   buttonClass,
+  buttonVariant = "secondary",
   class: className,
   ...attrs
 } = Astro.props;
@@ -59,7 +61,7 @@ const redirectInputs = mikaRedirectInputs({ successPath, cancelPath, returnTo })
   <Button
     type="submit"
     className={buttonClass}
-    variant="primary"
+    variant={buttonVariant}
     disabled={disabled}
     data-mika-purchase-submit
     data-mika-initial-disabled={disabled ? "true" : "false"}

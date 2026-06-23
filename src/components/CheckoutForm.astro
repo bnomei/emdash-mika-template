@@ -1,6 +1,6 @@
 ---
 import { actions } from "astro:actions";
-import { Button, Input, Text } from "@cloudflare/kumo";
+import { Banner, Button, Input, Text } from "@cloudflare/kumo";
 import type { CartDTO } from "@bnomei/emdash-mika/types";
 import { mikaReturnTo } from "@bnomei/emdash-mika/astro";
 import { mikaHiddenInput, mikaRedirectInputs } from "../lib/form";
@@ -15,6 +15,11 @@ interface Props {
   name?: string;
   company?: string;
   vatId?: string;
+  emailError?: string;
+  nameError?: string;
+  companyError?: string;
+  vatIdError?: string;
+  checkoutIssues?: readonly string[];
   emailLabel?: string;
   nameLabel?: string;
   companyLabel?: string;
@@ -35,6 +40,11 @@ const {
   name,
   company,
   vatId,
+  emailError,
+  nameError,
+  companyError,
+  vatIdError,
+  checkoutIssues = [],
   emailLabel = "Email address",
   nameLabel = "Full name",
   companyLabel = "Company (optional)",
@@ -45,7 +55,7 @@ const {
   class: className,
   ...attrs
 } = Astro.props;
-const disabled = !cart || cart.items.length === 0;
+const disabled = !cart || cart.items.length === 0 || checkoutIssues.length > 0;
 const redirectInputs = mikaRedirectInputs({ successPath, cancelPath, returnTo });
 ---
 
@@ -64,12 +74,58 @@ const redirectInputs = mikaRedirectInputs({ successPath, cancelPath, returnTo })
   {showCustomerFields && (
     <section data-mika-checkout-customer class="mika-kumo-stack">
       <Text as="h3" variant="heading3">{customerLegend}</Text>
-      <Input label={emailLabel} name="email" type="email" autoComplete="email" value={email} />
-      <Input label={nameLabel} name="name" autoComplete="name" value={name} />
-      <Input label={companyLabel} name="company" autoComplete="organization" value={company} />
-      <Input label={vatIdLabel} name="vatId" value={vatId} />
+      <Input
+        label={emailLabel}
+        name="email"
+        type="email"
+        autoComplete="email"
+        defaultValue={email}
+        required
+        aria-invalid={emailError ? "true" : undefined}
+        aria-describedby={emailError ? "checkout-email-error" : undefined}
+      />
+      {emailError && <p id="checkout-email-error" role="alert">{emailError}</p>}
+      <Input
+        label={nameLabel}
+        name="name"
+        autoComplete="name"
+        defaultValue={name}
+        aria-invalid={nameError ? "true" : undefined}
+        aria-describedby={nameError ? "checkout-name-error" : undefined}
+      />
+      {nameError && <p id="checkout-name-error" role="alert">{nameError}</p>}
+      <Input
+        label={companyLabel}
+        name="company"
+        autoComplete="organization"
+        defaultValue={company}
+        aria-invalid={companyError ? "true" : undefined}
+        aria-describedby={companyError ? "checkout-company-error" : undefined}
+      />
+      {companyError && <p id="checkout-company-error" role="alert">{companyError}</p>}
+      <Input
+        label={vatIdLabel}
+        name="vatId"
+        defaultValue={vatId}
+        aria-invalid={vatIdError ? "true" : undefined}
+        aria-describedby={vatIdError ? "checkout-vat-error" : undefined}
+      />
+      {vatIdError && <p id="checkout-vat-error" role="alert">{vatIdError}</p>}
     </section>
   )}
+
+  {checkoutIssues.length > 0 && (
+    <Banner
+      variant="error"
+      title="Review cart before checkout"
+      description={checkoutIssues.join(" ")}
+      role="alert"
+    />
+  )}
+
+  <Text as="p" variant="secondary" size="sm">
+    You will confirm payment with the checkout provider before this shop marks the order paid.
+  </Text>
 
   <Button
     type="submit"

@@ -2,6 +2,7 @@
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
+import BuyerAssurance from "../../components/BuyerAssurance.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
@@ -161,6 +162,16 @@ const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
           {deliveryNotes.map((note) => <li>{note}</li>)}
         </ul>
       </section>
+
+      <BuyerAssurance
+        class="mika-kumo-panel"
+        title="Checkout expectations"
+        items={[
+          { title: "Clear handoff", description: "Checkout returns here with provider status and order links." },
+          { title: "Account records", description: "Receipts, downloads, subscriptions, and licenses have separate account screens." },
+          { title: "License privacy", description: "License pages show status and suffixes, not raw keys." },
+        ]}
+      />
     </div>
 
     <aside class="mika-kumo-panel mika-kumo-product-purchase-panel" aria-label="Purchase">

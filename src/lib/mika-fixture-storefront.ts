@@ -195,10 +195,21 @@ interface TemplateSessionState {
   subscriptionStatus?: SubscriptionDTO["status"];
 }
 
+interface TemplateSessionStateSnapshot {
+  readonly cartItems?: readonly SessionCartItem[];
+  readonly wishlistItems?: readonly SessionWishlistItem[];
+  readonly checkouts?: readonly CheckoutSessionDTO[];
+  readonly checkoutOrders?: readonly OrderSummaryDTO[];
+  readonly couponCode?: string;
+  readonly accountEmail?: string;
+  readonly subscriptionStatus?: SubscriptionDTO["status"];
+}
+
 const seed = readSeed();
 const sessionStates = new Map<string, TemplateSessionState>();
 const defaultCurrency = createCurrencyCode("EUR");
 const templateProvider = createProviderName("template");
+const templateSessionStorageKey = "mika-template-storefront";
 
 export const mikaStorefrontApiOverrides = {
   catalog: {
@@ -216,14 +227,14 @@ export const mikaStorefrontApiOverrides = {
   },
   cart: {
     async get(ctx) {
-      return ok(cartFor(sessionState(ctx)));
+      return ok(cartFor(await sessionState(ctx)));
     },
     async quote(ctx, input = {}) {
-      const cart = cartFor(sessionState(ctx));
+      const cart = cartFor(await sessionState(ctx));
       return ok(cartQuote(cart, input.couponCode));
     },
     async add(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const variant = findVariantBySellable(input.sellableId, input.priceId);
       if (!variant) return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
 
@@ -236,11 +247,12 @@ export const mikaStorefrontApiOverrides = {
         priceId: input.priceId,
         quantity,
       });
+      await persistSessionState(ctx, state);
 
       return ok(cartFor(state));
     },
     async update(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const current = state.cartItems.get(input.lineId);
       if (!current) return fail("SELLABLE_NOT_FOUND", "Template cart line not found.", 404);
 
@@ -248,34 +260,38 @@ export const mikaStorefrontApiOverrides = {
         ...current,
         quantity: Math.max(1, input.quantity),
       });
+      await persistSessionState(ctx, state);
 
       return ok(cartFor(state));
     },
     async remove(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.cartItems.delete(input.lineId);
+      await persistSessionState(ctx, state);
       return ok(cartFor(state));
     },
     async merge(ctx) {
-      return ok(cartFor(sessionState(ctx)));
+      return ok(cartFor(await sessionState(ctx)));
     },
     async applyCoupon(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.couponCode = input.code.trim().toUpperCase();
+      await persistSessionState(ctx, state);
       return ok(cartFor(state));
     },
     async removeCoupon(ctx) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.couponCode = undefined;
+      await persistSessionState(ctx, state);
       return ok(cartFor(state));
     },
   },
   wishlist: {
     async get(ctx) {
-      return ok(wishlistFor(sessionState(ctx)));
+      return ok(wishlistFor(await sessionState(ctx)));
     },
     async add(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const variant = findVariantBySellable(input.sellableId, input.priceId);
       if (!variant) return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
 
@@ -286,16 +302,18 @@ export const mikaStorefrontApiOverrides = {
         priceId: input.priceId,
         addedAt: nowIso(),
       });
+      await persistSessionState(ctx, state);
 
       return ok(wishlistFor(state));
     },
     async remove(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.wishlistItems.delete(input.itemId);
+      await persistSessionState(ctx, state);
       return ok(wishlistFor(state));
     },
     async moveToCart(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const item = state.wishlistItems.get(input.itemId);
       if (!item) return fail("SELLABLE_NOT_FOUND", "Template wishlist item not found.", 404);
 
@@ -306,11 +324,12 @@ export const mikaStorefrontApiOverrides = {
         priceId: item.priceId,
         quantity: Math.max(1, input.quantity ?? 1),
       });
+      await persistSessionState(ctx, state);
 
       return ok(cartFor(state));
     },
     async saveForLater(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const item = state.cartItems.get(input.lineId);
       if (!item) return fail("SELLABLE_NOT_FOUND", "Template cart line not found.", 404);
 
@@ -322,16 +341,17 @@ export const mikaStorefrontApiOverrides = {
         priceId: item.priceId,
         addedAt: nowIso(),
       });
+      await persistSessionState(ctx, state);
 
       return ok(wishlistFor(state));
     },
     async merge(ctx) {
-      return ok(wishlistFor(sessionState(ctx)));
+      return ok(wishlistFor(await sessionState(ctx)));
     },
   },
   checkout: {
     async start(ctx, input = {}) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
       if (lines.length === 0) return fail("CHECKOUT_EMPTY", "Template checkout is empty.", 400);
 
@@ -354,12 +374,14 @@ export const mikaStorefrontApiOverrides = {
         state.cartItems.clear();
         state.couponCode = undefined;
       }
+      await persistSessionState(ctx, state);
 
       return ok(checkout);
     },
     async preview(ctx, input = {}) {
-      const cart = cartFor(sessionState(ctx));
-      const lines = checkoutLines(sessionState(ctx), input.sellableId, input.priceId, input.quantity);
+      const state = await sessionState(ctx);
+      const cart = cartFor(state);
+      const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
       const preview: CheckoutPreviewDTO = {
         id: createMikaId("preview_template"),
         status: cart.items.length > 0 || input.sellableId ? "requires_confirmation" : "unavailable",
@@ -370,9 +392,22 @@ export const mikaStorefrontApiOverrides = {
       };
       return ok(preview);
     },
-    async status({ checkoutId }) {
+    async status(ctxOrInput, input) {
+      const checkoutId =
+        typeof input === "string"
+          ? input
+          : input?.checkoutId ??
+            (typeof ctxOrInput === "string"
+              ? ctxOrInput
+              : (ctxOrInput as { readonly checkoutId?: string }).checkoutId);
+      if (!checkoutId) return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
       const seeded = seededCheckout(checkoutId);
       if (seeded) return ok(seeded);
+
+      if (isRequestContextInput(ctxOrInput)) {
+        const checkout = (await sessionState(ctxOrInput)).checkouts.get(checkoutId);
+        if (checkout) return ok(checkout);
+      }
 
       for (const state of sessionStates.values()) {
         const checkout = state.checkouts.get(checkoutId);
@@ -384,18 +419,21 @@ export const mikaStorefrontApiOverrides = {
   },
   magicLink: {
     async request(ctx, input) {
-      sessionState(ctx).accountEmail = input.email;
+      const state = await sessionState(ctx);
+      state.accountEmail = input.email;
+      await persistSessionState(ctx, state);
       return ok({ sent: true });
     },
     async verify(ctx, input) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.accountEmail = input.token.includes("@") ? input.token : defaultCustomer().email;
+      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
   },
   account: {
     async get(ctx) {
-      return ok(accountFor(sessionState(ctx)));
+      return ok(accountFor(await sessionState(ctx)));
     },
     async export() {
       const requestedAt = nowIso();
@@ -432,18 +470,21 @@ export const mikaStorefrontApiOverrides = {
   },
   subscription: {
     async cancel(ctx) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.subscriptionStatus = "cancel_at_period_end";
+      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
     async change(ctx) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.subscriptionStatus = "active";
+      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
     async renew(ctx) {
-      const state = sessionState(ctx);
+      const state = await sessionState(ctx);
       state.subscriptionStatus = "active";
+      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
   },
@@ -460,10 +501,18 @@ export const mikaStorefrontApiOverrides = {
     },
   },
   order: {
-    async invoice(input) {
+    async invoice(ctxOrInput, input) {
+      const orderId =
+        typeof input === "string"
+          ? createMikaId(input)
+          : input?.orderId ??
+            (typeof ctxOrInput === "string"
+              ? createMikaId(ctxOrInput)
+              : (ctxOrInput as { readonly orderId?: MikaId }).orderId);
+      if (!orderId) return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
       return ok({
-        orderId: input.orderId,
-        href: `/account?invoice=${encodeURIComponent(input.orderId)}`,
+        orderId,
+        href: `/account?invoice=${encodeURIComponent(orderId)}`,
         expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
       } satisfies OrderInvoiceDTO);
     },
@@ -791,20 +840,137 @@ function defaultCustomer(): { readonly id: MikaId; readonly email: string; reado
   };
 }
 
-function sessionState(ctx: MikaRequestContext): TemplateSessionState {
-  const key = ctx.sessionId ?? ctx.customerId ?? ctx.userId ?? "template-session";
+async function sessionState(ctx: MikaRequestContext): Promise<TemplateSessionState> {
+  const key = templateSessionKey(ctx);
+  const stored = await readStoredSessionState(ctx);
+  if (stored) {
+    const state = stateFromSnapshot(stored);
+    sessionStates.set(key, state);
+    return state;
+  }
+
   let state = sessionStates.get(String(key));
   if (!state) {
-    state = {
-      cartItems: new Map(),
-      wishlistItems: new Map(),
-      checkouts: new Map(),
-      checkoutOrders: new Map(),
-      accountEmail: defaultCustomer().email,
-    };
+    state = emptySessionState();
     sessionStates.set(String(key), state);
   }
   return state;
+}
+
+async function persistSessionState(
+  ctx: MikaRequestContext,
+  state: TemplateSessionState,
+): Promise<void> {
+  sessionStates.set(templateSessionKey(ctx), state);
+
+  try {
+    await ctx.session?.set(templateSessionStorageKey, snapshotFromState(state));
+  } catch {
+    // Astro session storage may be unavailable in direct unit tests.
+  }
+}
+
+async function readStoredSessionState(
+  ctx: MikaRequestContext,
+): Promise<TemplateSessionStateSnapshot | undefined> {
+  try {
+    const stored = await ctx.session?.get<TemplateSessionStateSnapshot>(templateSessionStorageKey);
+    return isRecord(stored) ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function emptySessionState(): TemplateSessionState {
+  return {
+    cartItems: new Map(),
+    wishlistItems: new Map(),
+    checkouts: new Map(),
+    checkoutOrders: new Map(),
+    accountEmail: defaultCustomer().email,
+  };
+}
+
+function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSessionState {
+  return {
+    cartItems: new Map(
+      (snapshot.cartItems ?? []).map((item) => [
+        String(item.lineId),
+        {
+          lineId: createMikaId(String(item.lineId)),
+          sellableId: createMikaId(String(item.sellableId)),
+          priceId: item.priceId ? createMikaId(String(item.priceId)) : undefined,
+          quantity: Math.max(1, numberValue(item.quantity, 1)),
+        },
+      ]),
+    ),
+    wishlistItems: new Map(
+      (snapshot.wishlistItems ?? []).map((item) => [
+        String(item.itemId),
+        {
+          itemId: createMikaId(String(item.itemId)),
+          sellableId: createMikaId(String(item.sellableId)),
+          priceId: item.priceId ? createMikaId(String(item.priceId)) : undefined,
+          addedAt: createISODateTime(stringValue(item.addedAt, nowIso())),
+        },
+      ]),
+    ),
+    checkouts: new Map((snapshot.checkouts ?? []).map((checkout) => [String(checkout.id), checkout])),
+    checkoutOrders: new Map(
+      (snapshot.checkoutOrders ?? []).map((order) => [String(order.id), order]),
+    ),
+    couponCode: snapshot.couponCode,
+    accountEmail: snapshot.accountEmail ?? defaultCustomer().email,
+    subscriptionStatus: snapshot.subscriptionStatus,
+  };
+}
+
+function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSnapshot {
+  return {
+    cartItems: [...state.cartItems.values()],
+    wishlistItems: [...state.wishlistItems.values()],
+    checkouts: [...state.checkouts.values()],
+    checkoutOrders: [...state.checkoutOrders.values()],
+    couponCode: state.couponCode,
+    accountEmail: state.accountEmail,
+    subscriptionStatus: state.subscriptionStatus,
+  };
+}
+
+function templateSessionKey(ctx: MikaRequestContext): string {
+  if (ctx.customerId) return `customer:${ctx.customerId}`;
+  if (ctx.userId) return `user:${ctx.userId}`;
+  if (ctx.sessionId?.startsWith("template-test-")) return ctx.sessionId;
+
+  return templateSessionCookie(ctx) ?? "template-browser-session";
+}
+
+function templateSessionCookie(ctx: MikaRequestContext): string | undefined {
+  const cookie = ctx.request?.headers.get("cookie");
+  if (!cookie) return undefined;
+
+  const match = cookie.match(/(?:^|;\s*)mika_template_session=([^;]+)/);
+  if (!match?.[1]) return undefined;
+
+  try {
+    return `cookie:${decodeURIComponent(match[1])}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function isRequestContextInput(value: unknown): value is MikaRequestContext {
+  return (
+    isRecord(value) &&
+    !("checkoutId" in value) &&
+    ("request" in value ||
+      "url" in value ||
+      "session" in value ||
+      "sessionId" in value ||
+      "now" in value ||
+      "customerId" in value ||
+      "userId" in value)
+  );
 }
 
 function cartFor(state: TemplateSessionState): CartDTO {
@@ -1059,13 +1225,14 @@ function seededCheckout(checkoutId: string): CheckoutSessionDTO | undefined {
 
   const ref = isRecord(entry.data?.["checkout_ref"]) ? entry.data["checkout_ref"] : {};
   const paid = entry.data?.["provider_status"] === "paid";
+  const orderId = stringValue(ref["orderId"], "");
   return {
     id: createMikaId(stringValue(ref["checkoutId"], checkoutId)),
     status: paid ? "completed" : "pending",
     mode: "payment",
     provider: createProviderName(stringValue(ref["provider"], "template")),
     redirectUrl: stringValue(entry.data?.["redirect_url"], ""),
-    orderId: createMikaId("order_buttonwood_1001"),
+    ...(orderId ? { orderId: createMikaId(orderId) } : {}),
   };
 }
 

@@ -54,8 +54,10 @@ const savedCount = wishlist?.items.length ?? 0;
         <Table.Body>
           {wishlist.items.map((item) => (
             <Table.Row>
-              <Table.Cell><strong>{item.title}</strong></Table.Cell>
-              <Table.Cell>
+              <Table.Cell className="mika-kumo-table-cell mika-kumo-table-cell-primary" data-label={itemLabel}>
+                <strong>{item.title}</strong>
+              </Table.Cell>
+              <Table.Cell className="mika-kumo-table-cell" data-label={actionsLabel}>
                 <div class="mika-kumo-actions">
                   <form class="mika-kumo-form" action={actions.mika.wishlist.moveToCart} method="post">
                     <input type="hidden" {...mikaHiddenInput("itemId", item.id)} />

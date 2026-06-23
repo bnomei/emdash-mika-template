@@ -1,0 +1,49 @@
+---
+import { Text } from "@cloudflare/kumo";
+
+type StepKey = "cart" | "checkout" | "confirmation" | "fulfillment";
+
+interface Props {
+  current?: StepKey;
+  label?: string;
+  compact?: boolean;
+  class?: string;
+  [attribute: string]: unknown;
+}
+
+const {
+  current = "cart",
+  label = "Checkout progress",
+  compact = false,
+  class: className,
+  ...attrs
+} = Astro.props;
+const steps: readonly { key: StepKey; label: string; description: string }[] = [
+  { key: "cart", label: "Cart", description: "Review items" },
+  { key: "checkout", label: "Checkout", description: "Confirm payment" },
+  { key: "confirmation", label: "Status", description: "Provider result" },
+  { key: "fulfillment", label: "Fulfillment", description: "Account access" },
+];
+const activeIndex = Math.max(0, steps.findIndex((step) => step.key === current));
+---
+
+<nav
+  {...attrs}
+  aria-label={label}
+  class:list={["mika-kumo-checkout-steps", compact && "is-compact", className]}
+>
+  <ol>
+    {steps.map((step, index) => {
+      const state = index < activeIndex ? "complete" : index === activeIndex ? "current" : "upcoming";
+      return (
+        <li class:list={[`is-${state}`]} aria-current={state === "current" ? "step" : undefined}>
+          <span class="mika-kumo-step-index" aria-hidden="true">{index + 1}</span>
+          <span class="mika-kumo-step-copy">
+            <Text as="strong">{step.label}</Text>
+            <span>{step.description}</span>
+          </span>
+        </li>
+      );
+    })}
+  </ol>
+</nav>

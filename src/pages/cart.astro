@@ -1,13 +1,15 @@
 ---
-import { actions } from "astro:actions";
-import { Badge, Link, Text } from "@cloudflare/kumo";
+import { actions, isInputError } from "astro:actions";
+import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
+import BuyerAssurance from "../components/BuyerAssurance.astro";
 import CartLines from "../components/CartLines.astro";
+import CheckoutSteps from "../components/CheckoutSteps.astro";
 import CartSummary from "../components/CartSummary.astro";
 import CheckoutForm from "../components/CheckoutForm.astro";
 import CouponForm from "../components/CouponForm.astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
-import { mikaTemplateCartItemCount, mikaTemplatePlural } from "../lib/display";
+import { mikaTemplateCartCheckoutIssues, mikaTemplateCartItemCount, mikaTemplatePlural } from "../lib/display";
 import { mikaApiOverrides } from "../lib/mika-api";
 import { mikaTemplateRoutes } from "../lib/routes";
 
@@ -25,8 +27,10 @@ const removeResult = Astro.getActionResult(actions.mika.cart.remove);
 const couponApplyResult = Astro.getActionResult(actions.mika.cart.applyCoupon);
 const couponRemoveResult = Astro.getActionResult(actions.mika.cart.removeCoupon);
 const saveForLaterResult = Astro.getActionResult(actions.mika.wishlist.saveForLater);
+const checkoutInputErrors = isInputError(checkoutResult?.error) ? checkoutResult.error.fields : {};
+const checkoutError = isInputError(checkoutResult?.error) ? null : checkoutResult?.error?.message;
 const actionError =
-  checkoutResult?.error?.message ??
+  checkoutError ??
   updateResult?.error?.message ??
   removeResult?.error?.message ??
   couponApplyResult?.error?.message ??
@@ -37,9 +41,22 @@ const cart = cartResult.ok ? cartResult.data : null;
 const error = actionError ?? null;
 const lineCount = cart?.items.length ?? 0;
 const itemCount = mikaTemplateCartItemCount(cart);
+const checkoutIssues = mikaTemplateCartCheckoutIssues(cart);
+const actionStatus = updateResult?.data
+  ? "Cart quantity updated."
+  : removeResult?.data
+    ? "Item removed from cart."
+    : couponApplyResult?.data
+      ? "Discount applied."
+      : couponRemoveResult?.data
+        ? "Discount removed."
+        : saveForLaterResult?.data
+          ? "Item saved for later."
+          : null;
 ---
 
 <MikaKumoPage title="Cart" cartItemCount={itemCount} data-mika-cart-page>
+  <CheckoutSteps current="cart" />
   {lineCount > 0 ? (
     <section class="mika-kumo-cart-layout" aria-label="Cart review and checkout">
       <section class="mika-kumo-panel mika-kumo-stack mika-kumo-cart-items-panel">
@@ -55,7 +72,8 @@ const itemCount = mikaTemplateCartItemCount(cart);
             <Badge variant="secondary">{mikaTemplatePlural(itemCount, "item")}</Badge>
           </div>
         </div>
-        {error && <Text as="p" variant="error" role="alert">{error}</Text>}
+        {actionStatus && <Banner variant="default" title={actionStatus} role="status" />}
+        {error && <Banner variant="error" title="Cart action failed" description={error} role="alert" />}
         <CartLines
           cart={cart}
           updateLabel="Update"
@@ -73,16 +91,29 @@ const itemCount = mikaTemplateCartItemCount(cart);
         </div>
         <CartSummary cart={cart} />
         <CouponForm cart={cart} codeLabel="Discount code" applyLabel="Apply discount" />
-        <CheckoutForm cart={cart} class="mika-kumo-checkout-form" />
-        <Text as="p" variant="secondary" size="sm">
-          Checkout can include downloads, subscriptions, and licenses.
-        </Text>
+        <CheckoutForm
+          cart={cart}
+          class="mika-kumo-checkout-form"
+          checkoutIssues={checkoutIssues}
+          emailError={checkoutInputErrors.email?.join(", ")}
+          nameError={checkoutInputErrors.name?.join(", ")}
+          companyError={checkoutInputErrors.company?.join(", ")}
+          vatIdError={checkoutInputErrors.vatId?.join(", ")}
+        />
+        <BuyerAssurance
+          title="Before checkout"
+          items={[
+            { title: "Provider confirmation", description: "The order is paid only after checkout status returns confirmed." },
+            { title: "Account fulfillment", description: "Downloads, licenses, and subscriptions stay organized after purchase." },
+            { title: "Editable cart", description: "Quantities, discounts, and saved items can be changed before checkout." },
+          ]}
+        />
       </aside>
     </section>
   ) : (
     <section class="mika-kumo-panel mika-kumo-stack mika-kumo-empty-cart">
       <CartLines cart={cart} />
-      {error && <Text as="p" variant="error" role="alert">{error}</Text>}
+      {error && <Banner variant="error" title="Cart action failed" description={error} role="alert" />}
       <div class="mika-kumo-actions">
         <Link href={mikaTemplateRoutes.products}>Browse products</Link>
       </div>

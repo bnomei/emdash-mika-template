@@ -14,6 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let api;
 let templateProductFilters;
 let templateProductSummaries;
+let mikaTemplateCartCheckoutIssues;
 let db;
 let tempDir;
 
@@ -43,6 +44,7 @@ before(async () => {
   process.env.EMDASH_MIKA_TEMPLATE_DB = dbPath;
   db = new Database(dbPath);
   ({ api, templateProductFilters, templateProductSummaries } = await import("../src/lib/mika-api.ts"));
+  ({ mikaTemplateCartCheckoutIssues } = await import("../src/lib/display.ts"));
 });
 
 after(() => {
@@ -306,6 +308,40 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(remove.data.items.length, 0);
   });
 
+  it("keeps anonymous cart state across Astro action and page contexts", async () => {
+    const actionCtx = astroCtx("astro-action-session");
+    const pageCtx = astroCtx("astro-page-session");
+    const add = await api.cart.add(actionCtx, {
+      sellableId: "sellable_bw_panel_pack",
+      priceId: "price_bw_panel_pack",
+      quantity: 1,
+    });
+
+    assert.equal(add.ok, true);
+    assert.equal(add.data.items.length, 1);
+
+    const pageCart = await api.cart.get(pageCtx);
+    assert.equal(pageCart.ok, true);
+    assert.equal(pageCart.data.items.length, 1);
+    assert.equal(pageCart.data.items[0].title, "Buttonwood Creator Bundle - Panel Pack Download");
+
+    await api.cart.remove(pageCtx, { lineId: pageCart.data.items[0].id });
+  });
+
+  it("reports cart checkout blockers for unavailable lines", async () => {
+    const ctx = storefrontCtx("checkout-blockers");
+    const add = await api.cart.add(ctx, {
+      sellableId: "sellable_bw_lettering_license",
+      priceId: "price_bw_lettering_license",
+      quantity: 1,
+    });
+
+    assert.equal(add.ok, true);
+    assert.deepEqual(mikaTemplateCartCheckoutIssues(add.data), [
+      "Buttonwood Creator Bundle - Lettering Brush Pro License is no longer available.",
+    ]);
+  });
+
   it("runs wishlist, save-for-later, and move-to-cart flows", async () => {
     const ctx = storefrontCtx("wishlist-flow");
     const wishlist = await api.wishlist.add(ctx, {
@@ -365,6 +401,15 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     const seeded = await api.checkout.status({ checkoutId: "checkout_buttonwood_1001" });
     assert.equal(seeded.ok, true);
     assert.equal(seeded.data.status, "completed");
+    assert.equal(seeded.data.orderId, "order_buttonwood_1001");
+
+    const seededSecondOrder = await api.checkout.status({ checkoutId: "checkout_buttonwood_1002" });
+    assert.equal(seededSecondOrder.ok, true);
+    assert.equal(seededSecondOrder.data.orderId, "order_buttonwood_1002");
+
+    const seededSecondOrderByString = await api.checkout.status("checkout_buttonwood_1002");
+    assert.equal(seededSecondOrderByString.ok, true);
+    assert.equal(seededSecondOrderByString.data.orderId, "order_buttonwood_1002");
 
     const subscriptionCheckout = await api.checkout.start(storefrontCtx("subscription-checkout"), {
       sellableId: "sellable_bw_sunday_club",
@@ -427,6 +472,10 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(invoice.ok, true);
     assert.equal(invoice.data.href, "/account?invoice=order_buttonwood_1001");
 
+    const invoiceByString = await api.order.invoice("order_buttonwood_1001");
+    assert.equal(invoiceByString.ok, true);
+    assert.equal(invoiceByString.data.href, "/account?invoice=order_buttonwood_1001");
+
     const webhook = await api.webhook.receive(ctx, {
       provider: "stripe_test",
       eventType: "fixture.test",
@@ -450,6 +499,13 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 function storefrontCtx(label) {
   return {
     sessionId: "template-test-" + label,
+    now: "2026-06-20T12:00:00.000Z",
+  };
+}
+
+function astroCtx(sessionId) {
+  return {
+    sessionId,
     now: "2026-06-20T12:00:00.000Z",
   };
 }

@@ -1,0 +1,35 @@
+---
+import { Text } from "@cloudflare/kumo";
+
+interface AssuranceItem {
+  readonly title: string;
+  readonly description: string;
+}
+
+interface Props {
+  title?: string;
+  items: readonly AssuranceItem[];
+  class?: string;
+  [attribute: string]: unknown;
+}
+
+const {
+  title = "Buyer confidence",
+  items,
+  class: className,
+  ...attrs
+} = Astro.props;
+const headingId = `assurance-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+---
+
+<section {...attrs} class:list={["mika-kumo-assurance", className]} aria-labelledby={headingId}>
+  <Text as="h2" id={headingId} variant="heading3">{title}</Text>
+  <div class="mika-kumo-assurance-grid">
+    {items.map((item) => (
+      <div class="mika-kumo-assurance-item">
+        <Text as="strong">{item.title}</Text>
+        <Text as="span" variant="secondary" size="sm">{item.description}</Text>
+      </div>
+    ))}
+  </div>
+</section>

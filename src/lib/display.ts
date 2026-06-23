@@ -96,6 +96,26 @@ export function mikaTemplateCartItemCount(cart: CartDTO | null | undefined): num
   return cart?.items.reduce((total, line) => total + line.quantity, 0) ?? 0;
 }
 
+export function mikaTemplateCartCheckoutIssues(cart: CartDTO | null | undefined): readonly string[] {
+  if (!cart?.items.length) return [];
+
+  const issues: string[] = [];
+  for (const line of cart.items) {
+    const status = line.availability?.status;
+    if (status === "out_of_stock") {
+      issues.push(`${line.title} is no longer available.`);
+      continue;
+    }
+
+    const maxPerOrder = line.availability?.maxPerOrder;
+    if (typeof maxPerOrder === "number" && maxPerOrder > 0 && line.quantity > maxPerOrder) {
+      issues.push(`${line.title} has ${maxPerOrder} available for this order.`);
+    }
+  }
+
+  return issues;
+}
+
 export function mikaTemplatePriceRangeLabel(sellables: readonly SellableDTO[]): string {
   const prices = activePrices(sellables).toSorted((a, b) => a.amount - b.amount);
   const first = prices[0];

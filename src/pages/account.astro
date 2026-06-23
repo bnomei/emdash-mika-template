@@ -2,6 +2,7 @@
 import { actions, isInputError } from "astro:actions";
 import { Button, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
+import AccountOverview from "../components/AccountOverview.astro";
 import AccountSignInPanel from "../components/AccountSignInPanel.astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../lib/cart";
@@ -51,6 +52,11 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
   )}
 
   {account && (
+    <>
+    <section class="mika-kumo-panel mika-kumo-stack">
+      <AccountOverview account={account} />
+    </section>
+
     <section class="mika-kumo-panel mika-kumo-stack">
       <Text as="h2" variant="heading2">Profile</Text>
       {account.customer?.email && <Text as="p" variant="secondary">{account.customer.email}</Text>}
@@ -81,5 +87,6 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
       </form>
       </div>
     </section>
+    </>
   )}
 </MikaKumoPage>
