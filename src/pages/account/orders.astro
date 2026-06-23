@@ -5,11 +5,12 @@ import AccountOrders from "../../components/AccountOrders.astro";
 import AccountSignInPanel from "../../components/AccountSignInPanel.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
+import { mikaApiOverrides } from "../../lib/mika-api";
 import { mikaTemplateRoutes } from "../../lib/routes";
 
 export const prerender = false;
 
-const Mika = createMika(Astro);
+const Mika = createMika(Astro, { api: mikaApiOverrides });
 const magicLinkResult = Astro.getActionResult(actions.mika.magicLink.request);
 const magicLinkInputErrors = isInputError(magicLinkResult?.error)
   ? magicLinkResult.error.fields

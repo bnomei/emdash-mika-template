@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import { createProviderName } from "@bnomei/emdash-mika/types";
 import type { APIRoute } from "astro";
+import { mikaApiOverrides } from "../../../lib/mika-api";
 
 export const prerender = false;
 
@@ -9,7 +10,7 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   const provider = params["provider"];
   if (!provider) return new Response("Missing provider.", { status: 400 });
 
-  const Mika = createMika({ request, url }, { includeWebhook: true });
+  const Mika = createMika({ request, url }, { includeWebhook: true, api: mikaApiOverrides });
   const rawBody = await request.clone().arrayBuffer();
   const payloadHash = "sha256:" + createHash("sha256").update(Buffer.from(rawBody)).digest("hex");
   const signatureHeaderPresent =

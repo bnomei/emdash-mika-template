@@ -1,13 +1,26 @@
 ---
-import { Link, Text } from "@cloudflare/kumo";
+import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
 import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
-import { mikaTemplateCartItemCount, mikaTemplatePlural } from "../../lib/display";
-import { templateProductBySlug } from "../../lib/mika-api";
+import {
+  mikaTemplateAvailabilityLabel,
+  mikaTemplateAvailabilityStatus,
+  mikaTemplateCartItemCount,
+  mikaTemplateDeliveryLabel,
+  mikaTemplateFulfillmentLabel,
+  mikaTemplatePlural,
+  mikaTemplatePriceRangeLabel,
+  mikaTemplateProductDeliveryNotes,
+  mikaTemplateProductIncludedLabels,
+  mikaTemplateProductTrustNotes,
+  mikaTemplateProductVariantDisplays,
+  mikaTemplateStatusVariant,
+} from "../../lib/display";
+import { mikaApiOverrides, templateProductBySlug } from "../../lib/mika-api";
 import { mikaTemplateRoutes } from "../../lib/routes";
 
 export const prerender = false;
@@ -23,7 +36,7 @@ if (!slug) return Astro.redirect("/");
 const product = templateProductBySlug(slug);
 if (!product) return Astro.redirect("/");
 
-const Mika = createMika(Astro);
+const Mika = createMika(Astro, { api: mikaApiOverrides });
 const sellablesResult = await Mika.catalog.sellables("products", product.id);
 const sellables = sellablesResult.ok ? sellablesResult.data : product.sellables;
 const addResult = Astro.getActionResult(actions.mika.cart.add);
@@ -54,6 +67,15 @@ const formStatus = addResult?.data
         label: "View wishlist",
       }
     : null;
+const priceLabel = mikaTemplatePriceRangeLabel(sellables);
+const fulfillmentLabel = mikaTemplateFulfillmentLabel(sellables);
+const availabilityLabel = mikaTemplateAvailabilityLabel(sellables);
+const availabilityStatus = mikaTemplateAvailabilityStatus(sellables);
+const deliveryLabel = mikaTemplateDeliveryLabel(sellables);
+const included = mikaTemplateProductIncludedLabels(sellables);
+const deliveryNotes = mikaTemplateProductDeliveryNotes(sellables);
+const trustNotes = mikaTemplateProductTrustNotes();
+const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
 ---
 
 <MikaKumoPage
@@ -73,23 +95,91 @@ const formStatus = addResult?.data
       description: product.description,
       url: Astro.url,
       brand: "Buttonwood Lot Press",
-      category: "Comic goods",
+      category: product.categories[0]?.label ?? "Comic goods",
     }}
   />
 
   <section class="mika-kumo-product-layout">
-    <section class="mika-kumo-stack">
+    <div class="mika-kumo-stack">
       {formError && <Text as="p" variant="error" role="alert">{formError}</Text>}
       {formStatus && (
-        <div class="mika-kumo-stack mika-kumo-stack-tight" role="status" aria-live="polite">
+        <div class="mika-kumo-panel mika-kumo-stack mika-kumo-stack-tight" role="status" aria-live="polite">
           <Text as="p" variant="success">{formStatus.message}</Text>
           <Link href={formStatus.href}>{formStatus.label}</Link>
         </div>
       )}
-    </section>
 
-    <aside class="mika-kumo-panel" aria-label="Purchase">
-      <ProductPurchase sellables={sellables} />
+      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="product-story-title">
+        <div class="mika-kumo-card-signals" aria-label="Product signals">
+          <Badge variant="secondary">{priceLabel}</Badge>
+          <Badge variant="secondary">{fulfillmentLabel}</Badge>
+          <Badge appearance="dot" variant={mikaTemplateStatusVariant(availabilityStatus)}>
+            {availabilityLabel}
+          </Badge>
+        </div>
+        {(product.categories.length > 0 || product.tags.length > 0) && (
+          <div class="mika-kumo-term-row" aria-label="Product categories and tags">
+            {product.categories.map((category) => <Badge variant="secondary">{category.label}</Badge>)}
+            {product.tags.map((tag) => <span class="mika-kumo-term-chip">{tag.label}</span>)}
+          </div>
+        )}
+        <Text as="h2" id="product-story-title" variant="heading2">Product details</Text>
+        <Text as="p" variant="secondary">{product.description}</Text>
+        <Text as="p" variant="secondary">
+          Choose the format that fits your project, then add it to your cart or buy it now. Downloads, access, and license records are prepared in your account after checkout.
+        </Text>
+      </section>
+
+      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="included-title">
+        <Text as="h2" id="included-title" variant="heading2">What is included</Text>
+        <ul class="mika-kumo-list">
+          {included.map((item) => <li>{item}</li>)}
+        </ul>
+      </section>
+
+      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="formats-title">
+        <Text as="h2" id="formats-title" variant="heading2">Formats</Text>
+        <div class="mika-kumo-product-variant-list">
+          {variantDisplays.map((variant) => (
+            <div class="mika-kumo-product-variant-item">
+              <div class="mika-kumo-stack mika-kumo-stack-tight">
+                <Text as="strong">{variant.label}</Text>
+                <Text as="span" variant="secondary">{variant.fulfillmentLabel} · {variant.priceLabel}</Text>
+              </div>
+              <Badge appearance="dot" variant={variant.available ? "success" : "error"}>
+                {variant.availabilityLabel}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="delivery-title">
+        <Text as="h2" id="delivery-title" variant="heading2">Delivery and support</Text>
+        <Text as="p" variant="secondary">{deliveryLabel}</Text>
+        <ul class="mika-kumo-list">
+          {deliveryNotes.map((note) => <li>{note}</li>)}
+        </ul>
+      </section>
+    </div>
+
+    <aside class="mika-kumo-panel mika-kumo-product-purchase-panel" aria-label="Purchase">
+      <div class="mika-kumo-stack">
+        <div class="mika-kumo-stack mika-kumo-stack-tight">
+          <Text as="p" variant="secondary">From</Text>
+          <Text as="p" variant="heading2">{priceLabel}</Text>
+          <div class="mika-kumo-card-signals" aria-label="Purchase summary">
+            <Badge variant="secondary">{fulfillmentLabel}</Badge>
+            <Badge appearance="dot" variant={mikaTemplateStatusVariant(availabilityStatus)}>
+              {availabilityLabel}
+            </Badge>
+          </div>
+        </div>
+        <ProductPurchase sellables={sellables} />
+        <div class="mika-kumo-trust-notes">
+          {trustNotes.map((note) => <Text as="p" variant="secondary" size="sm">{note}</Text>)}
+        </div>
+      </div>
     </aside>
   </section>
 </MikaKumoPage>

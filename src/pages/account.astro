@@ -6,11 +6,12 @@ import AccountSignInPanel from "../components/AccountSignInPanel.astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../lib/cart";
 import { mikaReturnToInput } from "../lib/form";
+import { mikaApiOverrides } from "../lib/mika-api";
 import { mikaTemplateRoutes } from "../lib/routes";
 
 export const prerender = false;
 
-const Mika = createMika(Astro);
+const Mika = createMika(Astro, { api: mikaApiOverrides });
 
 const portalResult = Astro.getActionResult(actions.mika.account.portal);
 if (portalResult?.data?.redirectUrl) {

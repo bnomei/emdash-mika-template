@@ -583,6 +583,10 @@
     "products": [
       {
         "id": "products:mira-field-clipboard:en",
+        "taxonomies": {
+          "category": ["paper-goods"],
+          "tag": ["planning", "checklists", "desk-tools"]
+        },
         "slug": "mira-field-clipboard",
         "status": "published",
         "locale": "en",
@@ -641,6 +645,10 @@
       },
       {
         "id": "products:thirdbase-team-pennants:en",
+        "taxonomies": {
+          "category": ["paper-goods"],
+          "tag": ["team-goods", "decor", "baseball"]
+        },
         "slug": "thirdbase-team-pennants",
         "status": "published",
         "locale": "en",
@@ -699,6 +707,10 @@
       },
       {
         "id": "products:junie-sidewalk-zine-kit:en",
+        "taxonomies": {
+          "category": ["maker-kits"],
+          "tag": ["zines", "printables", "workshops"]
+        },
         "slug": "junie-sidewalk-zine-kit",
         "status": "published",
         "locale": "en",
@@ -757,6 +769,10 @@
       },
       {
         "id": "products:buttonwood-creator-bundle:en",
+        "taxonomies": {
+          "category": ["creator-tools"],
+          "tag": ["downloads", "membership", "licenses"]
+        },
         "slug": "buttonwood-creator-bundle",
         "status": "published",
         "locale": "en",
@@ -1504,6 +1520,88 @@
     ]
   },
   "menus": [],
-  "taxonomies": [],
+  "taxonomies": [
+    {
+      "name": "category",
+      "label": "Categories",
+      "labelSingular": "Category",
+      "hierarchical": true,
+      "collections": ["products"],
+      "terms": [
+        {
+          "slug": "paper-goods",
+          "label": "Paper Goods",
+          "description": "Printed shop goods, stationery pieces, and small-run paper merchandise."
+        },
+        {
+          "slug": "maker-kits",
+          "label": "Maker Kits",
+          "description": "Hands-on kits and workshop packs for making comics and zines."
+        },
+        {
+          "slug": "creator-tools",
+          "label": "Creator Tools",
+          "description": "Downloads, subscriptions, and licenses for comic creators."
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "label": "Tags",
+      "labelSingular": "Tag",
+      "hierarchical": false,
+      "collections": ["products"],
+      "terms": [
+        {
+          "slug": "printables",
+          "label": "Printables"
+        },
+        {
+          "slug": "planning",
+          "label": "Planning"
+        },
+        {
+          "slug": "checklists",
+          "label": "Checklists"
+        },
+        {
+          "slug": "desk-tools",
+          "label": "Desk Tools"
+        },
+        {
+          "slug": "team-goods",
+          "label": "Team Goods"
+        },
+        {
+          "slug": "decor",
+          "label": "Decor"
+        },
+        {
+          "slug": "baseball",
+          "label": "Baseball"
+        },
+        {
+          "slug": "zines",
+          "label": "Zines"
+        },
+        {
+          "slug": "workshops",
+          "label": "Workshops"
+        },
+        {
+          "slug": "downloads",
+          "label": "Downloads"
+        },
+        {
+          "slug": "membership",
+          "label": "Membership"
+        },
+        {
+          "slug": "licenses",
+          "label": "Licenses"
+        }
+      ]
+    }
+  ],
   "widgetAreas": []
 }

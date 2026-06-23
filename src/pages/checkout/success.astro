@@ -1,12 +1,14 @@
 ---
-import { Link, Text } from "@cloudflare/kumo";
+import { Badge, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
+import { mikaApiOverrides } from "../../lib/mika-api";
 import {
   mikaTemplateCheckoutSuccessHref,
   mikaTemplateRoutes
 } from "../../lib/routes";
+import { mikaTemplateStatusLabel, mikaTemplateStatusVariant } from "../../lib/display";
 
 export const prerender = false;
 
@@ -14,29 +16,59 @@ const checkoutId =
   Astro.url.searchParams.get("checkoutId") ??
   Astro.url.searchParams.get("checkout_id") ??
   Astro.url.searchParams.get("session_id");
-const Mika = createMika(Astro);
+const Mika = createMika(Astro, { api: mikaApiOverrides });
 const result = checkoutId ? await Mika.checkout.status(checkoutId) : null;
 const checkout = result?.ok ? result.data : null;
 const status = checkout?.status ?? "pending";
+const accountResult = checkout?.orderId ? await Mika.account.get() : null;
+const order = accountResult?.ok
+  ? accountResult.data.orders.find((candidate) => candidate.id === checkout?.orderId)
+  : undefined;
+const orderLabel = order?.orderNumber ?? checkout?.orderId;
 const messageByStatus: Record<string, string> = {
-  pending: "Payment pending.",
-  completed: "Order complete.",
-  cancelled: "Checkout cancelled.",
-  expired: "Checkout expired.",
-  failed: "Checkout failed.",
-  binding_mismatch: "Checkout could not be verified."
+  pending: "Checkout is still being confirmed. Refresh this page in a moment for the latest status.",
+  completed: "Payment is confirmed. Your order and fulfillment details are ready in your account.",
+  cancelled: "Checkout was cancelled. No payment was completed.",
+  expired: "Checkout expired before payment was completed.",
+  failed: "Checkout failed. Return to the cart to review your items or try again.",
+  binding_mismatch: "Checkout could not be verified for this session. Contact the seller if you expected an order.",
 };
 const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 ---
 
-<MikaKumoPage title="Checkout" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-success>
+<MikaKumoPage title="Checkout status" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-success>
   <section class="mika-kumo-panel mika-kumo-stack">
-    <Text as="p" aria-live="polite">{messageByStatus[status] ?? "Checkout received."}</Text>
+    <div class="mika-kumo-title-row">
+      <Text as="h2" variant="heading2">Order status</Text>
+      <Badge appearance="dot" variant={mikaTemplateStatusVariant(status)}>
+        {mikaTemplateStatusLabel(status)}
+      </Badge>
+    </div>
+    <Text as="p" aria-live="polite" variant="secondary">{messageByStatus[status] ?? "Checkout received."}</Text>
+
+    <dl class="mika-kumo-summary">
+      {checkoutId && (
+        <div>
+          <dt>Checkout</dt>
+          <dd>{checkoutId}</dd>
+        </div>
+      )}
+      {orderLabel && (
+        <div>
+          <dt>Order</dt>
+          <dd>{orderLabel}</dd>
+        </div>
+      )}
+    </dl>
+
     <div class="mika-kumo-actions">
       {status === "pending" && checkoutId && (
         <Link href={mikaTemplateCheckoutSuccessHref(checkoutId)}>Refresh status</Link>
       )}
-      {checkout?.orderId && <Link href={mikaTemplateRoutes.accountOrders}>View orders</Link>}
+      {checkout?.orderId && <Link href={`${mikaTemplateRoutes.accountOrders}#order-${checkout.orderId}`}>View order</Link>}
+      {status === "completed" && <Link href={mikaTemplateRoutes.accountDownloads}>Downloads</Link>}
+      {status === "completed" && <Link href={mikaTemplateRoutes.accountLicenses}>Licenses</Link>}
+      {!checkout?.orderId && <Link href={mikaTemplateRoutes.cart}>Return to cart</Link>}
     </div>
   </section>
 </MikaKumoPage>

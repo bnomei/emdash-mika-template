@@ -5,9 +5,9 @@ import type { SubscriptionDTO } from "@bnomei/emdash-mika/types";
 import { mikaReturnTo } from "@bnomei/emdash-mika/astro";
 import { mikaReturnToInput } from "../lib/form";
 import {
-  mikaTemplateDateLabel,
   mikaTemplateStatusLabel,
-  mikaTemplateStatusVariant
+  mikaTemplateStatusVariant,
+  mikaTemplateSubscriptionPeriodLabel
 } from "../lib/display";
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
   cancelLabel?: string;
   renewLabel?: string;
   changeLabel?: string;
+  portalLabel?: string;
   subscriptionLabel?: string;
   periodEndLabel?: string;
   statusLabel?: string;
@@ -34,11 +35,12 @@ const {
   error,
   headingLabel = "Subscriptions",
   emptyLabel = "No subscriptions.",
-  cancelLabel = "Cancel subscription",
+  cancelLabel = "Cancel renewal",
   renewLabel = "Renew subscription",
   changeLabel = "Manage plan",
+  portalLabel = "Billing portal",
   subscriptionLabel = "Subscription",
-  periodEndLabel = "Renews or ends",
+  periodEndLabel = "Renewal",
   statusLabel = "Status",
   showChangeAction = false,
   changePriceIds = {},
@@ -49,7 +51,10 @@ const hasEmptySlot = Astro.slots.has("empty");
 ---
 
 <section {...attrs} data-mika-account-subscriptions class:list={["mika-kumo-stack", className]}>
-  <Text as="h2" variant="heading2"><slot name="heading">{headingLabel}</slot></Text>
+  <div class="mika-kumo-stack mika-kumo-stack-tight">
+    <Text as="h2" variant="heading2"><slot name="heading">{headingLabel}</slot></Text>
+    <Text as="p" variant="secondary">Review renewal state and use the billing portal or available subscription actions.</Text>
+  </div>
   {error && <Banner variant="error" title="Subscription action failed" description={error} role="alert" />}
   {subscriptions.length ? (
     <div class="mika-kumo-table-scroll">
@@ -65,23 +70,38 @@ const hasEmptySlot = Astro.slots.has("empty");
         <Table.Body>
           {subscriptions.map((subscription) => (
             <Table.Row>
-              <Table.Cell><strong>{subscription.title}</strong></Table.Cell>
-              <Table.Cell>
-                <Badge appearance="dot" variant={mikaTemplateStatusVariant(subscription.status)}>
-                  {mikaTemplateStatusLabel(subscription.status)}
-                </Badge>
+              <Table.Cell className="mika-kumo-table-cell mika-kumo-table-cell-primary" data-label={subscriptionLabel}>
+                <strong>{subscription.title}</strong>
               </Table.Cell>
-              <Table.Cell>
+              <Table.Cell className="mika-kumo-table-cell" data-label={statusLabel}>
+                <div class="mika-kumo-actions">
+                  <Badge appearance="dot" variant={mikaTemplateStatusVariant(subscription.status)}>
+                    {mikaTemplateStatusLabel(subscription.status)}
+                  </Badge>
+                  {subscription.cancelAtPeriodEnd && (
+                    <Badge appearance="dot" variant="warning">Cancels at period end</Badge>
+                  )}
+                </div>
+              </Table.Cell>
+              <Table.Cell className="mika-kumo-table-cell" data-label={periodEndLabel}>
                 {subscription.currentPeriodEnd ? (
                   <time datetime={subscription.currentPeriodEnd}>
-                    {mikaTemplateDateLabel(subscription.currentPeriodEnd)}
+                    {mikaTemplateSubscriptionPeriodLabel(subscription)}
                   </time>
                 ) : (
                   <span class="mika-kumo-muted">Not scheduled</span>
                 )}
               </Table.Cell>
-              <Table.Cell>
+              <Table.Cell className="mika-kumo-table-cell" data-label="Actions">
                 <div class="mika-kumo-actions">
+                  {subscription.providerActions?.includes("portal") && (
+                    <form class="mika-kumo-form" action={actions.mika.account.portal} method="post">
+                      <input type="hidden" {...mikaReturnToInput(returnTo)} />
+                      <Button type="submit" variant="secondary" aria-label={`${portalLabel} for ${subscription.title}`}>
+                        {portalLabel}
+                      </Button>
+                    </form>
+                  )}
                   {showChangeAction && subscription.providerActions?.includes("change") && changePriceIds[subscription.id] && (
                     <form class="mika-kumo-form" action={actions.mika.subscription.change} method="post">
                       <input type="hidden" name="subscriptionId" value={subscription.id} />
@@ -101,7 +121,7 @@ const hasEmptySlot = Astro.slots.has("empty");
                       </Button>
                     </form>
                   )}
-                  {subscription.providerActions?.includes("cancel") && (
+                  {subscription.providerActions?.includes("cancel") && !subscription.cancelAtPeriodEnd && (
                     <form class="mika-kumo-form" action={actions.mika.subscription.cancel} method="post">
                       <input type="hidden" name="subscriptionId" value={subscription.id} />
                       <input type="hidden" {...mikaReturnToInput(returnTo)} />
@@ -110,7 +130,7 @@ const hasEmptySlot = Astro.slots.has("empty");
                       </Button>
                     </form>
                   )}
-                  {!subscription.providerActions?.length && <span class="mika-kumo-muted">No actions available</span>}
+                  {!subscription.providerActions?.length && <span class="mika-kumo-muted">Managed by seller</span>}
                 </div>
               </Table.Cell>
             </Table.Row>
@@ -121,6 +141,6 @@ const hasEmptySlot = Astro.slots.has("empty");
   ) : hasEmptySlot ? (
     <slot name="empty" />
   ) : (
-    <Empty size="sm" title={emptyLabel} description="Active subscription products will appear here." />
+    <Empty size="sm" title={emptyLabel} description="Subscription access and renewal details will appear here." />
   )}
 </section>

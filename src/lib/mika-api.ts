@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { createMikaApi, type MikaApiOverrides } from "@bnomei/emdash-mika/server";
 import { createISODateTime } from "@bnomei/emdash-mika/types";
 import { mikaStorefrontApiOverrides } from "./mika-fixture-storefront.ts";
-export { templateProductBySlug, templateProductSummaries } from "./mika-fixture-storefront.ts";
+export { templateProductBySlug, templateProductFilters, templateProductSummaries } from "./mika-fixture-storefront.ts";
 
 import type {
   AdminActionResultDTO,

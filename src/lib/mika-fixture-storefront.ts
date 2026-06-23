@@ -2,6 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { MikaApiOverrides, MikaRequestContext } from "@bnomei/emdash-mika/server";
 import {
+  mikaTemplateAvailabilityLabel,
+  mikaTemplateAvailabilityStatus,
+  mikaTemplateDeliveryLabel,
+  mikaTemplateFulfillmentLabel,
+  mikaTemplatePriceRangeLabel,
+} from "./display.ts";
+import {
   createCurrencyCode,
   createISODateTime,
   createMikaId,
@@ -40,6 +47,22 @@ import type {
 
 interface SeedFile {
   readonly content?: Record<string, readonly SeedEntry[]>;
+  readonly taxonomies?: readonly SeedTaxonomy[];
+}
+
+interface SeedTaxonomy {
+  readonly name: string;
+  readonly label: string;
+  readonly labelSingular?: string;
+  readonly hierarchical?: boolean;
+  readonly collections?: readonly string[];
+  readonly terms?: readonly SeedTaxonomyTerm[];
+}
+
+interface SeedTaxonomyTerm {
+  readonly slug: string;
+  readonly label: string;
+  readonly description?: string;
 }
 
 interface SeedEntry {
@@ -47,6 +70,7 @@ interface SeedEntry {
   readonly slug: string;
   readonly locale?: string;
   readonly data?: Record<string, unknown>;
+  readonly taxonomies?: Record<string, readonly string[]>;
 }
 
 interface ProductVariant {
@@ -66,14 +90,46 @@ interface ProductVariant {
   readonly sortOrder?: number;
 }
 
+export interface TemplateTaxonomyTermDisplay {
+  readonly taxonomy: string;
+  readonly slug: string;
+  readonly label: string;
+  readonly href: string;
+}
+
+export interface TemplateProductFilterTerm extends TemplateTaxonomyTermDisplay {
+  readonly count: number;
+  readonly active: boolean;
+}
+
+export interface TemplateProductFilterState {
+  readonly categories: readonly TemplateProductFilterTerm[];
+  readonly tags: readonly TemplateProductFilterTerm[];
+  readonly activeCategory?: string;
+  readonly activeTag?: string;
+  readonly totalCount: number;
+  readonly filteredCount: number;
+}
+
 interface TemplateProductSummary {
   readonly id: string;
   readonly slug: string;
   readonly title: string;
   readonly description: string;
   readonly href: string;
+  readonly categories: readonly TemplateTaxonomyTermDisplay[];
+  readonly tags: readonly TemplateTaxonomyTermDisplay[];
   readonly priceLabel: string;
+  readonly fulfillmentLabel: string;
+  readonly availabilityLabel: string;
+  readonly availabilityStatus: string;
+  readonly deliveryLabel: string;
   readonly variantCount: number;
+}
+
+export interface TemplateProductFilterInput {
+  readonly category?: string | null;
+  readonly tag?: string | null;
 }
 
 interface TemplateProductDetail extends TemplateProductSummary {
@@ -433,32 +489,130 @@ export const mikaStorefrontApiOverrides = {
   },
 } satisfies MikaApiOverrides;
 
-export function templateProductSummaries(): readonly TemplateProductSummary[] {
-  return products().map((product) => {
-    const variants = productVariants(product);
-    return {
-      id: product.id,
-      slug: product.slug,
-      title: stringValue(product.data?.["title"], product.slug),
-      description: stringValue(product.data?.["description"], ""),
-      href: `/products/${product.slug}`,
-      priceLabel: priceRangeLabel(variants),
-      variantCount: variants.length,
-    };
-  });
+export function templateProductSummaries(
+  filters: TemplateProductFilterInput = {},
+): readonly TemplateProductSummary[] {
+  return products().map(templateProductSummary).filter((product) => productMatchesFilters(product, filters));
+}
+
+export function templateProductFilters(filters: TemplateProductFilterInput = {}): TemplateProductFilterState {
+  const summaries = products().map(templateProductSummary);
+  const filteredProducts = summaries.filter((product) => productMatchesFilters(product, filters));
+  const activeCategory = normalizeFilterSlug(filters.category);
+  const activeTag = normalizeFilterSlug(filters.tag);
+
+  return {
+    categories: productFilterTerms("category", summaries, activeCategory),
+    tags: productFilterTerms("tag", summaries, activeTag),
+    activeCategory,
+    activeTag,
+    totalCount: summaries.length,
+    filteredCount: filteredProducts.length,
+  };
 }
 
 export function templateProductBySlug(slug: string): TemplateProductDetail | undefined {
   const product = products().find((entry) => entry.slug === slug || entry.id === slug);
   if (!product) return undefined;
 
-  const summary = templateProductSummaries().find((candidate) => candidate.slug === product.slug);
-  if (!summary) return undefined;
-
   return {
-    ...summary,
+    ...templateProductSummary(product),
     sellables: productSellables(product),
   };
+}
+
+function templateProductSummary(product: SeedEntry): TemplateProductSummary {
+  const sellables = productSellables(product);
+  return {
+    id: product.id,
+    slug: product.slug,
+    title: stringValue(product.data?.["title"], product.slug),
+    description: stringValue(product.data?.["description"], ""),
+    href: `/products/${product.slug}`,
+    categories: productTaxonomyTerms(product, "category"),
+    tags: productTaxonomyTerms(product, "tag"),
+    priceLabel: mikaTemplatePriceRangeLabel(sellables),
+    fulfillmentLabel: mikaTemplateFulfillmentLabel(sellables),
+    availabilityLabel: mikaTemplateAvailabilityLabel(sellables),
+    availabilityStatus: mikaTemplateAvailabilityStatus(sellables),
+    deliveryLabel: mikaTemplateDeliveryLabel(sellables),
+    variantCount: sellables.length,
+  };
+}
+
+function productMatchesFilters(
+  product: TemplateProductSummary,
+  filters: TemplateProductFilterInput,
+): boolean {
+  const category = normalizeFilterSlug(filters.category);
+  const tag = normalizeFilterSlug(filters.tag);
+  const categoryMatches = !category || product.categories.some((term) => term.slug === category);
+  const tagMatches = !tag || product.tags.some((term) => term.slug === tag);
+  return categoryMatches && tagMatches;
+}
+
+function productFilterTerms(
+  taxonomyName: string,
+  productsForCounts: readonly TemplateProductSummary[],
+  activeSlug: string | undefined,
+): readonly TemplateProductFilterTerm[] {
+  const counts = new Map<string, number>();
+  for (const product of productsForCounts) {
+    const terms = taxonomyName === "category" ? product.categories : product.tags;
+    for (const term of terms) counts.set(term.slug, (counts.get(term.slug) ?? 0) + 1);
+  }
+
+  return taxonomyTerms(taxonomyName)
+    .map((term) => ({
+      ...taxonomyTermDisplay(taxonomyName, term.slug),
+      count: counts.get(term.slug) ?? 0,
+      active: activeSlug === term.slug,
+    }))
+    .filter((term) => term.count > 0);
+}
+
+function productTaxonomyTerms(
+  product: SeedEntry,
+  taxonomyName: string,
+): readonly TemplateTaxonomyTermDisplay[] {
+  const slugs = product.taxonomies?.[taxonomyName] ?? [];
+  return slugs.map((slug) => taxonomyTermDisplay(taxonomyName, slug));
+}
+
+function taxonomyTermDisplay(taxonomyName: string, slug: string): TemplateTaxonomyTermDisplay {
+  const term = taxonomyTerm(taxonomyName, slug);
+  return {
+    taxonomy: taxonomyName,
+    slug,
+    label: term?.label ?? titleFromSlug(slug),
+    href: taxonomyHref(taxonomyName, slug),
+  };
+}
+
+function taxonomyTerm(taxonomyName: string, slug: string): SeedTaxonomyTerm | undefined {
+  return taxonomyTerms(taxonomyName).find((term) => term.slug === slug);
+}
+
+function taxonomyTerms(taxonomyName: string): readonly SeedTaxonomyTerm[] {
+  return seed.taxonomies?.find((taxonomy) => taxonomy.name === taxonomyName)?.terms ?? [];
+}
+
+function taxonomyHref(taxonomyName: string, slug: string): string {
+  const param = taxonomyName === "category" ? "category" : taxonomyName === "tag" ? "tag" : taxonomyName;
+  return `/?${param}=${encodeURIComponent(slug)}`;
+}
+
+function normalizeFilterSlug(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function titleFromSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function readSeed(): SeedFile {
@@ -667,7 +821,7 @@ function cartFor(state: TemplateSessionState): CartDTO {
     coupon: state.couponCode
       ? {
           code: state.couponCode,
-          label: "Template 10% discount",
+          label: "Buttonwood 10% discount",
           discount: money(discountAmount),
         }
       : undefined,
@@ -711,7 +865,7 @@ function cartQuote(cart: CartDTO, couponCode?: string): CartQuoteDTO {
     coupon: couponCode
       ? {
           code: couponCode,
-          label: "Template 10% discount",
+          label: "Buttonwood 10% discount",
           discount: money(discountAmount, cart.currency),
         }
       : cart.coupon,

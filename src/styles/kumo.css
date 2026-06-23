@@ -237,6 +237,117 @@ a {
   font-weight: 600;
 }
 
+.mika-kumo-product-card {
+  min-height: 100%;
+}
+
+.mika-kumo-card-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mika-kumo-filter-bar {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 4px;
+}
+
+.mika-kumo-filter-group {
+  display: grid;
+  gap: 8px;
+}
+
+.mika-kumo-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mika-kumo-filter-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-kumo-line);
+  border-radius: 8px;
+  background: var(--color-kumo-base);
+  color: var(--text-color-kumo-default);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mika-kumo-filter-chip:hover,
+.mika-kumo-filter-chip:focus-visible {
+  border-color: var(--color-kumo-brand);
+  background: var(--color-kumo-tint);
+}
+
+.mika-kumo-filter-chip.is-active {
+  border-color: var(--color-kumo-brand);
+  color: var(--text-color-kumo-strong);
+  box-shadow: 0 0 0 1px var(--color-kumo-brand);
+}
+
+.mika-kumo-filter-count {
+  color: var(--text-color-kumo-subtle);
+  font-weight: 500;
+}
+
+.mika-kumo-filter-clear {
+  justify-self: start;
+}
+
+.mika-kumo-term-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mika-kumo-term-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-kumo-hairline);
+  border-radius: 8px;
+  background: var(--color-kumo-tint);
+  color: var(--text-color-kumo-subtle);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mika-kumo-card-detail {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.mika-kumo-card-detail > div {
+  display: grid;
+  gap: 2px;
+}
+
+.mika-kumo-card-detail dt,
+.mika-kumo-card-detail dd {
+  margin: 0;
+}
+
+.mika-kumo-card-detail dt {
+  color: var(--text-color-kumo-subtle);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mika-kumo-card-detail dd {
+  color: var(--text-color-kumo-strong);
+}
+
 .mika-kumo-panel {
   padding: 18px;
 }
@@ -253,9 +364,14 @@ a {
   min-width: 0;
 }
 
-.mika-kumo-cart-checkout-panel {
+.mika-kumo-cart-checkout-panel,
+.mika-kumo-product-purchase-panel {
   position: sticky;
   top: 24px;
+}
+
+.mika-kumo-product-purchase-panel {
+  min-width: 0;
 }
 
 .mika-kumo-actions {
@@ -315,6 +431,32 @@ a {
 
 .mika-kumo-stack-tight {
   gap: 4px;
+}
+
+.mika-kumo-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.mika-kumo-product-variant-list,
+.mika-kumo-trust-notes {
+  display: grid;
+  gap: 10px;
+}
+
+.mika-kumo-product-variant-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-kumo-hairline);
+}
+
+.mika-kumo-product-variant-item:last-child {
+  border-bottom: 0;
 }
 
 .mika-kumo-meta,
@@ -412,7 +554,8 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .mika-kumo-cart-checkout-panel {
+  .mika-kumo-cart-checkout-panel,
+  .mika-kumo-product-purchase-panel {
     position: static;
   }
 
@@ -455,21 +598,24 @@ a {
     border: 0;
   }
 
-  .mika-kumo-cart-cell:not(.mika-kumo-cart-cell-item) {
+  .mika-kumo-cart-cell:not(.mika-kumo-cart-cell-item),
+  .mika-kumo-table-cell:not(.mika-kumo-table-cell-primary) {
     display: grid;
     grid-template-columns: minmax(0, 92px) minmax(0, 1fr);
     gap: 12px;
     align-items: center;
   }
 
-  .mika-kumo-cart-cell::before {
+  .mika-kumo-cart-cell::before,
+  .mika-kumo-table-cell::before {
     content: attr(data-label);
     color: var(--text-color-kumo-subtle);
     font-size: 0.85rem;
     font-weight: 600;
   }
 
-  .mika-kumo-cart-cell-item::before {
+  .mika-kumo-cart-cell-item::before,
+  .mika-kumo-table-cell-primary::before {
     display: none;
   }
 
@@ -483,6 +629,11 @@ a {
 
   .mika-kumo-product-layout {
     grid-template-columns: 1fr;
+  }
+
+  .mika-kumo-product-variant-item {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

@@ -12,7 +12,10 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 
 <MikaKumoPage title="Checkout cancelled" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-cancel>
   <section class="mika-kumo-panel mika-kumo-stack">
-    <Text as="p" variant="secondary">No payment was completed.</Text>
+    <Text as="h2" variant="heading2">No payment was completed</Text>
+    <Text as="p" variant="secondary">
+      Your cart is still the place to review quantities, apply a coupon, or start checkout again.
+    </Text>
     <Link href={cartHref}>Return to cart</Link>
   </section>
 </MikaKumoPage>

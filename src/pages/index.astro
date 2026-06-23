@@ -2,31 +2,111 @@
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../lib/cart";
-import { templateProductSummaries } from "../lib/mika-api";
+import { mikaTemplateStatusVariant } from "../lib/display";
+import { templateProductFilters, templateProductSummaries } from "../lib/mika-api";
 
-const products = templateProductSummaries();
+const activeCategory = Astro.url.searchParams.get("category");
+const activeTag = Astro.url.searchParams.get("tag");
+const productFilters = templateProductFilters({ category: activeCategory, tag: activeTag });
+const products = templateProductSummaries({ category: activeCategory, tag: activeTag });
+const hasActiveFilters = Boolean(productFilters.activeCategory || productFilters.activeTag);
 const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
+const filterHref = (next: { readonly category?: string | null; readonly tag?: string | null }) => {
+  const category = next.category === undefined ? productFilters.activeCategory : next.category;
+  const tag = next.tag === undefined ? productFilters.activeTag : next.tag;
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  if (tag) params.set("tag", tag);
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
+};
 ---
 
 <MikaKumoPage
   title="Buttonwood Lot"
-  description="Comic goods and creator tools from a neighborhood press: printables, pennants, downloads, subscriptions, and licenses."
+  description="Comic goods and creator tools from a neighborhood press: printables, downloads, subscriptions, and licenses."
   cartItemCount={cartItemCount}
 >
-  <section class="mika-kumo-grid" aria-label="Products">
-    {products.map((product) => (
-      <article class="mika-kumo-card">
-        <div class="mika-kumo-stack">
-          <Text as="h2" variant="heading3">
-            <Link href={product.href} class="mika-kumo-card-link">{product.title}</Link>
-          </Text>
-          <Text as="p" variant="secondary">{product.description}</Text>
-          <div class="mika-kumo-meta-row">
-            <Badge variant="secondary">{product.priceLabel}</Badge>
-          </div>
-          <span class="mika-kumo-card-cta" aria-hidden="true">View product</span>
-        </div>
-      </article>
-    ))}
+  <section class="mika-kumo-filter-bar" aria-label="Product filters">
+    <div class="mika-kumo-filter-group">
+      <Text as="h2" variant="secondary" size="sm">Categories</Text>
+      <div class="mika-kumo-filter-options">
+        <Link href={filterHref({ category: null })} class:list={["mika-kumo-filter-chip", !productFilters.activeCategory && "is-active"]}>
+          All
+        </Link>
+        {productFilters.categories.map((category) => (
+          <Link href={filterHref({ category: category.slug })} class:list={["mika-kumo-filter-chip", category.active && "is-active"]}>
+            {category.label}
+            <span class="mika-kumo-filter-count">{category.count}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+
+    <div class="mika-kumo-filter-group">
+      <Text as="h2" variant="secondary" size="sm">Tags</Text>
+      <div class="mika-kumo-filter-options">
+        <Link href={filterHref({ tag: null })} class:list={["mika-kumo-filter-chip", !productFilters.activeTag && "is-active"]}>
+          All
+        </Link>
+        {productFilters.tags.map((tag) => (
+          <Link href={filterHref({ tag: tag.slug })} class:list={["mika-kumo-filter-chip", tag.active && "is-active"]}>
+            {tag.label}
+            <span class="mika-kumo-filter-count">{tag.count}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+
+    {hasActiveFilters && <Link href="/" class="mika-kumo-filter-clear">Clear filters</Link>}
   </section>
+
+  {products.length ? (
+    <section class="mika-kumo-grid" aria-label="Products">
+      {products.map((product) => (
+        <article class="mika-kumo-card mika-kumo-product-card">
+          <div class="mika-kumo-stack">
+            <div class="mika-kumo-card-signals" aria-label={`${product.title} shop details`}>
+              <Badge variant="secondary">{product.priceLabel}</Badge>
+              <Badge variant="secondary">{product.fulfillmentLabel}</Badge>
+              <Badge appearance="dot" variant={mikaTemplateStatusVariant(product.availabilityStatus)}>
+                {product.availabilityLabel}
+              </Badge>
+            </div>
+            {product.categories.length > 0 && (
+              <div class="mika-kumo-term-row" aria-label={`${product.title} categories`}>
+                {product.categories.map((category) => <Badge variant="secondary">{category.label}</Badge>)}
+              </div>
+            )}
+            <Text as="h2" variant="heading3">
+              <Link href={product.href} class="mika-kumo-card-link">{product.title}</Link>
+            </Text>
+            <Text as="p" variant="secondary">{product.description}</Text>
+            {product.tags.length > 0 && (
+              <div class="mika-kumo-term-row" aria-label={`${product.title} tags`}>
+                {product.tags.map((tag) => <span class="mika-kumo-term-chip">{tag.label}</span>)}
+              </div>
+            )}
+            <dl class="mika-kumo-card-detail">
+              <div>
+                <dt>Delivery</dt>
+                <dd>{product.deliveryLabel}</dd>
+              </div>
+              <div>
+                <dt>Options</dt>
+                <dd>{product.variantCount === 1 ? "1 format" : `${product.variantCount} formats`}</dd>
+              </div>
+            </dl>
+            <span class="mika-kumo-card-cta" aria-hidden="true">View product</span>
+          </div>
+        </article>
+      ))}
+    </section>
+  ) : (
+    <section class="mika-kumo-panel mika-kumo-stack">
+      <Text as="h2" variant="heading2">No products match those filters</Text>
+      <Text as="p" variant="secondary">Try a different category or tag.</Text>
+      <Link href="/">Clear filters</Link>
+    </section>
+  )}
 </MikaKumoPage>

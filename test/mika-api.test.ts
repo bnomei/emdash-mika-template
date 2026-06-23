@@ -12,6 +12,8 @@ const Database = require("better-sqlite3");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 let api;
+let templateProductFilters;
+let templateProductSummaries;
 let db;
 let tempDir;
 
@@ -40,7 +42,7 @@ before(async () => {
 
   process.env.EMDASH_MIKA_TEMPLATE_DB = dbPath;
   db = new Database(dbPath);
-  ({ api } = await import("../src/lib/mika-api.ts"));
+  ({ api, templateProductFilters, templateProductSummaries } = await import("../src/lib/mika-api.ts"));
 });
 
 after(() => {
@@ -252,6 +254,28 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(availability.get("sellable_bw_sunday_club")?.availableQuantity, 1);
     assert.equal(availability.get("sellable_bw_lettering_license")?.status, "out_of_stock");
     assert.equal(availability.get("sellable_bw_lettering_license")?.availableQuantity, 0);
+  });
+
+  it("projects product categories and tags for storefront filters", () => {
+    const filters = templateProductFilters();
+
+    assert.equal(filters.totalCount, 4);
+    assert.deepEqual(
+      filters.categories.map((category) => [category.slug, category.label, category.count]),
+      [
+        ["paper-goods", "Paper Goods", 2],
+        ["maker-kits", "Maker Kits", 1],
+        ["creator-tools", "Creator Tools", 1],
+      ],
+    );
+    assert.equal(filters.tags.find((tag) => tag.slug === "downloads")?.label, "Downloads");
+
+    const creatorTools = templateProductSummaries({ category: "creator-tools" });
+    assert.deepEqual(creatorTools.map((product) => product.slug), ["buttonwood-creator-bundle"]);
+    assert.deepEqual(creatorTools[0].tags.map((tag) => tag.slug), ["downloads", "membership", "licenses"]);
+
+    const paperPrintables = templateProductSummaries({ category: "paper-goods", tag: "printables" });
+    assert.deepEqual(paperPrintables, []);
   });
 
   it("runs cart and coupon flows with session-scoped fixture state", async () => {

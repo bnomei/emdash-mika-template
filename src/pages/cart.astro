@@ -8,11 +8,12 @@ import CheckoutForm from "../components/CheckoutForm.astro";
 import CouponForm from "../components/CouponForm.astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCartItemCount, mikaTemplatePlural } from "../lib/display";
+import { mikaApiOverrides } from "../lib/mika-api";
 import { mikaTemplateRoutes } from "../lib/routes";
 
 export const prerender = false;
 
-const Mika = createMika(Astro);
+const Mika = createMika(Astro, { api: mikaApiOverrides });
 
 const checkoutResult = Astro.getActionResult(actions.mika.checkout.start);
 if (checkoutResult?.data?.redirectUrl) {
