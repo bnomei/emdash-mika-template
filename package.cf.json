@@ -1,0 +1,54 @@
+{
+  "name": "emdash-mika-template-cloudflare",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "local:build": "node scripts/build-local-packages.mjs",
+    "predev": "npm run local:build",
+    "dev": "astro dev",
+    "prebuild": "npm run local:build",
+    "build": "astro build",
+    "predeploy": "npm run local:build",
+    "deploy": "astro build && wrangler deploy",
+    "prepreview": "npm run local:build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "pretypecheck": "npm run local:build",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run local:build",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "postinstall": "node scripts/patch-emdash-dev-bypass.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.1.7",
+    "@astrojs/react": "^5.0.7",
+    "@bnomei/emdash-actions": "^0.4.0",
+    "@bnomei/emdash-mika": "file:../emdash-mika",
+    "@cloudflare/kumo": "^2.5.2",
+    "@emdash-cms/cloudflare": "^0.11.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "astro": "^6.4.4",
+    "emdash": "^0.21.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260305.1",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.83.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "packageManager": "npm@11.16.0",
+  "emdash": {
+    "seed": "seed/mika-actions.seed.json"
+  },
+  "imports": {
+    "#mika-template-plugin": "./src/plugins/mika-template-plugin.ts"
+  }
+}

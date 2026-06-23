@@ -78,6 +78,46 @@ template, replace the remaining `file:../emdash-mika` dependency in
 `package.json` with a released npm version and remove the local Mika build
 workaround if it is no longer needed.
 
+## Experimental Cloudflare Variant Files
+
+The default checkout is the Node.js variant: `@astrojs/node`, SQLite via
+`better-sqlite3`, and local filesystem uploads.
+
+Cloudflare Workers support is sketched as inactive variant files in the same
+tree:
+
+- `package.cf.json` replaces the Node adapter and SQLite dependency with
+  `@astrojs/cloudflare`, `@emdash-cms/cloudflare`, Worker types, and `wrangler`.
+- `astro.config.cf.mjs` swaps EmDash storage from SQLite/local files to D1/R2
+  bindings.
+- `wrangler.cf.jsonc` declares the D1, R2, Worker Loader, and compatibility
+  bindings.
+- `worker.cf.ts` exports the Astro Cloudflare handler and EmDash plugin
+  bridge.
+
+To try the Cloudflare variant manually:
+
+```sh
+cp package.cf.json package.json
+cp astro.config.cf.mjs astro.config.mjs
+cp wrangler.cf.jsonc wrangler.jsonc
+cp worker.cf.ts src/worker.ts
+npm install
+wrangler d1 create emdash-mika-template
+```
+
+Then update `wrangler.jsonc` with the real D1 database ID before deploying:
+
+```sh
+npm run deploy
+```
+
+This is intentionally not wired to a Cloudflare deploy button yet. The one-click
+deploy flow expects real `package.json`, `astro.config.mjs`, `wrangler.jsonc`,
+and `src/worker.ts` files at the target path, so these `.cf` files are a
+low-maintenance variant sketch until we decide whether to generate a dedicated
+Cloudflare folder.
+
 ## Verification
 
 ```sh
