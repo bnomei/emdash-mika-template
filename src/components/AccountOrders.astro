@@ -63,6 +63,7 @@ const hasEmptySlot = Astro.slots.has("empty");
         <Table.Body>
           {orders.map((order) => {
             const href = orderHref?.(order);
+            const invoiceHref = `${mikaTemplateRoutes.accountOrders}?invoice=${encodeURIComponent(order.id)}`;
             return (
               <Table.Row id={`order-${order.id}`}>
                 <Table.Cell className="mika-kumo-table-cell mika-kumo-table-cell-primary" data-label={orderLabel}>
@@ -95,7 +96,11 @@ const hasEmptySlot = Astro.slots.has("empty");
                   </div>
                 </Table.Cell>
                 <Table.Cell className="mika-kumo-table-cell" data-label="Actions">
-                  {order.invoiceUrl ? <Link href={order.invoiceUrl}>{invoiceLabel}</Link> : <span class="mika-kumo-muted">Invoice pending</span>}
+                  {order.paymentStatus === "unpaid" ? (
+                    <span class="mika-kumo-muted">Invoice pending</span>
+                  ) : (
+                    <Link href={invoiceHref}>{invoiceLabel}</Link>
+                  )}
                 </Table.Cell>
               </Table.Row>
             );

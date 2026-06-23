@@ -1,7 +1,5 @@
 ---
 import type { SellableDTO } from "@bnomei/emdash-mika/types";
-import { Text } from "@cloudflare/kumo";
-import CheckoutSteps from "./CheckoutSteps.astro";
 import {
   createMikaPurchaseModel,
   mikaMaxPurchaseQuantity,
@@ -38,14 +36,6 @@ const needsPurchaseSync = purchase.useGroupedVariantControls || purchase.options
   data-mika-product-purchase
   class:list={["mika-kumo-purchase", className]}
 >
-  <div class="mika-kumo-stack mika-kumo-stack-tight">
-    <Text as="h2" variant="heading3">Purchase</Text>
-    <Text as="p" variant="secondary" size="sm">
-      Add to cart for review, or buy this option now and return for order status.
-    </Text>
-  </div>
-  <CheckoutSteps current="cart" compact />
-
   {purchase.useGroupedVariantControls ? (
     <VariantOptionGroups
       client:load

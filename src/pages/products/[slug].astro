@@ -2,7 +2,6 @@
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
-import BuyerAssurance from "../../components/BuyerAssurance.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
 import ProductStructuredData from "../../components/ProductStructuredData.astro";
@@ -11,12 +10,9 @@ import {
   mikaTemplateAvailabilityLabel,
   mikaTemplateAvailabilityStatus,
   mikaTemplateCartItemCount,
-  mikaTemplateDeliveryLabel,
   mikaTemplateFulfillmentLabel,
   mikaTemplatePlural,
   mikaTemplatePriceRangeLabel,
-  mikaTemplateProductDeliveryNotes,
-  mikaTemplateProductIncludedLabels,
   mikaTemplateProductTrustNotes,
   mikaTemplateProductVariantDisplays,
   mikaTemplateStatusVariant,
@@ -72,9 +68,6 @@ const priceLabel = mikaTemplatePriceRangeLabel(sellables);
 const fulfillmentLabel = mikaTemplateFulfillmentLabel(sellables);
 const availabilityLabel = mikaTemplateAvailabilityLabel(sellables);
 const availabilityStatus = mikaTemplateAvailabilityStatus(sellables);
-const deliveryLabel = mikaTemplateDeliveryLabel(sellables);
-const included = mikaTemplateProductIncludedLabels(sellables);
-const deliveryNotes = mikaTemplateProductDeliveryNotes(sellables);
 const trustNotes = mikaTemplateProductTrustNotes();
 const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
 ---
@@ -131,13 +124,6 @@ const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
         </Text>
       </section>
 
-      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="included-title">
-        <Text as="h2" id="included-title" variant="heading2">What is included</Text>
-        <ul class="mika-kumo-list">
-          {included.map((item) => <li>{item}</li>)}
-        </ul>
-      </section>
-
       <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="formats-title">
         <Text as="h2" id="formats-title" variant="heading2">Formats</Text>
         <div class="mika-kumo-product-variant-list">
@@ -154,24 +140,6 @@ const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
           ))}
         </div>
       </section>
-
-      <section class="mika-kumo-panel mika-kumo-stack" aria-labelledby="delivery-title">
-        <Text as="h2" id="delivery-title" variant="heading2">Delivery and support</Text>
-        <Text as="p" variant="secondary">{deliveryLabel}</Text>
-        <ul class="mika-kumo-list">
-          {deliveryNotes.map((note) => <li>{note}</li>)}
-        </ul>
-      </section>
-
-      <BuyerAssurance
-        class="mika-kumo-panel"
-        title="Checkout expectations"
-        items={[
-          { title: "Clear handoff", description: "Checkout returns here with provider status and order links." },
-          { title: "Account records", description: "Receipts, downloads, subscriptions, and licenses have separate account screens." },
-          { title: "License privacy", description: "License pages show status and suffixes, not raw keys." },
-        ]}
-      />
     </div>
 
     <aside class="mika-kumo-panel mika-kumo-product-purchase-panel" aria-label="Purchase">

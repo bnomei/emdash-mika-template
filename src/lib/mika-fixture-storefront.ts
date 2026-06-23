@@ -1195,7 +1195,6 @@ function orderSummary(entry: SeedEntry): OrderSummaryDTO {
           : "paid",
     total: money(numberValue(entry.data?.["total_amount"])),
     createdAt: createISODateTime("2026-06-20T12:00:00.000Z"),
-    invoiceUrl: `/account/orders?invoice=${encodeURIComponent(stringValue(ref["orderId"], entry.id))}`,
   };
 }
 
@@ -1212,7 +1211,6 @@ function checkoutOrderSummary(orderId: MikaId, lines: readonly SessionCartItem[]
     paymentStatus: "paid",
     total: money(totalAmount),
     createdAt: nowIso(),
-    invoiceUrl: `/account/orders?invoice=${encodeURIComponent(orderId)}`,
   };
 }
 

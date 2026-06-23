@@ -1,6 +1,5 @@
 ---
 import { Badge, Link, Text } from "@cloudflare/kumo";
-import BuyerAssurance from "../components/BuyerAssurance.astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../lib/cart";
 import { mikaTemplateStatusVariant } from "../lib/display";
@@ -28,15 +27,6 @@ const filterHref = (next: { readonly category?: string | null; readonly tag?: st
   description="Comic goods and creator tools from a neighborhood press: printables, downloads, subscriptions, and licenses."
   cartItemCount={cartItemCount}
 >
-  <BuyerAssurance
-    title="Shop confidence"
-    items={[
-      { title: "Clear availability", description: "Cards show price, fulfillment, delivery, and stock signals before product detail." },
-      { title: "Checkout return", description: "Checkout status pages explain whether payment is confirmed, pending, or recoverable." },
-      { title: "Account fulfillment", description: "Orders, downloads, subscriptions, and licenses have focused account screens." },
-    ]}
-  />
-
   <section class="mika-kumo-filter-bar" aria-label="Product filters">
     <div class="mika-kumo-filter-group">
       <Text as="h2" variant="secondary" size="sm">Categories</Text>

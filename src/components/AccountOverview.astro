@@ -20,10 +20,10 @@ const readyDownloads = account.downloads?.filter((download) => download.status !
 const activeLicenses = account.licenses?.filter((license) => license.status === "active").length ?? 0;
 const activeSubscriptions = account.subscriptions?.filter((subscription) => subscription.status === "active").length ?? 0;
 const cards = [
-  { href: mikaTemplateRoutes.accountOrders, label: "Orders", count: account.orders?.length ?? 0, description: "Receipts, invoices, and fulfillment links" },
-  { href: mikaTemplateRoutes.accountDownloads, label: "Downloads", count: readyDownloads, description: "Ready files and expiry dates" },
-  { href: mikaTemplateRoutes.accountLicenses, label: "Licenses", count: activeLicenses, description: "Active status and key suffixes" },
-  { href: mikaTemplateRoutes.accountSubscriptions, label: "Subscriptions", count: activeSubscriptions, description: "Renewal state and billing actions" },
+  { href: mikaTemplateRoutes.accountOrders, label: "Orders", count: account.orders?.length ?? 0 },
+  { href: mikaTemplateRoutes.accountDownloads, label: "Downloads", count: readyDownloads },
+  { href: mikaTemplateRoutes.accountLicenses, label: "Licenses", count: activeLicenses },
+  { href: mikaTemplateRoutes.accountSubscriptions, label: "Subscriptions", count: activeSubscriptions },
 ];
 ---
 
@@ -39,7 +39,6 @@ const cards = [
           <Text as="strong">{card.label}</Text>
           <Badge variant="secondary">{card.count}</Badge>
         </span>
-        <Text as="span" variant="secondary" size="sm">{card.description}</Text>
       </Link>
     ))}
   </div>
