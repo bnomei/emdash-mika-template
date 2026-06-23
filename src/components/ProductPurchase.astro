@@ -1,5 +1,6 @@
 ---
 import type { SellableDTO } from "@bnomei/emdash-mika/types";
+import { Text } from "@cloudflare/kumo";
 import {
   createMikaPurchaseModel,
   mikaMaxPurchaseQuantity,
@@ -7,8 +8,9 @@ import {
 } from "@bnomei/emdash-mika/astro";
 import AddToCartForm from "./AddToCartForm.astro";
 import BuyNowForm from "./BuyNowForm.astro";
+import PurchaseOptionsSelect from "./PurchaseOptionsSelect.tsx";
 import ProductPurchaseSync from "./ProductPurchaseSync.astro";
-import VariantOptionGroups from "./VariantOptionGroups.astro";
+import VariantOptionGroups from "./VariantOptionGroups.tsx";
 import WishlistForm from "./WishlistForm.astro";
 
 interface Props {
@@ -35,33 +37,31 @@ const needsPurchaseSync = purchase.useGroupedVariantControls || purchase.options
   data-mika-product-purchase
   class:list={["mika-kumo-purchase", className]}
 >
+  <Text as="h2" variant="heading3">Purchase</Text>
+
   {purchase.useGroupedVariantControls ? (
     <VariantOptionGroups
+      client:load
       variantGroups={purchase.variantGroups}
       variantOptionMap={purchase.variantOptionMap}
       selectedSellableId={purchase.selectedSellable?.id}
       includePriceId
     />
   ) : purchase.options.length > 1 ? (
-    <fieldset data-mika-shared-purchase-options class="mika-kumo-fieldset">
-      <legend class="mika-kumo-legend">Purchase</legend>
-      {purchase.options.map((option, index) => (
-        <label class="mika-kumo-choice">
-          <input
-            type="radio"
-            name="mikaPurchase"
-            value={option.fields.purchase}
-            data-mika-purchase-option
-            data-mika-purchase-sellable-id={option.fields.sellableId}
-            data-mika-purchase-price-id={option.fields.priceId}
-            data-mika-purchase-max-quantity={mikaMaxPurchaseQuantity(option.sellable.availability) ?? ""}
-            checked={index === purchase.selectedOptionIndex}
-            disabled={option.disabled}
-          />
-          <span>{option.label}</span>
-        </label>
-      ))}
-    </fieldset>
+    <PurchaseOptionsSelect
+      client:load
+      label="Purchase"
+      name="mikaPurchase"
+      selectedValue={purchase.options[purchase.selectedOptionIndex]?.fields.purchase}
+      options={purchase.options.map((option) => ({
+        label: option.label,
+        value: option.fields.purchase,
+        sellableId: option.fields.sellableId,
+        priceId: option.fields.priceId,
+        maxQuantity: mikaMaxPurchaseQuantity(option.sellable.availability),
+        disabled: option.disabled,
+      }))}
+    />
   ) : null}
 
   <AddToCartForm
@@ -69,21 +69,25 @@ const needsPurchaseSync = purchase.useGroupedVariantControls || purchase.options
     purchase={purchase}
     showPurchaseControls={false}
     returnTo={returnTo}
+    class="mika-kumo-purchase-cart-form"
+    buttonClass="mika-kumo-full-width-button"
   />
   {primary && (
-    <WishlistForm
-      sellableId={primary.id}
-      priceId={primaryPrice?.id}
-      returnTo={returnTo}
-    />
-  )}
-  {primary && (
-    <BuyNowForm
-      sellableId={primary.id}
-      priceId={primaryPrice?.id}
-      returnTo={returnTo}
-      disabled={!purchase.selectedOption || purchase.selectedOption.disabled}
-    />
+    <div class="mika-kumo-purchase-action-row">
+      <WishlistForm
+        sellableId={primary.id}
+        priceId={primaryPrice?.id}
+        returnTo={returnTo}
+        buttonClass="mika-kumo-full-width-button"
+      />
+      <BuyNowForm
+        sellableId={primary.id}
+        priceId={primaryPrice?.id}
+        returnTo={returnTo}
+        disabled={!purchase.selectedOption || purchase.selectedOption.disabled}
+        buttonClass="mika-kumo-full-width-button"
+      />
+    </div>
   )}
   {needsPurchaseSync && <ProductPurchaseSync />}
 </mika-product-purchase>

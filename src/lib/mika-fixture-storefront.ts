@@ -23,6 +23,7 @@ import type {
   CartQuoteDTO,
   CheckoutPreviewDTO,
   CheckoutSessionDTO,
+  DownloadDTO,
   DownloadResolutionDTO,
   MikaApiResult,
   MoneyDTO,
@@ -84,10 +85,17 @@ export interface TemplateAccountLicenseDTO {
   readonly title: string;
   readonly status: "active" | "revoked";
   readonly displayKeySuffix?: string;
+  readonly orderId?: MikaId;
+  readonly downloadHref?: string;
+}
+
+export interface TemplateAccountDownloadDTO extends DownloadDTO {
+  readonly status: "ready" | "expired";
 }
 
 export interface TemplateAccountDTO extends AccountDTO {
   readonly licenses: readonly TemplateAccountLicenseDTO[];
+  readonly downloads: readonly TemplateAccountDownloadDTO[];
 }
 
 interface TemplateWebhookReceiveInput {
@@ -125,6 +133,7 @@ interface TemplateSessionState {
   readonly cartItems: Map<string, SessionCartItem>;
   readonly wishlistItems: Map<string, SessionWishlistItem>;
   readonly checkouts: Map<string, CheckoutSessionDTO>;
+  readonly checkoutOrders: Map<string, OrderSummaryDTO>;
   couponCode?: string;
   accountEmail?: string;
   subscriptionStatus?: SubscriptionDTO["status"];
@@ -271,6 +280,7 @@ export const mikaStorefrontApiOverrides = {
       if (lines.length === 0) return fail("CHECKOUT_EMPTY", "Template checkout is empty.", 400);
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
+      const orderId = createMikaId(`order_${checkoutId}`);
       const successPath = input.successPath ?? "/checkout/success";
       const separator = successPath.includes("?") ? "&" : "?";
       const redirectUrl = `${successPath}${separator}checkoutId=${encodeURIComponent(checkoutId)}`;
@@ -280,9 +290,14 @@ export const mikaStorefrontApiOverrides = {
         mode: checkoutMode(lines),
         provider: input.provider ?? templateProvider,
         redirectUrl,
-        orderId: createMikaId(`order_${checkoutId}`),
+        orderId,
       };
       state.checkouts.set(checkoutId, { ...checkout, status: "completed" });
+      state.checkoutOrders.set(orderId, checkoutOrderSummary(orderId, lines));
+      if (!input.sellableId) {
+        state.cartItems.clear();
+        state.couponCode = undefined;
+      }
 
       return ok(checkout);
     },
@@ -529,12 +544,13 @@ function isProductVariant(value: unknown): value is ProductVariant {
 function productSellables(product: SeedEntry): readonly SellableDTO[] {
   const variants = productVariants(product);
   const hasMultipleVariants = variants.length > 1;
+  const groupOption = variantGroupOption(variants);
   const groups = hasMultipleVariants
     ? [
         {
-          option: "size",
-          label: "Size",
-          values: variants.map((variant) => variantOption(variant)),
+          option: groupOption,
+          label: groupOption === "fulfillment" ? "Format" : "Size",
+          values: variants.map((variant) => variantOption(variant, groupOption)),
         },
       ]
     : [];
@@ -565,7 +581,7 @@ function productSellables(product: SeedEntry): readonly SellableDTO[] {
       title: `${stringValue(product.data?.["title"], product.slug)} - ${variant.label}`,
       active: true,
       variantKey: variant.variantKey,
-      variantOptions: hasMultipleVariants ? [variantOption(variant)] : [],
+      variantOptions: hasMultipleVariants ? [variantOption(variant, groupOption)] : [],
       variantGroups: groups,
       prices: [price],
       availability: availabilityFor(sellableId),
@@ -573,9 +589,13 @@ function productSellables(product: SeedEntry): readonly SellableDTO[] {
   });
 }
 
-function variantOption(variant: ProductVariant): VariantOptionValueDTO {
+function variantGroupOption(variants: readonly ProductVariant[]): string {
+  return variants.some((variant) => variant.mode || variant.fulfillmentKind) ? "fulfillment" : "size";
+}
+
+function variantOption(variant: ProductVariant, option = "size"): VariantOptionValueDTO {
   return {
-    option: "size",
+    option,
     value: variant.variantKey,
     label: variant.label,
   };
@@ -625,6 +645,7 @@ function sessionState(ctx: MikaRequestContext): TemplateSessionState {
       cartItems: new Map(),
       wishlistItems: new Map(),
       checkouts: new Map(),
+      checkoutOrders: new Map(),
       accountEmail: defaultCustomer().email,
     };
     sessionStates.set(String(key), state);
@@ -665,9 +686,9 @@ function cartLine(item: SessionCartItem): CartLineDTO | undefined {
     id: item.lineId,
     sellableId: item.sellableId,
     priceId: item.priceId,
-    title: variant.label,
+    title: productVariantTitle(variant),
     sku: variant.sku,
-    variantOptions: [variantOption(variant)],
+    variantOptions: [variantOption(variant, variantGroupOptionForVariant(variant))],
     quantity: item.quantity,
     unitAmount: money(variant.amount, createCurrencyCode(variant.currency)),
     subtotal: money(amount, createCurrencyCode(variant.currency)),
@@ -712,9 +733,9 @@ function wishlistItem(item: SessionWishlistItem): WishlistItemDTO | undefined {
     id: item.itemId,
     sellableId: item.sellableId,
     priceId: item.priceId,
-    title: variant.label,
+    title: productVariantTitle(variant),
     sku: variant.sku,
-    variantOptions: [variantOption(variant)],
+    variantOptions: [variantOption(variant, variantGroupOptionForVariant(variant))],
     addedAt: item.addedAt,
     availability: availabilityFor(item.sellableId),
   };
@@ -759,7 +780,7 @@ function accountFor(
       email,
       name: customer.name,
     },
-    orders: orders().map(orderSummary),
+    orders: [...state.checkoutOrders.values(), ...orders().map(orderSummary)],
     subscriptions: [
       {
         id: createMikaId("sub_template_buttonwood_club"),
@@ -779,15 +800,7 @@ function accountFor(
         expiresAt: maybeIso(ref["expiresAt"]),
       };
     }),
-    downloads: downloads().map((entry) => {
-      const ref = downloadRef(entry);
-      return {
-        id: createMikaId(stringValue(ref["downloadRef"], entry.slug)),
-        title: stringValue(entry.data?.["title"], entry.slug),
-        href: `/download/${stringValue(ref["downloadRef"], entry.slug)}`,
-        expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
-      };
-    }),
+    downloads: downloads().map(downloadSummary),
     licenses: licenses().map(licenseSummary),
   };
 }
@@ -796,24 +809,90 @@ function licenseSummary(entry: SeedEntry): TemplateAccountLicenseDTO {
   const ref = isRecord(entry.data?.["license_ref"]) ? entry.data["license_ref"] : {};
   const status = entry.data?.["fixture_status"] === "revoked" ? "revoked" : "active";
   const displayKeySuffix = stringValue(ref["displayKeySuffix"], "");
+  const orderId = stringValue(ref["orderId"], "");
+  const entitlementId = stringValue(ref["entitlementId"], "");
+  const matchingDownload = downloads().find((download) => {
+    const downloadReference = downloadRef(download);
+    return (
+      download.data?.["fixture_status"] !== "expired" &&
+      stringValue(downloadReference["entitlementId"], "") === entitlementId
+    );
+  });
+  const matchingDownloadRef = matchingDownload ? downloadRef(matchingDownload) : undefined;
+  const downloadToken = matchingDownloadRef
+    ? stringValue(matchingDownloadRef["downloadRef"], "")
+    : "";
+
   return {
     id: createMikaId(stringValue(ref["licenseId"], entry.id)),
     title: stringValue(entry.data?.["title"], entry.slug),
     status,
     displayKeySuffix: displayKeySuffix || undefined,
+    orderId: orderId ? createMikaId(orderId) : undefined,
+    downloadHref: downloadToken ? `/download/${downloadToken}` : undefined,
+  };
+}
+
+function downloadSummary(entry: SeedEntry): TemplateAccountDownloadDTO {
+  const ref = downloadRef(entry);
+  const issue = isRecord(entry.data?.["download_issue"]) ? entry.data["download_issue"] : {};
+  const token = stringValue(ref["downloadRef"], entry.slug);
+  const status = entry.data?.["fixture_status"] === "expired" ? "expired" : "ready";
+  const fallbackExpiresAt =
+    status === "expired"
+      ? createISODateTime("2026-06-01T12:00:00.000Z")
+      : createISODateTime("2026-07-20T12:00:00.000Z");
+
+  return {
+    id: createMikaId(token),
+    title: stringValue(entry.data?.["title"], entry.slug),
+    href: `/download/${token}`,
+    expiresAt: maybeIso(issue["expiresAt"]) ?? fallbackExpiresAt,
+    status,
   };
 }
 
 function orderSummary(entry: SeedEntry): OrderSummaryDTO {
   const ref = isRecord(entry.data?.["order_ref"]) ? entry.data["order_ref"] : {};
+  const fixtureStatus = stringValue(entry.data?.["fixture_status"], "");
+  const paymentStatus = stringValue(entry.data?.["payment_status"], "");
   return {
     id: createMikaId(stringValue(ref["orderId"], entry.id)),
     orderNumber: stringValue(ref["orderNumber"], entry.slug),
-    status: entry.data?.["fixture_status"] === "cancelled" ? "cancelled" : "paid",
-    paymentStatus: entry.data?.["payment_status"] === "partially_refunded" ? "partially_refunded" : "paid",
+    status:
+      fixtureStatus === "cancelled"
+        ? "cancelled"
+        : fixtureStatus === "pending"
+          ? "pending"
+          : paymentStatus === "partially_refunded"
+            ? "partially_refunded"
+            : "paid",
+    paymentStatus:
+      paymentStatus === "partially_refunded"
+        ? "partially_refunded"
+        : paymentStatus === "pending"
+          ? "unpaid"
+          : "paid",
     total: money(numberValue(entry.data?.["total_amount"])),
     createdAt: createISODateTime("2026-06-20T12:00:00.000Z"),
-    invoiceUrl: `/account?invoice=${encodeURIComponent(stringValue(ref["orderId"], entry.id))}`,
+    invoiceUrl: `/account/orders?invoice=${encodeURIComponent(stringValue(ref["orderId"], entry.id))}`,
+  };
+}
+
+function checkoutOrderSummary(orderId: MikaId, lines: readonly SessionCartItem[]): OrderSummaryDTO {
+  const totalAmount = lines.reduce((sum, line) => {
+    const variant = findVariantBySellable(line.sellableId, line.priceId);
+    return sum + (variant?.amount ?? 0) * line.quantity;
+  }, 0);
+
+  return {
+    id: orderId,
+    orderNumber: orderId.replace(/^order_checkout_template_/, "TEMPLATE-").toUpperCase(),
+    status: "paid",
+    paymentStatus: "paid",
+    total: money(totalAmount),
+    createdAt: nowIso(),
+    invoiceUrl: `/account/orders?invoice=${encodeURIComponent(orderId)}`,
   };
 }
 
@@ -846,6 +925,26 @@ function findVariantBySellable(sellableId: MikaId, priceId?: MikaId): ProductVar
   }
 
   return undefined;
+}
+
+function productForVariant(variant: ProductVariant): SeedEntry | undefined {
+  return products().find((product) =>
+    productVariants(product).some(
+      (candidate) =>
+        candidate.sellableId === variant.sellableId && candidate.priceId === variant.priceId,
+    ),
+  );
+}
+
+function productVariantTitle(variant: ProductVariant): string {
+  const product = productForVariant(variant);
+  const productTitle = product ? stringValue(product.data?.["title"], "") : "";
+  return productTitle ? `${productTitle} - ${variant.label}` : variant.label;
+}
+
+function variantGroupOptionForVariant(variant: ProductVariant): string {
+  const product = productForVariant(variant);
+  return product ? variantGroupOption(productVariants(product)) : "size";
 }
 
 function priceRangeLabel(variants: readonly ProductVariant[]): string {

@@ -232,6 +232,8 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     assert.equal(result.ok, true);
     assert.equal(result.data.length, 3);
+    assert.equal(result.data[0].variantGroups?.[0]?.label, "Format");
+    assert.equal(result.data[0].variantOptions[0]?.option, "fulfillment");
 
     const prices = new Map(result.data.flatMap((sellable) => sellable.prices.map((price) => [price.id, price])));
     assert.equal(prices.get("price_bw_panel_pack")?.mode, "payment");
@@ -262,6 +264,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     assert.equal(add.ok, true);
     assert.equal(add.data.items.length, 1);
+    assert.equal(add.data.items[0].title, "Mira Field Clipboard - Pocket checklist");
     assert.equal(add.data.total.amount, 998);
 
     const lineId = add.data.items[0].id;
@@ -288,6 +291,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     assert.equal(wishlist.ok, true);
     assert.equal(wishlist.data.items.length, 1);
+    assert.equal(wishlist.data.items[0].title, "Thirdbase Team Pennants - Rain-delay");
 
     const moved = await api.wishlist.moveToCart(ctx, {
       itemId: wishlist.data.items[0].id,
@@ -324,6 +328,15 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     const status = await api.checkout.status({ checkoutId });
     assert.equal(status.ok, true);
     assert.equal(status.data.status, "completed");
+    assert.ok(status.data.orderId);
+
+    const cartAfterCheckout = await api.cart.get(ctx);
+    assert.equal(cartAfterCheckout.ok, true);
+    assert.equal(cartAfterCheckout.data.items.length, 0);
+
+    const accountAfterCheckout = await api.account.get(ctx);
+    assert.equal(accountAfterCheckout.ok, true);
+    assert.equal(accountAfterCheckout.data.orders[0].id, status.data.orderId);
 
     const seeded = await api.checkout.status({ checkoutId: "checkout_buttonwood_1001" });
     assert.equal(seeded.ok, true);
@@ -350,9 +363,17 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.ok(account.data.orders.length >= 3);
     assert.ok(account.data.downloads.length >= 3);
     assert.ok(account.data.licenses.length >= 3);
+    const pendingOrder = account.data.orders.find((item) => item.id === "order_buttonwood_1003");
+    assert.equal(pendingOrder.status, "pending");
+    assert.equal(pendingOrder.paymentStatus, "unpaid");
+    const expiredDownload = account.data.downloads.find((item) => item.id === "download_archive_nell");
+    assert.equal(expiredDownload.status, "expired");
+    assert.equal(expiredDownload.expiresAt, "2026-06-01T12:00:00.000Z");
     const license = account.data.licenses.find((item) => item.id === "license_buttonwood_panel_mira");
     assert.equal(license.status, "active");
     assert.equal(license.displayKeySuffix, "MIRA");
+    assert.equal(license.orderId, "order_buttonwood_1001");
+    assert.equal(license.downloadHref, "/download/download_panel_pack_mira");
     assert.equal("key" in license, false);
 
     const cancelSubscription = await api.subscription.cancel(ctx, {

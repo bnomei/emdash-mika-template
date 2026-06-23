@@ -44,6 +44,14 @@
                 if (Number(input.value) > Number(maxQuantity)) input.value = maxQuantity;
               }
             }
+            syncBuyNowQuantities(scope);
+          };
+
+          const syncBuyNowQuantities = (scope) => {
+            const quantity = scope.querySelector("[data-mika-purchase-quantity]")?.value ?? "1";
+            for (const input of scope.querySelectorAll("[data-mika-buy-now-quantity]")) {
+              input.value = quantity;
+            }
           };
 
           const syncAvailabilityPanels = (scope, sellableId) => {
@@ -73,11 +81,28 @@
             );
           };
 
+          const updateFromPurchaseSelect = (select, detail = {}) => {
+            sync(
+              detail.sellableId ?? select.dataset.mikaPurchaseSellableId ?? "",
+              detail.priceId ?? select.dataset.mikaPurchasePriceId ?? "",
+              detail.maxQuantity === undefined
+                ? select.dataset.mikaPurchaseMaxQuantity ?? ""
+                : String(detail.maxQuantity)
+            );
+          };
+
           const options = this.querySelectorAll("[data-mika-purchase-option]");
           for (const option of options) {
             option.addEventListener("change", updateFromPurchaseOption);
           }
           if (options.length > 0) updateFromPurchaseOption();
+
+          for (const select of this.querySelectorAll("[data-mika-purchase-select]")) {
+            select.addEventListener("mika:purchase-change", (event) =>
+              updateFromPurchaseSelect(select, event.detail)
+            );
+            updateFromPurchaseSelect(select);
+          }
 
           for (const groups of this.querySelectorAll("[data-mika-variant-groups]")) {
             groups.addEventListener("mika:variant-change", (event) =>
@@ -85,6 +110,13 @@
             );
             updateFromVariantGroups(groups);
           }
+
+          for (const input of this.querySelectorAll("[data-mika-purchase-quantity]")) {
+            if (input.dataset.mikaBuyNowQuantitySyncReady === "true") continue;
+            input.dataset.mikaBuyNowQuantitySyncReady = "true";
+            input.addEventListener("input", () => syncBuyNowQuantities(this));
+          }
+          syncBuyNowQuantities(this);
         }
       }
     );

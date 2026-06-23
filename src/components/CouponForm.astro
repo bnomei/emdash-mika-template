@@ -1,6 +1,6 @@
 ---
 import { actions } from "astro:actions";
-import { Button } from "@cloudflare/kumo";
+import { Badge, Button, Input, Text } from "@cloudflare/kumo";
 import type { CartDTO } from "@bnomei/emdash-mika/types";
 import { mikaReturnTo } from "@bnomei/emdash-mika/astro";
 import { mikaHiddenInput, mikaReturnToInput } from "../lib/form";
@@ -26,14 +26,20 @@ const {
 } = Astro.props;
 ---
 
-<div {...attrs} data-mika-coupon class:list={["mika-kumo-stack", className]}>
-  <form class="mika-kumo-form" action={actions.mika.cart.applyCoupon} method="post">
+<div {...attrs} data-mika-coupon class:list={["mika-kumo-stack mika-kumo-coupon-panel", className]}>
+  <div class="mika-kumo-stack mika-kumo-stack-tight">
+    <Text as="h3" variant="heading3">Discount</Text>
+    {cart?.coupon && (
+      <div class="mika-kumo-actions">
+        <Badge variant="success">{cart.coupon.label ?? cart.coupon.code ?? "Discount applied"}</Badge>
+      </div>
+    )}
+  </div>
+
+  <form class="mika-kumo-form mika-kumo-coupon-form" action={actions.mika.cart.applyCoupon} method="post">
     {cart?.id && <input type="hidden" {...mikaHiddenInput("cartId", cart.id)} />}
     <input type="hidden" {...mikaReturnToInput(returnTo)} />
-    <label class="mika-kumo-field">
-      <span>{codeLabel}</span>
-      <input class="mika-kumo-input" name="code" autocomplete="off" />
-    </label>
+    <Input label={codeLabel} name="code" autoComplete="off" placeholder="Enter code" />
     <Button type="submit" variant="secondary">{applyLabel}</Button>
   </form>
 

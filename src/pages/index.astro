@@ -9,8 +9,8 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 ---
 
 <MikaKumoPage
-  title="Mika Storefront Template"
-  description="A runnable Astro and EmDash storefront starter with Mika product forms, cart, wishlist, checkout, account surfaces, agent-readable metadata, and the admin action fixture in one resettable app."
+  title="Buttonwood Lot"
+  description="Comic goods and creator tools from a neighborhood press: printables, pennants, downloads, subscriptions, and licenses."
   cartItemCount={cartItemCount}
 >
   <section class="mika-kumo-grid" aria-label="Products">
@@ -18,13 +18,13 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
       <article class="mika-kumo-card">
         <div class="mika-kumo-stack">
           <Text as="h2" variant="heading3">
-            <Link href={product.href}>{product.title}</Link>
+            <Link href={product.href} class="mika-kumo-card-link">{product.title}</Link>
           </Text>
           <Text as="p" variant="secondary">{product.description}</Text>
           <div class="mika-kumo-meta-row">
             <Badge variant="secondary">{product.priceLabel}</Badge>
-            <span class="mika-kumo-muted">{product.variantCount} variants</span>
           </div>
+          <span class="mika-kumo-card-cta" aria-hidden="true">View product</span>
         </div>
       </article>
     ))}

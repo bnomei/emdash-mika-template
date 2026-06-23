@@ -5,6 +5,7 @@ import {
   isMikaPurchasable
 } from "@bnomei/emdash-mika/astro";
 import { mikaHiddenInput } from "../lib/form";
+import KumoHiddenSelect from "./KumoHiddenSelect.tsx";
 
 interface Props {
   sellables: readonly SellableDTO[];
@@ -33,21 +34,19 @@ const hiddenValue = selected ?? activeSellables[0]?.id ?? "";
 ---
 
 {activeSellables.length > 1 ? (
-  <fieldset {...attrs} data-mika-variants class:list={["mika-kumo-fieldset", className]}>
-    <legend class="mika-kumo-legend">{label}</legend>
-    {activeSellables.map((sellable) => (
-      <label class="mika-kumo-choice">
-        <input
-          type="radio"
-          name="sellableId"
-          value={sellable.id}
-          checked={sellable.id === selected}
-          disabled={!isMikaPurchasable(sellable.availability)}
-        />
-        <span>{formatMikaSellable(sellable)}</span>
-      </label>
-    ))}
-  </fieldset>
+  <KumoHiddenSelect
+    {...attrs}
+    client:load
+    name="sellableId"
+    label={label}
+    selectedValue={selected}
+    options={activeSellables.map((sellable) => ({
+      label: formatMikaSellable(sellable),
+      value: sellable.id,
+      disabled: !isMikaPurchasable(sellable.availability),
+    }))}
+    className={className}
+  />
 ) : (
   <input
     {...attrs}

@@ -1,5 +1,5 @@
 ---
-import { Badge, Link, Text } from "@cloudflare/kumo";
+import { Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
@@ -59,7 +59,7 @@ const formStatus = addResult?.data
 <MikaKumoPage
   title={product.title}
   description={product.description}
-  documentTitle={`${product.title} | Mika Storefront Template`}
+  documentTitle={`${product.title} | Buttonwood Lot`}
   eyebrow="Buttonwood Lot Press"
   backHref="/"
   backLabel="Back to products"
@@ -73,21 +73,12 @@ const formStatus = addResult?.data
       description: product.description,
       url: Astro.url,
       brand: "Buttonwood Lot Press",
-      category: "Buttonwood fixtures",
+      category: "Comic goods",
     }}
   />
 
   <section class="mika-kumo-product-layout">
     <section class="mika-kumo-stack">
-      <div class="mika-kumo-actions">
-        <Badge variant="secondary">{product.variantCount} fixture variants</Badge>
-        <Badge variant="info">Mika sellables</Badge>
-        <Badge variant="success">Stock-aware</Badge>
-      </div>
-      <Text as="p" variant="secondary">
-        Powered by Mika sellables, checkout actions, stock states, downloads,
-        subscriptions, and license fulfillment fixtures.
-      </Text>
       {formError && <Text as="p" variant="error" role="alert">{formError}</Text>}
       {formStatus && (
         <div class="mika-kumo-stack mika-kumo-stack-tight" role="status" aria-live="polite">

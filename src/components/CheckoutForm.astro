@@ -1,6 +1,6 @@
 ---
 import { actions } from "astro:actions";
-import { Button, Input } from "@cloudflare/kumo";
+import { Button, Input, Text } from "@cloudflare/kumo";
 import type { CartDTO } from "@bnomei/emdash-mika/types";
 import { mikaReturnTo } from "@bnomei/emdash-mika/astro";
 import { mikaHiddenInput, mikaRedirectInputs } from "../lib/form";
@@ -62,14 +62,21 @@ const redirectInputs = mikaRedirectInputs({ successPath, cancelPath, returnTo })
   <input type="hidden" {...redirectInputs.returnTo} />
 
   {showCustomerFields && (
-    <fieldset data-mika-checkout-customer class="mika-kumo-fieldset">
-      <legend class="mika-kumo-legend">{customerLegend}</legend>
+    <section data-mika-checkout-customer class="mika-kumo-stack">
+      <Text as="h3" variant="heading3">{customerLegend}</Text>
       <Input label={emailLabel} name="email" type="email" autoComplete="email" value={email} />
       <Input label={nameLabel} name="name" autoComplete="name" value={name} />
       <Input label={companyLabel} name="company" autoComplete="organization" value={company} />
       <Input label={vatIdLabel} name="vatId" value={vatId} />
-    </fieldset>
+    </section>
   )}
 
-  <Button type="submit" variant="primary" disabled={disabled}>{label}</Button>
+  <Button
+    type="submit"
+    variant="primary"
+    disabled={disabled}
+    className="mika-kumo-full-width-button"
+  >
+    {label}
+  </Button>
 </form>

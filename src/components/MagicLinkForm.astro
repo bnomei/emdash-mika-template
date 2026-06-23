@@ -1,6 +1,6 @@
 ---
 import { actions } from "astro:actions";
-import { Button } from "@cloudflare/kumo";
+import { Button, Input } from "@cloudflare/kumo";
 import { mikaReturnToInput } from "../lib/form";
 import { mikaTemplateRoutes } from "../lib/routes";
 
@@ -44,20 +44,17 @@ const resolvedEmailErrorId = emailError
   method="post"
 >
   <input type="hidden" {...mikaReturnToInput(returnTo)} />
-  <label class="mika-kumo-field">
-    <span>{emailLabel}</span>
-    <input
-      class="mika-kumo-input"
-      id={resolvedEmailId}
-      name="email"
-      type="email"
-      autocomplete="email"
-      required
-      value={emailValue}
-      aria-invalid={emailError ? "true" : undefined}
-      aria-describedby={resolvedEmailErrorId}
-    />
-  </label>
+  <Input
+    label={emailLabel}
+    id={resolvedEmailId}
+    name="email"
+    type="email"
+    autoComplete="email"
+    required
+    defaultValue={emailValue}
+    aria-invalid={emailError ? "true" : undefined}
+    aria-describedby={resolvedEmailErrorId}
+  />
   {emailError && (
     <p id={resolvedEmailErrorId} role="alert">
       {emailError}

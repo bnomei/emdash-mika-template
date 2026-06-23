@@ -33,31 +33,58 @@ const actionError =
   saveForLaterResult?.error?.message;
 const cartResult = await Mika.cart.get();
 const cart = cartResult.ok ? cartResult.data : null;
-const error = actionError ?? (cartResult.ok ? null : cartResult.error.message);
+const error = actionError ?? null;
 const lineCount = cart?.items.length ?? 0;
 const itemCount = mikaTemplateCartItemCount(cart);
 ---
 
-<MikaKumoPage title="Cart" pageSize="narrow" cartItemCount={itemCount} data-mika-cart-page>
-  <section class="mika-kumo-panel mika-kumo-stack">
-    <div class="mika-kumo-title-row">
-      <div class="mika-kumo-kicker">
-        <Badge variant="secondary">{mikaTemplatePlural(lineCount, "line")}</Badge>
-        <Badge variant="secondary">{mikaTemplatePlural(itemCount, "item")}</Badge>
-      </div>
-    </div>
-    {error && <Text as="p" variant="error" role="alert">{error}</Text>}
-    <CartLines cart={cart} />
-    {lineCount > 0 ? (
-      <>
-        <CouponForm cart={cart} />
+<MikaKumoPage title="Cart" cartItemCount={itemCount} data-mika-cart-page>
+  {lineCount > 0 ? (
+    <section class="mika-kumo-cart-layout" aria-label="Cart review and checkout">
+      <section class="mika-kumo-panel mika-kumo-stack mika-kumo-cart-items-panel">
+        <div class="mika-kumo-title-row">
+          <div>
+            <Text as="h2" variant="heading2">Review items</Text>
+            <Text as="p" variant="secondary" size="sm">
+              Update quantities or save items for later before checkout.
+            </Text>
+          </div>
+          <div class="mika-kumo-kicker">
+            <Badge variant="secondary">{mikaTemplatePlural(lineCount, "line")}</Badge>
+            <Badge variant="secondary">{mikaTemplatePlural(itemCount, "item")}</Badge>
+          </div>
+        </div>
+        {error && <Text as="p" variant="error" role="alert">{error}</Text>}
+        <CartLines
+          cart={cart}
+          updateLabel="Update"
+          saveForLaterLabel="Save for later"
+        />
+        <Link href={mikaTemplateRoutes.products}>Continue shopping</Link>
+      </section>
+
+      <aside class="mika-kumo-panel mika-kumo-stack mika-kumo-cart-checkout-panel" aria-label="Order summary">
+        <div class="mika-kumo-stack mika-kumo-stack-tight">
+          <Text as="h2" variant="heading2">Order summary</Text>
+          <Text as="p" variant="secondary" size="sm">
+            Totals update after cart changes.
+          </Text>
+        </div>
         <CartSummary cart={cart} />
-        <CheckoutForm cart={cart} />
-      </>
-    ) : (
+        <CouponForm cart={cart} codeLabel="Discount code" applyLabel="Apply discount" />
+        <CheckoutForm cart={cart} class="mika-kumo-checkout-form" />
+        <Text as="p" variant="secondary" size="sm">
+          Checkout can include downloads, subscriptions, and licenses.
+        </Text>
+      </aside>
+    </section>
+  ) : (
+    <section class="mika-kumo-panel mika-kumo-stack mika-kumo-empty-cart">
+      <CartLines cart={cart} />
+      {error && <Text as="p" variant="error" role="alert">{error}</Text>}
       <div class="mika-kumo-actions">
         <Link href={mikaTemplateRoutes.products}>Browse products</Link>
       </div>
-    )}
-  </section>
+    </section>
+  )}
 </MikaKumoPage>

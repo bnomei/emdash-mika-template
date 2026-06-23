@@ -7,7 +7,7 @@ the full reference docs from `@bnomei/emdash-mika`.
 ## Storefront Flow
 
 The homepage lists products from `seed/mika-actions.seed.json`. Product detail
-pages use Mika sellables, stock-aware variant controls, add-to-cart, buy-now,
+pages show purchasable formats, availability states, add-to-cart, buy-now,
 wishlist, and JSON-LD structured data.
 
 Key files:

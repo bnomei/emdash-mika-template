@@ -52,7 +52,7 @@ const redirectInputs = mikaRedirectInputs({ successPath, cancelPath, returnTo })
     {...mikaHiddenInput("priceId", priceId)}
     data-mika-selected-price-id
   />
-  <input type="hidden" {...mikaHiddenInput("quantity", quantity)} />
+  <input type="hidden" {...mikaHiddenInput("quantity", quantity)} data-mika-buy-now-quantity />
   <input type="hidden" {...redirectInputs.successPath} />
   <input type="hidden" {...redirectInputs.cancelPath} />
   <input type="hidden" {...redirectInputs.returnTo} />

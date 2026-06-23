@@ -762,7 +762,7 @@
         "locale": "en",
         "data": {
           "title": "Buttonwood Creator Bundle",
-          "description": "Comic creator bundle covering panel downloads, monthly strip-club access, and lettering license fulfillment.",
+          "description": "Comic creator bundle with panel downloads, monthly strip-club access, and a lettering brush license.",
           "commerce_ref": {
             "sellableId": "sellable_bw_panel_pack",
             "providerProductId": "prod_buttonwood_creator_bundle",
@@ -1496,7 +1496,7 @@
             "entitlementId": "ent_buttonwood_archive_nell",
             "orderId": "order_buttonwood_1003",
             "orderLineId": "line_bw_zine_workshop",
-            "expiresAt": "2026-07-20T12:00:00.000Z"
+            "expiresAt": "2026-06-01T12:00:00.000Z"
           },
           "fixture_status": "expired"
         }

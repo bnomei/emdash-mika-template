@@ -1,29 +1,17 @@
 import type { ReactNode } from "react";
-import { Badge, Button, Link, Sidebar, Text, useSidebar } from "@cloudflare/kumo";
-import type { Icon } from "@phosphor-icons/react";
+import { Button, Link, Sidebar, Text, useSidebar } from "@cloudflare/kumo";
 import {
   BagIcon,
-  BookOpenIcon,
   CompassIcon,
-  FileTextIcon,
-  GithubLogoIcon,
   HeartIcon,
   KeyIcon,
   ListIcon,
   PackageIcon,
   ReceiptIcon,
-  RobotIcon,
   ShoppingCartSimpleIcon,
   SparkleIcon,
   UserCircleIcon,
-  WrenchIcon,
 } from "@phosphor-icons/react";
-
-interface MikaKumoResourceLink {
-  readonly label: string;
-  readonly href: string;
-  readonly badge?: string;
-}
 
 interface AppFrameProps {
   readonly title: string;
@@ -31,13 +19,6 @@ interface AppFrameProps {
   readonly cartItemCount?: number;
   readonly children: ReactNode;
 }
-
-const fixtureLinks: readonly (MikaKumoResourceLink & { readonly icon: Icon })[] = [
-  { label: "Agent manifest", href: "/.well-known/mika-agent.json", icon: RobotIcon },
-  { label: "llms.txt", href: "/llms.txt", icon: FileTextIcon },
-  { label: "Action contract", href: "/api/mika-action-contract.json", icon: ReceiptIcon },
-  { label: "Admin action testbed", href: "/_emdash/admin", icon: WrenchIcon },
-];
 
 export default function MikaKumoAppFrame({
   title,
@@ -66,7 +47,11 @@ export default function MikaKumoAppFrame({
       peekable
       resizable
     >
-      <Sidebar aria-label={`${title} navigation`} className="mika-kumo-sidebar">
+      <Sidebar
+        aria-label={`${title} navigation`}
+        className="mika-kumo-sidebar"
+        contentClassName="mika-kumo-sidebar-panel"
+      >
         <Sidebar.Header>
           <a className="mika-kumo-brand" href="/">
             <span className="mika-kumo-brand-mark" aria-hidden="true">
@@ -77,7 +62,7 @@ export default function MikaKumoAppFrame({
                 Buttonwood Lot
               </Text>
               <Text as="span" variant="secondary" size="sm">
-                Mika storefront
+                Comic goods shop
               </Text>
             </span>
           </a>
@@ -85,7 +70,7 @@ export default function MikaKumoAppFrame({
 
         <Sidebar.Content>
           <Sidebar.Group>
-            <Sidebar.GroupLabel>Storefront</Sidebar.GroupLabel>
+            <Sidebar.GroupLabel>Shop</Sidebar.GroupLabel>
             <Sidebar.Menu>
               <Sidebar.MenuButton
                 active={productsActive}
@@ -160,40 +145,9 @@ export default function MikaKumoAppFrame({
             </Sidebar.Menu>
           </Sidebar.Group>
 
-          <Sidebar.Group>
-            <Sidebar.GroupLabel>Developer</Sidebar.GroupLabel>
-            <Sidebar.Menu>
-              {fixtureLinks.map((item) => (
-                <Sidebar.MenuButton
-                  active={isActive(currentPath, item.href)}
-                  href={item.href}
-                  icon={item.icon}
-                  key={item.href}
-                  tooltip={item.label}
-                >
-                  {item.label}
-                </Sidebar.MenuButton>
-              ))}
-            </Sidebar.Menu>
-          </Sidebar.Group>
         </Sidebar.Content>
 
         <Sidebar.Footer>
-          <div className="mika-kumo-sidebar-footer">
-            <Badge appearance="dot" variant="success">
-              Fixture mode
-            </Badge>
-            <Link
-              href="https://github.com/bnomei/emdash-actions"
-              target="_blank"
-              rel="noreferrer"
-              variant="plain"
-            >
-              <GithubLogoIcon size={16} aria-hidden="true" />
-              Actions package
-              <Link.ExternalIcon aria-hidden="true" />
-            </Link>
-          </div>
           <Sidebar.Trigger aria-label="Collapse navigation" />
         </Sidebar.Footer>
         <Sidebar.Rail aria-label="Toggle navigation rail" />
@@ -225,34 +179,10 @@ export default function MikaKumoAppFrame({
         <footer className="mika-kumo-footer">
           <div className="mika-kumo-footer-copy">
             <Text as="p" variant="secondary" size="sm">
-              Resettable Mika fixture storefront with purchases, stock, subscriptions, licenses,
-              downloads, webhooks, and admin actions.
+              Buttonwood Lot Press ships comic goods, digital downloads, subscriptions, and
+              creator licenses.
             </Text>
           </div>
-          <nav aria-label="Template resources" className="mika-kumo-footer-links">
-            <Link href="/.well-known/mika-agent.json" variant="plain">
-              Agent
-            </Link>
-            <Link href="/llms.txt" variant="plain">
-              llms.txt
-            </Link>
-            <Link href="/api/mika-action-contract.json" variant="plain">
-              Contract
-            </Link>
-            <Link href="/_emdash/admin" variant="plain">
-              Admin
-            </Link>
-            <Link
-              href="https://github.com/bnomei/emdash-actions"
-              target="_blank"
-              rel="noreferrer"
-              variant="plain"
-            >
-              <BookOpenIcon size={16} aria-hidden="true" />
-              Actions
-              <Link.ExternalIcon aria-hidden="true" />
-            </Link>
-          </nav>
         </footer>
       </div>
     </Sidebar.Provider>

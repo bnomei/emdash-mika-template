@@ -1,14 +1,23 @@
 ---
-import { Empty, Link, Table, Text } from "@cloudflare/kumo";
+import { Badge, Empty, Link, Table, Text } from "@cloudflare/kumo";
 import type { DownloadDTO } from "@bnomei/emdash-mika/types";
-import { mikaTemplateDateLabel } from "../lib/display";
+import {
+  mikaTemplateDateLabel,
+  mikaTemplateStatusLabel,
+  mikaTemplateStatusVariant
+} from "../lib/display";
+
+interface AccountDownloadDisplay extends DownloadDTO {
+  readonly status?: string;
+}
 
 interface Props {
-  downloads: readonly DownloadDTO[];
+  downloads: readonly AccountDownloadDisplay[];
   headingLabel?: string;
   emptyLabel?: string;
   downloadLabel?: string;
   expiresLabel?: string;
+  statusLabel?: string;
   class?: string;
   [attribute: string]: unknown;
 }
@@ -19,6 +28,7 @@ const {
   emptyLabel = "No downloads.",
   downloadLabel = "Download",
   expiresLabel = "Expires",
+  statusLabel = "Status",
   class: className,
   ...attrs
 } = Astro.props;
@@ -33,6 +43,7 @@ const hasEmptySlot = Astro.slots.has("empty");
         <Table.Header>
           <Table.Row>
             <Table.Head>{downloadLabel}</Table.Head>
+            <Table.Head>{statusLabel}</Table.Head>
             <Table.Head>{expiresLabel}</Table.Head>
             <Table.Head>Actions</Table.Head>
           </Table.Row>
@@ -42,13 +53,24 @@ const hasEmptySlot = Astro.slots.has("empty");
             <Table.Row>
               <Table.Cell><strong>{download.title}</strong></Table.Cell>
               <Table.Cell>
+                <Badge appearance="dot" variant={mikaTemplateStatusVariant(download.status ?? "ready")}>
+                  {mikaTemplateStatusLabel(download.status ?? "ready")}
+                </Badge>
+              </Table.Cell>
+              <Table.Cell>
                 {download.expiresAt ? (
                   <time datetime={download.expiresAt}>{mikaTemplateDateLabel(download.expiresAt)}</time>
                 ) : (
                   <span class="mika-kumo-muted">No expiry</span>
                 )}
               </Table.Cell>
-              <Table.Cell><Link href={download.href}>Download</Link></Table.Cell>
+              <Table.Cell>
+                {download.status === "expired" ? (
+                  <span class="mika-kumo-muted">Expired</span>
+                ) : (
+                  <Link href={download.href}>Download</Link>
+                )}
+              </Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>
@@ -57,6 +79,6 @@ const hasEmptySlot = Astro.slots.has("empty");
   ) : hasEmptySlot ? (
     <slot name="empty" />
   ) : (
-    <Empty size="sm" title={emptyLabel} description="Runnable download fulfillments will appear here." />
+    <Empty size="sm" title={emptyLabel} description="Downloads will appear here after checkout." />
   )}
 </section>

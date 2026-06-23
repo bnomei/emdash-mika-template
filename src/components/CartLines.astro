@@ -1,6 +1,6 @@
 ---
 import { actions } from "astro:actions";
-import { Button, Empty, Table } from "@cloudflare/kumo";
+import { Button, Empty, Input, Table } from "@cloudflare/kumo";
 import type { CartDTO } from "@bnomei/emdash-mika/types";
 import {
   formatMikaMoney,
@@ -9,6 +9,7 @@ import {
   mikaReturnTo
 } from "@bnomei/emdash-mika/astro";
 import { mikaHiddenInput, mikaReturnToInput } from "../lib/form";
+import StockBadge from "./StockBadge.astro";
 
 interface Props {
   cart?: CartDTO | null;
@@ -59,41 +60,46 @@ const hasEmptySlot = Astro.slots.has("empty");
         <Table.Body>
           {cart.items.map((line) => (
             <Table.Row data-mika-cart-line={line.id}>
-              <Table.Cell>
-                <div class="mika-kumo-stack mika-kumo-stack-tight">
-                  <strong>{line.title}</strong>
+              <Table.Cell className="mika-kumo-cart-cell mika-kumo-cart-cell-item" data-label={itemLabel}>
+                <div class="mika-kumo-stack mika-kumo-stack-tight mika-kumo-cart-item">
+                  <strong class="mika-kumo-cart-item-title">{line.title}</strong>
                   {line.variantOptions.length > 0 && (
                     <small class="mika-kumo-muted">{formatMikaVariant(line.variantOptions)}</small>
                   )}
+                  <div class="mika-kumo-cart-item-meta">
+                    <StockBadge availability={line.availability} />
+                    {line.sku && <small class="mika-kumo-muted">SKU {line.sku}</small>}
+                    <small class="mika-kumo-muted">{formatMikaMoney(line.unitAmount)} each</small>
+                  </div>
                 </div>
               </Table.Cell>
-              <Table.Cell>
+              <Table.Cell className="mika-kumo-cart-cell" data-label={quantityLabel}>
                 <form class="mika-kumo-form mika-kumo-inline-form" action={actions.mika.cart.update} method="post">
                   <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                   <input type="hidden" {...mikaReturnToInput(returnTo)} />
-                  <label class="mika-kumo-field mika-kumo-quantity-field">
-                    <span class="mika-kumo-sr-only">{quantityLabel} for {line.title}</span>
-                    <input
-                      class="mika-kumo-input"
-                      name="quantity"
-                      type="number"
-                      min="1"
-                      max={mikaMaxPurchaseQuantity(line.availability)}
-                      inputmode="numeric"
-                      value={String(line.quantity)}
-                      aria-label={`${quantityLabel} for ${line.title}`}
-                    />
-                  </label>
-                  <Button type="submit" variant="secondary" aria-label={`${updateLabel} for ${line.title}`}>
+                  <Input
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    max={mikaMaxPurchaseQuantity(line.availability)}
+                    inputMode="numeric"
+                    defaultValue={String(line.quantity)}
+                    aria-label={`${quantityLabel} for ${line.title}`}
+                  />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    aria-label={`${updateLabel} quantity for ${line.title}`}
+                  >
                     {updateLabel}
                   </Button>
                 </form>
               </Table.Cell>
-              <Table.Cell>
+              <Table.Cell className="mika-kumo-cart-cell" data-label={lineTotalLabel}>
                 <output class="mika-kumo-strong">{formatMikaMoney(line.total)}</output>
               </Table.Cell>
-              <Table.Cell>
-                <div class="mika-kumo-actions">
+              <Table.Cell className="mika-kumo-cart-cell mika-kumo-cart-cell-actions" data-label={actionsLabel}>
+                <div class="mika-kumo-actions mika-kumo-cart-line-actions">
                   <form class="mika-kumo-form" action={actions.mika.wishlist.saveForLater} method="post">
                     <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                     <input type="hidden" {...mikaReturnToInput(returnTo)} />
@@ -105,7 +111,7 @@ const hasEmptySlot = Astro.slots.has("empty");
                     <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                     <input type="hidden" {...mikaReturnToInput(returnTo)} />
                     <Button type="submit" variant="secondary-destructive" aria-label={`${removeLabel} ${line.title}`}>
-                      {removeLabel}
+                      Remove
                     </Button>
                   </form>
                 </div>
