@@ -63,6 +63,19 @@ the provider name, optional event id/type headers, whether a common signature
 header was present, and the raw-body hash/length before handing the event to the
 fixture API. It is not a Stripe, Paddle, or other provider adapter.
 
+## Notifications And Email
+
+This template uses fixture API overrides, so it does not send real transactional
+email. A production host backend should wire Mika notification hooks in the
+`createMikaBackendApi()` call and queue host-owned email work from those typed
+intents.
+
+Handle `magic_link.requested` and `order.confirmed` when the host wants to own
+those emails completely; returning `{ handled: true }` suppresses Mika's
+default magic-link or order-confirmation email. Other notification kinds are
+hook-only today and should be routed to the host's mail, support, or ops queue
+as needed.
+
 For local browser testing, use
 `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` to create a dev admin
 session.
