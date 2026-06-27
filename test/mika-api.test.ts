@@ -591,6 +591,10 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     const expiredDownload = account.data.downloads.find((item) => item.id === "download_archive_nell");
     assert.equal(expiredDownload.status, "expired");
     assert.equal(expiredDownload.expiresAt, "2026-06-01T12:00:00.000Z");
+    const expiredEntitlement = account.data.entitlements.find(
+      (item) => item.key === "buttonwood_notebook_archive",
+    );
+    assert.equal(expiredEntitlement.status, "expired");
     const license = account.data.licenses.find((item) => item.id === "license_buttonwood_panel_mira");
     assert.equal(license.status, "active");
     assert.equal(license.displayKeySuffix, "MIRA");

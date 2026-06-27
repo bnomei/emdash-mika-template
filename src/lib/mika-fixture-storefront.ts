@@ -32,6 +32,7 @@ import type {
   CheckoutSessionDTO,
   DownloadDTO,
   DownloadResolutionDTO,
+  EntitlementDTO,
   MikaApiResult,
   MoneyDTO,
   OrderInvoiceDTO,
@@ -1167,7 +1168,7 @@ function accountFor(
       const ref = isRecord(entry.data?.["entitlement_ref"]) ? entry.data["entitlement_ref"] : {};
       return {
         key: stringValue(ref["entitlementKey"], entry.slug),
-        status: entry.data?.["fixture_status"] === "revoked" ? "revoked" : "active",
+        status: entitlementStatus(entry),
         source: "manual",
         expiresAt: maybeIso(ref["expiresAt"]),
       };
@@ -1175,6 +1176,14 @@ function accountFor(
     downloads: downloads().map(downloadSummary),
     licenses: licenses().map(licenseSummary),
   };
+}
+
+function entitlementStatus(entry: SeedEntry): EntitlementDTO["status"] {
+  const fixtureStatus = entry.data?.["fixture_status"];
+  if (fixtureStatus === "revoked") return "revoked";
+  // Mirror downloadSummary: a seed entitlement marked expired must not project as active.
+  if (fixtureStatus === "expired") return "expired";
+  return "active";
 }
 
 function licenseSummary(entry: SeedEntry): TemplateAccountLicenseDTO {
