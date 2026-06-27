@@ -515,6 +515,22 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("sanitizes an off-origin successPath into a same-origin redirect", async () => {
+    const ctx = storefrontCtx("checkout-open-redirect");
+    await api.cart.add(ctx, {
+      sellableId: "sellable_bw_panel_pack",
+      priceId: "price_bw_panel_pack",
+      quantity: 1,
+    });
+
+    for (const successPath of ["https://evil.example/login", "//evil.example"]) {
+      const checkout = await api.checkout.start(ctx, { successPath });
+      assert.equal(checkout.ok, true);
+      assert.equal(checkout.data.redirectUrl.startsWith("/checkout/success"), true);
+      assert.equal(checkout.data.redirectUrl.includes("evil.example"), false);
+    }
+  });
+
   it("does not resolve a dynamic checkout id across unrelated sessions", async () => {
     const sessionA = storefrontCtx("checkout-owner");
     await api.cart.add(sessionA, {

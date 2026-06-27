@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 import type { MikaApiOverrides, MikaRequestContext } from "@bnomei/emdash-mika/server";
 import {
   mikaTemplateAvailabilityLabel,
@@ -376,7 +377,10 @@ export const mikaStorefrontApiOverrides = {
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
       const orderId = createMikaId(`order_${checkoutId}`);
-      const successPath = input.successPath ?? "/checkout/success";
+      // Sanitize the caller-supplied successPath to an origin-relative path before building the
+      // redirect. The override replaces the package backend (whose origin guard never runs here), so
+      // an absolute/protocol-relative successPath would otherwise become an open-redirect target.
+      const successPath = mikaSafeReturnTo(input.successPath, { fallback: "/checkout/success" });
       const separator = successPath.includes("?") ? "&" : "?";
       const redirectUrl = `${successPath}${separator}checkoutId=${encodeURIComponent(checkoutId)}`;
       const checkout: CheckoutSessionDTO = {
