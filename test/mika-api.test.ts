@@ -186,6 +186,17 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     assertCompleted(refund);
     assert.equal(rowBySlug("ec_orders", "order-buttonwood-1001").payment_status, "partially_refunded");
 
+    // Cumulative partial refunds that reach the order total (1099) end as fully refunded.
+    assertCompleted(
+      await api.admin.orderRefund({ amount: 800, orderId: "order_buttonwood_1003", reason: "fixture_refund" }),
+    );
+    assert.equal(rowBySlug("ec_orders", "order-buttonwood-1003").payment_status, "partially_refunded");
+    assertCompleted(
+      await api.admin.orderRefund({ amount: 299, orderId: "order_buttonwood_1003", reason: "fixture_refund" }),
+    );
+    assert.equal(rowBySlug("ec_orders", "order-buttonwood-1003").payment_status, "refunded");
+    assert.equal(jsonBySlug("ec_orders", "order-buttonwood-1003", "order_ref").refundAmount, 1099);
+
     assertCompleted(
       await api.admin.orderCancel({
         orderId: "order_buttonwood_1002",

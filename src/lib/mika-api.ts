@@ -443,17 +443,23 @@ export const mikaApiOverrides = {
         const orderRef = readJsonObject(row["order_ref"]);
         const orderRefund = readJsonObject(row["order_refund"]);
         const totalAmount = numberValue(row["total_amount"]);
-        const refundAmount = input.amount ?? numberValue(orderRefund["amount"], totalAmount);
+        // Accumulate refunds across calls: order_ref.refundAmount holds the cumulative refunded total.
+        const priorRefunded = numberValue(orderRef["refundAmount"], 0);
+        // A bare refund (no amount) covers the remaining balance.
+        const thisRefund = input.amount ?? Math.max(0, totalAmount - priorRefunded);
         // A refund must be a positive amount; a zero/negative refund must not flip payment status.
-        if (refundAmount <= 0) {
-          return { updated: false, exceedsTotal: false, invalidAmount: true, refundAmount };
+        if (thisRefund <= 0) {
+          return { updated: false, exceedsTotal: false, invalidAmount: true, refundAmount: thisRefund };
         }
-        // A single refund must not exceed the order total; reject rather than persist an
+        const cumulativeRefunded = priorRefunded + thisRefund;
+        // Cumulative refunds must not exceed the order total; reject rather than persist an
         // over-refunded order that would corrupt fixture payment state.
-        if (refundAmount > totalAmount) {
-          return { updated: false, exceedsTotal: true, invalidAmount: false, refundAmount };
+        if (cumulativeRefunded > totalAmount) {
+          return { updated: false, exceedsTotal: true, invalidAmount: false, refundAmount: thisRefund };
         }
-        const refundStatus = refundAmount >= totalAmount ? "refunded" : "partially_refunded";
+        // Status reflects the cumulative refunded total, so a sequence of partials that reaches the
+        // order total ends as fully refunded.
+        const refundStatus = cumulativeRefunded >= totalAmount ? "refunded" : "partially_refunded";
         updateFixtureRow(
           db,
           fixtureTables.orders,
@@ -463,22 +469,22 @@ export const mikaApiOverrides = {
             order_ref: writeJson({
               ...orderRef,
               refundedAt: now,
-              refundAmount,
+              refundAmount: cumulativeRefunded,
               refundReason: input.reason ?? orderRefund["reason"] ?? "fixture_refund",
               refundCount: numberValue(orderRef["refundCount"]) + 1,
             }),
             order_refund: writeJson({
               ...orderRefund,
-              amount: refundAmount,
+              amount: cumulativeRefunded,
               lastRefundedAt: now,
-              lastRefundAmount: refundAmount,
+              lastRefundAmount: thisRefund,
               lastReason: input.reason ?? orderRefund["reason"] ?? "fixture_refund",
             }),
             payment_status: refundStatus,
           },
           now,
         );
-        return { updated: true, exceedsTotal: false, invalidAmount: false, refundAmount };
+        return { updated: true, exceedsTotal: false, invalidAmount: false, refundAmount: cumulativeRefunded };
       });
 
       if (result.invalidAmount) {
