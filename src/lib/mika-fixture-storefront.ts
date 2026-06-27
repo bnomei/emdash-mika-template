@@ -1,3 +1,8 @@
+/**
+ * Seed-json fixture implementing the Mika storefront API surface. Session state drives
+ * cart, wishlist, checkout, and account flows; catalog reads come from `seed/mika-actions.seed.json`.
+ * Exported overrides plug into `mika-api.ts`; catalog helpers feed product listing and detail pages.
+ */
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
@@ -129,6 +134,7 @@ interface TemplateProductSummary {
   readonly variantCount: number;
 }
 
+/** Optional category/tag slugs for catalog listing and filter UI. */
 export interface TemplateProductFilterInput {
   readonly category?: string | null;
   readonly tag?: string | null;
@@ -185,8 +191,6 @@ interface SessionWishlistItem {
   readonly sellableId: MikaId;
   readonly priceId?: MikaId;
   readonly addedAt: ISODateTime;
-  // Quantity carried over when a cart line is saved for later, so moving it back restores the
-  // original units instead of defaulting to 1.
   readonly quantity?: number;
 }
 
@@ -195,13 +199,9 @@ interface TemplateSessionState {
   readonly wishlistItems: Map<string, SessionWishlistItem>;
   readonly checkouts: Map<string, CheckoutSessionDTO>;
   readonly checkoutOrders: Map<string, OrderSummaryDTO>;
-  // Full-cart checkouts awaiting their post-payment cart clear. The cart is emptied only once
-  // the checkout's completion is confirmed (success page), so abandonment keeps the cart intact.
   readonly pendingCartCheckouts: Set<string>;
   couponCode?: string;
   accountEmail?: string;
-  // Email of an unverified magic-link challenge. Identity is only established from this on verify,
-  // so a request alone never signs the session in as the requested email.
   pendingEmail?: string;
   subscriptionStatus?: SubscriptionDTO["status"];
 }
@@ -222,10 +222,7 @@ const sessionStates = new Map<string, TemplateSessionState>();
 const defaultCurrency = createCurrencyCode("EUR");
 const templateProvider = createProviderName("template");
 const templateSessionStorageKey = "mika-template-storefront";
-// Canonical fixture magic-link token. verify only accepts this token paired with a pending
-// challenge from magicLink.request, so arbitrary (e.g. email-shaped) tokens cannot establish identity.
 const templateMagicLinkToken = "template-login";
-// Allowlist of valid coupon codes; unknown codes never change cart totals.
 const templateCouponCodes = new Set(["BUTTONWOOD10"]);
 
 function validCouponCode(code: string | undefined): string | undefined {
@@ -234,6 +231,7 @@ function validCouponCode(code: string | undefined): string | undefined {
   return templateCouponCodes.has(normalized) ? normalized : undefined;
 }
 
+/** Mika API overrides for catalog, cart, checkout, account, and webhook fixture handlers. */
 export const mikaStorefrontApiOverrides = {
   catalog: {
     async sellables({ contentRef }) {
@@ -254,7 +252,6 @@ export const mikaStorefrontApiOverrides = {
     },
     async quote(ctx, input = {}) {
       const cart = cartFor(await sessionState(ctx));
-      // Ignore unknown coupon codes so a quote never previews a discount for an invalid code.
       return ok(cartQuote(cart, validCouponCode(input.couponCode)));
     },
     async add(ctx, input) {
@@ -280,8 +277,6 @@ export const mikaStorefrontApiOverrides = {
       const current = state.cartItems.get(input.lineId);
       if (!current) return fail("SELLABLE_NOT_FOUND", "Template cart line not found.", 404);
 
-      // Clamp to availability.maxPerOrder server-side (the same bound the checkout blockers use), so a
-      // tampered/direct update cannot inflate a cart line past what is purchasable.
       const maxPerOrder = maxPerOrderFor(current.sellableId);
       const requested = Math.max(1, input.quantity);
       state.cartItems.set(input.lineId, {
@@ -302,8 +297,6 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const sourceSessionId = input?.sourceSessionId;
       const source = sourceSessionId ? findSourceSessionState(String(sourceSessionId)) : undefined;
-      // Merge the guest/source session's open cart lines into the caller's cart (quantities combined
-      // per line), so a guest-to-auth handoff does not silently drop the guest cart.
       if (source && source !== state) {
         for (const item of source.cartItems.values()) {
           const lineId = cartLineId(item.sellableId, item.priceId);
@@ -320,7 +313,6 @@ export const mikaStorefrontApiOverrides = {
       return ok(cartFor(state));
     },
     async applyCoupon(ctx, input) {
-      // Reject codes outside the fixture allowlist so arbitrary strings cannot discount the cart.
       const code = validCouponCode(input.code);
       if (!code) return fail("COUPON_INVALID", "Template coupon code is not valid.", 422);
       const state = await sessionState(ctx);
@@ -368,10 +360,7 @@ export const mikaStorefrontApiOverrides = {
 
       state.wishlistItems.delete(input.itemId);
       const lineId = cartLineId(item.sellableId, item.priceId);
-      // Merge with any existing cart line, matching cart.add, so moving a wishlist item never
-      // drops units already in the cart.
       const existingQuantity = state.cartItems.get(lineId)?.quantity ?? 0;
-      // Prefer an explicit move quantity, else restore the quantity saved with the wishlist item.
       const moveQuantity = input.quantity ?? item.quantity ?? 1;
       state.cartItems.set(lineId, {
         lineId: createMikaId(lineId),
@@ -395,7 +384,6 @@ export const mikaStorefrontApiOverrides = {
         sellableId: item.sellableId,
         priceId: item.priceId,
         addedAt: nowIso(),
-        // Preserve the cart line quantity so a later moveToCart restores the same units.
         quantity: item.quantity,
       });
       await persistSessionState(ctx, state);
@@ -406,8 +394,6 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const sourceSessionId = input?.sourceSessionId;
       const source = sourceSessionId ? findSourceSessionState(String(sourceSessionId)) : undefined;
-      // Union the guest/source session's wishlist items into the caller's wishlist so a
-      // guest-to-auth handoff does not lose saved items.
       if (source && source !== state) {
         for (const item of source.wishlistItems.values()) {
           const itemId = wishlistItemId(item.sellableId, item.priceId);
@@ -431,22 +417,15 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
       if (lines.length === 0) return fail("CHECKOUT_EMPTY", "Template checkout is empty.", 400);
-      // Reject non-resolvable sellable/price pairs (e.g. a tampered buy-now POST), matching
-      // cart.add, so checkout never records a zero-total paid order for a missing catalog line.
       if (lines.some((line) => !findVariantBySellable(line.sellableId, line.priceId))) {
         return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
       }
-      // Enforce stock and max-per-order server-side, mirroring mikaTemplateCartCheckoutIssues so a
-      // direct/buy-now checkout cannot complete purchases the cart UI marks as blocked.
       if (lines.some((line) => isCheckoutLineBlocked(line))) {
         return fail("CHECKOUT_UNAVAILABLE", "Template checkout has unavailable lines.", 409);
       }
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
       const orderId = createMikaId(`order_${checkoutId}`);
-      // Sanitize the caller-supplied successPath to an origin-relative path before building the
-      // redirect. The override replaces the package backend (whose origin guard never runs here), so
-      // an absolute/protocol-relative successPath would otherwise become an open-redirect target.
       const successPath = mikaSafeReturnTo(input.successPath, { fallback: "/checkout/success" });
       const separator = successPath.includes("?") ? "&" : "?";
       const redirectUrl = `${successPath}${separator}checkoutId=${encodeURIComponent(checkoutId)}`;
@@ -459,14 +438,10 @@ export const mikaStorefrontApiOverrides = {
         orderId,
       };
       state.checkouts.set(checkoutId, { ...checkout, status: "completed" });
-      // Apply the cart coupon only to full-cart checkouts (buy-now bypasses the cart coupon).
       state.checkoutOrders.set(
         orderId,
         checkoutOrderSummary(orderId, lines, input.sellableId ? undefined : state.couponCode),
       );
-      // Defer emptying the cart until the checkout's completion is confirmed (success page).
-      // Starting a full-cart checkout no longer clears the cart, so a buyer who abandons before
-      // payment keeps their lines and coupon, matching the /checkout/cancel page promise.
       if (!input.sellableId) {
         state.pendingCartCheckouts.add(String(checkoutId));
       }
@@ -478,9 +453,6 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const cart = cartFor(state);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
-      // Quote the same lines checkout.start will charge. For buy-now (sellableId set) the lines come
-      // from the input, not the session cart, and the cart coupon does not apply — mirroring
-      // checkout.start — so the preview total matches what the buyer is actually charged.
       const quoteCart = input.sellableId ? cartFromLines(lines) : cart;
       const preview: CheckoutPreviewDTO = {
         id: createMikaId("preview_template"),
@@ -508,7 +480,6 @@ export const mikaStorefrontApiOverrides = {
         const state = await sessionState(ctxOrInput);
         const checkout = state.checkouts.get(checkoutId);
         if (checkout) {
-          // Confirming a completed full-cart checkout empties the cart post-payment.
           if (checkout.status === "completed" && state.pendingCartCheckouts.delete(checkoutId)) {
             state.cartItems.clear();
             state.couponCode = undefined;
@@ -518,26 +489,18 @@ export const mikaStorefrontApiOverrides = {
         }
       }
 
-      // No process-global fallback: dynamic checkouts are session-scoped, so an unrelated visitor
-      // holding a leaked checkoutId (URLs, referrers, logs) cannot resolve another session's order
-      // metadata. Production Mika backends bind status to the creating session the same way.
       return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
     },
   },
   magicLink: {
     async request(ctx, input) {
       const state = await sessionState(ctx);
-      // Only record the pending challenge; identity is not established until verify succeeds, so a
-      // request alone cannot sign the session in as the requested email.
       state.pendingEmail = input.email;
       await persistSessionState(ctx, state);
       return ok({ sent: true });
     },
     async verify(ctx, input) {
       const state = await sessionState(ctx);
-      // Identity is established only from a challenge created by magicLink.request: the presented
-      // token must equal the canonical fixture token AND a pending email must exist. This rejects
-      // arbitrary email-shaped tokens (impersonation) that were never requested.
       if (!state.pendingEmail || input.token !== templateMagicLinkToken) {
         return fail("MAGIC_LINK_INVALID", "Template magic link is invalid or expired.", 401);
       }
@@ -581,8 +544,6 @@ export const mikaStorefrontApiOverrides = {
       return ok({ requested: true });
     },
     async portal(_ctx, input = {}) {
-      // Sanitize the caller-supplied returnTo to an origin-relative path; account.astro redirects to
-      // this value, so echoing a raw absolute URL would be an open redirect.
       return ok({ redirectUrl: mikaSafeReturnTo(input.returnTo, { fallback: "/account" }) });
     },
   },
@@ -594,8 +555,6 @@ export const mikaStorefrontApiOverrides = {
       return ok(accountFor(state));
     },
     async change(ctx) {
-      // A plan change preserves the subscription's lifecycle state; it must not implicitly renew a
-      // pending cancel_at_period_end the way subscription.renew does.
       const state = await sessionState(ctx);
       return ok(accountFor(state));
     },
@@ -611,8 +570,6 @@ export const mikaStorefrontApiOverrides = {
       const download = downloads().find((entry) => downloadRef(entry)["downloadRef"] === token);
       if (!download) return fail("TOKEN_INVALID", "Template download token not found.", 404);
 
-      // Keep resolution in agreement with the account surface: an entry the account UI marks
-      // expired (via fixture_status) must not grant file retrieval through /download/[token].
       if (download.data?.["fixture_status"] === "expired") {
         return fail("TOKEN_EXPIRED", "Template download token has expired.", 410);
       }
@@ -634,8 +591,6 @@ export const mikaStorefrontApiOverrides = {
               ? createMikaId(ctxOrInput)
               : (ctxOrInput as { readonly orderId?: MikaId }).orderId);
       if (!orderId) return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
-      // Only issue an invoice for a real order (seeded or a session checkout order); a bogus
-      // ?invoice= deep link must not render an "Invoice ready" banner.
       const sessionOrders = isRequestContextInput(ctxOrInput)
         ? (await sessionState(ctxOrInput)).checkoutOrders
         : undefined;
@@ -670,12 +625,14 @@ export const mikaStorefrontApiOverrides = {
   },
 } satisfies MikaApiOverrides;
 
+/** Product cards for the index page, optionally filtered by taxonomy slugs. */
 export function templateProductSummaries(
   filters: TemplateProductFilterInput = {},
 ): readonly TemplateProductSummary[] {
   return products().map(templateProductSummary).filter((product) => productMatchesFilters(product, filters));
 }
 
+/** Filter sidebar state: term counts, active slugs, and filtered vs total product counts. */
 export function templateProductFilters(filters: TemplateProductFilterInput = {}): TemplateProductFilterState {
   const summaries = products().map(templateProductSummary);
   const filteredProducts = summaries.filter((product) => productMatchesFilters(product, filters));
@@ -692,6 +649,7 @@ export function templateProductFilters(filters: TemplateProductFilterInput = {})
   };
 }
 
+/** Product detail payload by slug or id, including variant sellables. */
 export function templateProductBySlug(slug: string): TemplateProductDetail | undefined {
   const product = products().find((entry) => entry.slug === slug || entry.id === slug);
   if (!product) return undefined;
@@ -806,8 +764,6 @@ function readSeed(): SeedFile {
 
 let seedCache: { path: string; mtimeMs: number; value: SeedFile } | undefined;
 
-// Lazily read the storefront seed and reload when the on-disk file changes (path or mtime), so editing
-// seed/mika-actions.seed.json and running `fixture:reset` is reflected without restarting the dev server.
 function seed(): SeedFile {
   const path = seedPath();
   let mtimeMs: number;
@@ -960,9 +916,6 @@ function variantOption(variant: ProductVariant, option = "size"): VariantOptionV
 
 function availabilityFor(sellableId: MikaId): AvailabilityDTO {
   const stock = stockItems().find((entry) => stockRef(entry)["sellableId"] === sellableId);
-  // A sellable with no stock-tracking row is untracked (available), not sold out. Deliberate
-  // out-of-stock is modeled with an explicit zero-quantity row, so an absent row must not block
-  // purchase. This matches the display layer, which treats a missing status as "untracked".
   if (!stock) {
     return { sellableId, status: "untracked" };
   }
@@ -1104,7 +1057,6 @@ function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSna
 }
 
 function findSourceSessionState(sourceSessionId: string): TemplateSessionState | undefined {
-  // Accept either a raw session id (resolved to its anonymous-browser key) or an exact session key.
   return (
     sessionStates.get(sourceSessionId) ??
     sessionStates.get(`session:${sourceSessionId}`) ??
@@ -1117,8 +1069,6 @@ function templateSessionKey(ctx: MikaRequestContext): string {
   if (ctx.customerId) return `customer:${ctx.customerId}`;
   if (ctx.userId) return `user:${ctx.userId}`;
   if (ctx.sessionId?.startsWith("template-test-")) return ctx.sessionId;
-  // Partition anonymous visitors on the Astro per-browser session id so unrelated
-  // browsers on the same Node process never share one in-memory session bucket.
   if (ctx.sessionId) return `session:${ctx.sessionId}`;
   const cookie = templateSessionCookie(ctx);
   if (cookie) return cookie;
@@ -1325,7 +1275,6 @@ function accountFor(
 function entitlementStatus(entry: SeedEntry): EntitlementDTO["status"] {
   const fixtureStatus = entry.data?.["fixture_status"];
   if (fixtureStatus === "revoked") return "revoked";
-  // Mirror downloadSummary: a seed entitlement marked expired must not project as active.
   if (fixtureStatus === "expired") return "expired";
   return "active";
 }
@@ -1421,8 +1370,6 @@ function checkoutOrderSummary(
     const variant = findVariantBySellable(line.sellableId, line.priceId);
     return sum + (variant?.amount ?? 0) * line.quantity;
   }, 0);
-  // Mirror cartFor's discount so the persisted order total matches the cart total the customer
-  // saw immediately before checkout when a coupon was applied.
   const discountAmount = couponCode ? Math.round(subtotalAmount * 0.1) : 0;
   const totalAmount = Math.max(0, subtotalAmount - discountAmount);
 
@@ -1551,6 +1498,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/** Exposes mutable session map and seed rows for unit tests. */
 export function templateSeedForTests() {
   return {
     sessionStates,

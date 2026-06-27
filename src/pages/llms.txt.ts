@@ -1,3 +1,8 @@
+/**
+ * Route: `GET /llms.txt`
+ * Plain-text commerce surface summary for LLM crawlers and agents.
+ * Boundary: descriptive index only; links to manifest and host-owned pages.
+ */
 import {
   MIKA_AGENT_MANIFEST_VERSION,
   mikaAgentManifestJsonSchema,
@@ -11,6 +16,7 @@ const agentManifestSchemaId =
     ? mikaAgentManifestJsonSchema["$id"]
     : "https://bnomei.com/schemas/emdash-mika/agent-manifest.v1.json";
 
+/** Serves the storefront llms.txt document as `text/plain`. */
 export const GET: APIRoute = () =>
   new Response(
     [

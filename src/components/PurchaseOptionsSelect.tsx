@@ -1,6 +1,11 @@
+/**
+ * Purchase-option picker for multi-priced sellables; bubbles `mika:purchase-change`
+ * so parent forms sync sellable, price, and max-quantity hidden fields.
+ */
 import { Select } from "@cloudflare/kumo";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+/** One purchasable sellable/price pair in a composite purchase select. */
 export interface PurchaseSelectOption {
   label: string;
   value: string;
@@ -42,6 +47,7 @@ function selectItems(options: readonly PurchaseSelectOption[]) {
   );
 }
 
+/** Select control that resolves sellable/price metadata for cart and checkout forms. */
 export default function PurchaseOptionsSelect({
   label,
   name,

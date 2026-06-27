@@ -1,4 +1,8 @@
 // @ts-check
+/**
+ * Local Node/Astro config: server output, SQLite + filesystem media, EmDash admin
+ * with Mika actions provider and the template storefront plugin.
+ */
 import node from "@astrojs/node";
 import react from "@astrojs/react";
 import { actionsPlugin } from "@bnomei/emdash-actions";

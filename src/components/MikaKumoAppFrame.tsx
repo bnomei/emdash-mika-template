@@ -1,3 +1,7 @@
+/**
+ * Kumo sidebar application chrome for the template storefront: shop and account
+ * navigation, responsive mobile top bar, and cart item count in labels.
+ */
 import type { ReactNode } from "react";
 import { Button, Link, Sidebar, Text, useSidebar } from "@cloudflare/kumo";
 import {
@@ -20,6 +24,7 @@ interface AppFrameProps {
   readonly children: ReactNode;
 }
 
+/** Root layout island wrapping page content in resizable Kumo sidebar navigation. */
 export default function MikaKumoAppFrame({
   title,
   currentPath,

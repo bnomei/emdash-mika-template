@@ -1,3 +1,9 @@
+---
+/**
+ * Client script keeping add-to-cart submit state, quantity max, and availability
+ * panels aligned with variant groups or purchase-option selects.
+ */
+---
 <script>
   for (const form of document.querySelectorAll("[data-mika-add-to-cart]")) {
     const groups = form.querySelector("[data-mika-variant-groups]");

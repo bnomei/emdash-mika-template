@@ -1,4 +1,8 @@
 // @ts-check
+/**
+ * Cloudflare production Astro config: D1 database, R2 media, same EmDash/Mika
+ * plugin stack as local dev without the Node adapter.
+ */
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 import { actionsPlugin } from "@bnomei/emdash-actions";

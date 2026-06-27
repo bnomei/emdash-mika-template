@@ -1,4 +1,8 @@
 ---
+/**
+ * Subscription renewal table driven by provider-exposed actions (portal, plan
+ * change, renew, cancel) from the signed-in account payload.
+ */
 import { actions } from "astro:actions";
 import { Badge, Banner, Button, Empty, Table, Text } from "@cloudflare/kumo";
 import type { SubscriptionDTO } from "@bnomei/emdash-mika/types";

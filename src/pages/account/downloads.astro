@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/account/downloads`
+ * Purchased digital download entitlements for the signed-in customer.
+ * Boundary: Mika session required; magic-link sign-in when unauthenticated.
+ */
 import { actions, isInputError } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountDownloads from "../../components/AccountDownloads.astro";

@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/products/:slug`
+ * Product detail with live sellables, purchase forms, and JSON-LD structured data.
+ * Boundary: dynamic slug param; unknown products redirect home; buy-now may redirect to checkout.
+ */
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";

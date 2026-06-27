@@ -1,3 +1,7 @@
+/**
+ * Postinstall patches in `node_modules/emdash` so local fixture dev/seed flows
+ * bypass EmDash cache guards (single-flight lock reset, object-cache DEV check).
+ */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 

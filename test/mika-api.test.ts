@@ -1,3 +1,7 @@
+/**
+ * Integration tests for template Mika API overrides: seeds an isolated SQLite
+ * fixture, exercises admin action mutations, and storefront session flows.
+ */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
@@ -55,6 +59,7 @@ after(() => {
   delete process.env.EMDASH_MIKA_TEMPLATE_DB;
 });
 
+/** Admin handlers that read/write seeded commerce rows (stock, orders, entitlements). */
 describe("Mika template action overrides", { concurrency: false }, () => {
   it("lets customer grant buttons resolve entitlement keys from row values", () => {
     const seed = JSON.parse(readFileSync(join(root, "seed/mika-actions.seed.json"), "utf8"));
@@ -188,7 +193,6 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     assertCompleted(refund);
     assert.equal(rowBySlug("ec_orders", "order-buttonwood-1001").payment_status, "partially_refunded");
 
-    // Cumulative partial refunds that reach the order total (1099) end as fully refunded.
     assertCompleted(
       await api.admin.orderRefund({ amount: 800, orderId: "order_buttonwood_1003", reason: "fixture_refund" }),
     );
@@ -199,7 +203,6 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     assert.equal(rowBySlug("ec_orders", "order-buttonwood-1003").payment_status, "refunded");
     assert.equal(jsonBySlug("ec_orders", "order-buttonwood-1003", "order_ref").refundAmount, 1099);
 
-    // Cancelling an already-refunded order must fail and not clobber its terminal payment status.
     const cancelRefunded = await api.admin.orderCancel({
       orderId: "order_buttonwood_1001",
       reason: "fixture_cancel",
@@ -263,7 +266,7 @@ describe("Mika template action overrides", { concurrency: false }, () => {
   });
 });
 
-
+/** Session-scoped storefront API: cart/checkout/account plus redirect and session isolation guards. */
 describe("Mika template storefront overrides", { concurrency: false }, () => {
   it("reloads the storefront seed when the on-disk seed file changes", async () => {
     const realSeed = JSON.parse(readFileSync(join(root, "seed/mika-actions.seed.json"), "utf8"));
@@ -281,13 +284,13 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
       process.env.EMDASH_MIKA_TEMPLATE_SEED = tmpSeedPath;
       const first = await api.stock.availability({ sellableId: "sellable_bw_clip_mini" });
       assert.equal(first.ok, true);
-      assert.equal(first.data.availableQuantity, 97); // 100 on hand - 3 reserved
+      assert.equal(first.data.availableQuantity, 97);
 
       writeClipStock(50);
       const future = new Date(Date.now() + 5000);
-      utimesSync(tmpSeedPath, future, future); // ensure a distinct mtime so the cache reloads
+      utimesSync(tmpSeedPath, future, future);
       const second = await api.stock.availability({ sellableId: "sellable_bw_clip_mini" });
-      assert.equal(second.data.availableQuantity, 47); // 50 on hand - 3 reserved
+      assert.equal(second.data.availableQuantity, 47);
     } finally {
       if (previous === undefined) delete process.env.EMDASH_MIKA_TEMPLATE_SEED;
       else process.env.EMDASH_MIKA_TEMPLATE_SEED = previous;
@@ -312,7 +315,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(availability.data.availableQuantity, 39);
     assert.equal(availability.data.status, "available");
 
-    // A sellable with no stock-tracking row is untracked (available), not sold out.
     const untracked = await api.stock.availability({ sellableId: "sellable_bw_clip_standard" });
     assert.equal(untracked.ok, true);
     assert.equal(untracked.data.status, "untracked");
@@ -455,7 +457,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(update.ok, true);
     assert.equal(update.data.items[0].quantity, 3);
 
-    // An unknown coupon code is rejected and does not discount the cart.
     const invalidCoupon = await api.cart.applyCoupon(ctx, { code: "NOTAREALCODE" });
     assert.equal(invalidCoupon.ok, false);
     assert.equal(invalidCoupon.status, 422);
@@ -477,7 +478,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
   });
 
   it("keeps anonymous cart state across Astro action and page contexts", async () => {
-    // A single browser carries the same Astro session id across action and page requests.
     const actionCtx = astroCtx("astro-shared-session");
     const pageCtx = astroCtx("astro-shared-session");
     const add = await api.cart.add(actionCtx, {
@@ -593,7 +593,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     const saved = await api.wishlist.saveForLater(ctx, { lineId });
     assert.equal(saved.ok, true);
 
-    // Restore without an explicit quantity: the saved 5 units must come back.
     const moved = await api.wishlist.moveToCart(ctx, { itemId: saved.data.items[0].id });
     assert.equal(moved.ok, true);
     assert.equal(moved.data.items.length, 1);
@@ -620,19 +619,14 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get("checkoutId");
 
-    // A dynamic checkout id is session-scoped: a bare lookup without the creating session's context
-    // must not resolve it (no process-global fallback).
     const unscoped = await api.checkout.status({ checkoutId });
     assert.equal(unscoped.ok, false);
     assert.equal(unscoped.status, 404);
 
-    // Starting a full-cart checkout must not empty the cart: a buyer who abandons before payment
-    // keeps their lines, matching the /checkout/cancel page promise.
     const cartAfterStart = await api.cart.get(ctx);
     assert.equal(cartAfterStart.ok, true);
     assert.equal(cartAfterStart.data.items.length, 1);
 
-    // The success page confirms completion with the request context, which clears the cart.
     const confirmed = await api.checkout.status(ctx, { checkoutId });
     assert.equal(confirmed.ok, true);
     assert.equal(confirmed.data.status, "completed");
@@ -723,12 +717,10 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
   it("rejects magic-link verify for tokens without a matching request", async () => {
     const ctx = storefrontCtx("magic-link-impersonation");
 
-    // Email-shaped token with no prior request must not establish identity.
     const forged = await api.magicLink.verify(ctx, { token: "attacker@evil.test" });
     assert.equal(forged.ok, false);
     assert.equal(forged.status, 401);
 
-    // The canonical token without a request is also rejected.
     const noChallenge = await api.magicLink.verify(ctx, { token: "template-login" });
     assert.equal(noChallenge.ok, false);
 
@@ -813,13 +805,11 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
       "checkoutId",
     );
 
-    // Session B holds the leaked checkoutId but lacks session A's context.
     const sessionB = storefrontCtx("checkout-stranger");
     const leaked = await api.checkout.status(sessionB, { checkoutId });
     assert.equal(leaked.ok, false);
     assert.equal(leaked.status, 404);
 
-    // The owning session still resolves it.
     const owner = await api.checkout.status(sessionA, { checkoutId });
     assert.equal(owner.ok, true);
     assert.equal(owner.data.status, "completed");
@@ -923,7 +913,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(accountAfterCancel.ok, true);
     assert.equal(accountAfterCancel.data.subscriptions[0].status, "cancel_at_period_end");
 
-    // Changing the plan must not undo a scheduled cancellation.
     const changeSubscription = await api.subscription.change(ctx, {
       subscriptionId: "sub_template_buttonwood_club",
       priceId: "price_bw_sunday_club",
@@ -958,7 +947,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(invoiceByString.ok, true);
     assert.equal(invoiceByString.data.href, "/account/orders?invoice=order_buttonwood_1001");
 
-    // A bogus order id must not yield an invoice.
     const missingInvoice = await api.order.invoice("order_does_not_exist");
     assert.equal(missingInvoice.ok, false);
     assert.equal(missingInvoice.status, 404);

@@ -1,3 +1,9 @@
+---
+/**
+ * Registers `<mika-product-purchase>` to propagate sellable/price/quantity changes
+ * across nested add-to-cart, wishlist, and buy-now forms in one purchase block.
+ */
+---
 <script>
   if (!customElements.get("mika-product-purchase")) {
     customElements.define(

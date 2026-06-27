@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/account/subscriptions`
+ * Subscription entitlements with cancel, renew, and plan-change actions.
+ * Boundary: Mika session required; mutations via Astro Actions form posts.
+ */
 import { actions, isInputError } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountSignInPanel from "../../components/AccountSignInPanel.astro";

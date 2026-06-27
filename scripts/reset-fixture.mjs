@@ -1,3 +1,7 @@
+/**
+ * Drops the local SQLite fixture (including WAL/SHM) and re-applies
+ * `seed/mika-actions.seed.json` via `npm run seed:apply`.
+ */
 import { existsSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 

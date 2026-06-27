@@ -1,6 +1,11 @@
+/**
+ * Kumo `Select` paired with a read-only hidden input so Astro action forms can
+ * post the chosen value without a visible native `<select>`.
+ */
 import { Select } from "@cloudflare/kumo";
 import { useMemo, useState } from "react";
 
+/** Select option shape for hidden-input form posts. */
 export interface KumoHiddenSelectOption {
   label: string;
   value: string;
@@ -37,6 +42,7 @@ function initialValue(options: readonly KumoHiddenSelectOption[], selectedValue?
   );
 }
 
+/** Renders a labeled Kumo select that mirrors its value into `name`. */
 export default function KumoHiddenSelect({
   label,
   name,

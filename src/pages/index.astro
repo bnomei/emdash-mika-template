@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/`
+ * Public product catalog with optional category and tag filters.
+ * Boundary: template catalog reads only; no session or cart mutations.
+ */
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
 import { mikaTemplateCurrentCartItemCount } from "../lib/cart";

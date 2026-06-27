@@ -1,3 +1,8 @@
+/**
+ * Hidden-field builders for Mika Astro action forms. Wraps `mikaSafeReturnTo` so
+ * `returnTo`, `successPath`, and `cancelPath` POST values stay on-site and match
+ * `mikaTemplateRoutes` fallbacks.
+ */
 import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 
 import { mikaTemplateRoutes } from "./routes";
@@ -13,6 +18,7 @@ export function mikaReturnToInput(returnTo: string) {
   return mikaHiddenInput("returnTo", mikaSafeReturnTo(returnTo));
 }
 
+/** Checkout/Buy-now bundle: success, cancel, and post-action return paths. */
 export function mikaRedirectInputs(input: {
   readonly successPath: string;
   readonly cancelPath: string;

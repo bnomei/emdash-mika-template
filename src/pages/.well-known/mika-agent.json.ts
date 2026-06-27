@@ -1,3 +1,8 @@
+/**
+ * Route: `GET /.well-known/mika-agent.json`
+ * Public agent capability manifest for Mika storefront operations.
+ * Boundary: read-only JSON; protected flows summarized but not exposed as callable routes.
+ */
 import {
   MIKA_AGENT_MANIFEST_VERSION,
   createMikaAgentManifest,
@@ -13,6 +18,7 @@ const agentManifestSchemaId =
     : undefined;
 const mikaPluginRouteBasePath = "/_emdash/api/plugins/mika";
 
+/** Returns the public Mika agent manifest, schema id, and protected-flow summaries. */
 export const GET: APIRoute = () => {
   const manifest = createMikaAgentManifest({ include: ["public"] });
 

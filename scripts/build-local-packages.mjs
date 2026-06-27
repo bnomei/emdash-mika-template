@@ -1,3 +1,7 @@
+/**
+ * Pre-dev/build hook: installs and builds sibling `../emdash-mika` so the
+ * `file:` dependency is ready. Skipped when `EMDASH_MIKA_TEMPLATE_SKIP_LOCAL_BUILD=1`.
+ */
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";

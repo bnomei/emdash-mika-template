@@ -1,5 +1,10 @@
 /// <reference types="node" />
 
+/**
+ * Template Mika API entry point. Composes seed-backed storefront overrides with
+ * SQLite admin mutations so `createMika` and Astro actions share one override object.
+ * Re-exports catalog helpers from the fixture module for page-level product queries.
+ */
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { createMikaApi, type MikaApiOverrides } from "@bnomei/emdash-mika/server";
@@ -96,6 +101,7 @@ function currentISODateTime(): string {
   return new Date().toISOString();
 }
 
+/** Resolved path for the template fixture DB (`EMDASH_MIKA_TEMPLATE_DB` or default). */
 export function fixtureDatabasePath(): string {
   return process.env.EMDASH_MIKA_TEMPLATE_DB ?? join(process.cwd(), ".emdash/mika-template.sqlite");
 }
@@ -340,10 +346,6 @@ export const mikaApiOverrides = {
           const quantityReserved = numberValue(quantities["quantityReserved"]);
           if (quantityReserved <= 0) continue;
 
-          // Only release reservations whose hold has expired as of `now`, mirroring the canonical
-          // storage contract (expires_at IS NOT NULL AND expires_at <= now). Active holds (no
-          // reservedUntil, or a reservedUntil after `now`) stay reserved to avoid freeing live
-          // stock and enabling oversell.
           const reservedUntil =
             typeof quantities["reservedUntil"] === "string" ? quantities["reservedUntil"] : "";
           if (!reservedUntil || reservedUntil > now) continue;
@@ -443,22 +445,15 @@ export const mikaApiOverrides = {
         const orderRef = readJsonObject(row["order_ref"]);
         const orderRefund = readJsonObject(row["order_refund"]);
         const totalAmount = numberValue(row["total_amount"]);
-        // Accumulate refunds across calls: order_ref.refundAmount holds the cumulative refunded total.
         const priorRefunded = numberValue(orderRef["refundAmount"], 0);
-        // A bare refund (no amount) covers the remaining balance.
         const thisRefund = input.amount ?? Math.max(0, totalAmount - priorRefunded);
-        // A refund must be a positive amount; a zero/negative refund must not flip payment status.
         if (thisRefund <= 0) {
           return { updated: false, exceedsTotal: false, invalidAmount: true, refundAmount: thisRefund };
         }
         const cumulativeRefunded = priorRefunded + thisRefund;
-        // Cumulative refunds must not exceed the order total; reject rather than persist an
-        // over-refunded order that would corrupt fixture payment state.
         if (cumulativeRefunded > totalAmount) {
           return { updated: false, exceedsTotal: true, invalidAmount: false, refundAmount: thisRefund };
         }
-        // Status reflects the cumulative refunded total, so a sequence of partials that reaches the
-        // order total ends as fully refunded.
         const refundStatus = cumulativeRefunded >= totalAmount ? "refunded" : "partially_refunded";
         updateFixtureRow(
           db,
@@ -527,8 +522,6 @@ export const mikaApiOverrides = {
         );
         if (!row) return { updated: false, conflict: false };
 
-        // Do not clobber a terminal payment state: an order already refunded, partially refunded, or
-        // cancelled must not be silently overwritten with a cancelled status.
         const paymentStatus = String(row["payment_status"] ?? "");
         const fixtureStatus = String(row["fixture_status"] ?? "");
         if (

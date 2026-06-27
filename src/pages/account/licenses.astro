@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/account/licenses`
+ * License status and suffixes without exposing raw license keys.
+ * Boundary: Mika session required; account data passed through template sanitizer.
+ */
 import { actions, isInputError } from "astro:actions";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountLicenses from "../../components/AccountLicenses.astro";

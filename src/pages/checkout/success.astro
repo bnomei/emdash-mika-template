@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/checkout/success`
+ * Post-checkout status page keyed by `checkoutId`, `checkout_id`, or `session_id`.
+ * Boundary: Mika checkout and account reads; links to orders, downloads, and licenses on completion.
+ */
 import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import BuyerAssurance from "../../components/BuyerAssurance.astro";

@@ -1,3 +1,8 @@
+/**
+ * Presentation helpers for Mika DTOs in Astro templates. Maps commerce statuses,
+ * money, and sellable metadata into badge variants, human labels, and cart checkout
+ * guard messages. Keeps template copy and aggregation rules out of page components.
+ */
 import {
   formatMikaMoney,
   formatMikaPrice,
@@ -10,6 +15,7 @@ import type {
   SubscriptionDTO,
 } from "@bnomei/emdash-mika/types";
 
+/** Badge tone aligned with `mikaTemplateStatusVariant`. */
 export type MikaTemplateBadgeVariant = "success" | "warning" | "error" | "neutral";
 
 export interface MikaTemplateProductVariantDisplay {
@@ -96,6 +102,7 @@ export function mikaTemplateCartItemCount(cart: CartDTO | null | undefined): num
   return cart?.items.reduce((total, line) => total + line.quantity, 0) ?? 0;
 }
 
+/** User-facing blockers when cart lines exceed stock or are out of stock. */
 export function mikaTemplateCartCheckoutIssues(cart: CartDTO | null | undefined): readonly string[] {
   if (!cart?.items.length) return [];
 
@@ -148,6 +155,7 @@ export function mikaTemplateAvailabilityLabel(sellables: readonly SellableDTO[])
   return "Check availability";
 }
 
+/** Collapses aggregate availability copy into a single status token for badges. */
 export function mikaTemplateAvailabilityStatus(sellables: readonly SellableDTO[]): string {
   const label = mikaTemplateAvailabilityLabel(sellables);
   if (label === "Unavailable") return "out_of_stock";
@@ -219,6 +227,7 @@ export function mikaTemplateProductDeliveryNotes(sellables: readonly SellableDTO
   return [...notes];
 }
 
+/** Static storefront reassurance bullets for product detail pages. */
 export function mikaTemplateProductTrustNotes(): readonly string[] {
   return [
     "Sold by Buttonwood Lot Press.",

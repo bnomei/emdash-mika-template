@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/cart`
+ * Cart review, line edits, coupons, and checkout initiation.
+ * Boundary: Mika cart state; checkout-start action may redirect to payment provider.
+ */
 import { actions, isInputError } from "astro:actions";
 import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";

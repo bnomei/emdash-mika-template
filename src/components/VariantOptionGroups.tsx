@@ -1,3 +1,7 @@
+/**
+ * Multi-axis variant pickers (size, format, etc.) that resolve a sellable/price
+ * from `variantOptionMap` and emit `mika:variant-change` for form sync scripts.
+ */
 import { Select } from "@cloudflare/kumo";
 import type { MikaPurchaseVariantMapItem } from "@bnomei/emdash-mika/astro";
 import type { VariantOptionGroupDTO } from "@bnomei/emdash-mika/types";
@@ -70,6 +74,7 @@ function groupItems(
   );
 }
 
+/** Renders one Kumo select per variant group and posts the resolved sellable ids. */
 export default function VariantOptionGroups({
   variantGroups,
   variantOptionMap,

@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/account/orders`
+ * Customer order history with optional `?invoice=` invoice lookup.
+ * Boundary: Mika session required; magic-link sign-in when unauthenticated.
+ */
 import { actions, isInputError } from "astro:actions";
 import { Banner, Link } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";

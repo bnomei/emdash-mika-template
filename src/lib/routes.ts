@@ -1,3 +1,7 @@
+/**
+ * Canonical storefront paths for links, form hidden fields, and safe redirect
+ * fallbacks. Centralizes route strings so Astro pages and action forms stay aligned.
+ */
 export const mikaTemplateRoutes = {
   account: "/account",
   accountOrders: "/account/orders",

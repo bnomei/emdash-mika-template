@@ -1,3 +1,8 @@
+/**
+ * Route: `POST /api/mika-webhook/:provider`
+ * Payment-provider webhook ingress with payload hashing and signature metadata.
+ * Boundary: delegates verification and handling to Mika; responds with JSON status from `webhook.receive`.
+ */
 import { createHash } from "node:crypto";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import { createProviderName } from "@bnomei/emdash-mika/types";
@@ -6,6 +11,7 @@ import { mikaApiOverrides } from "../../../lib/mika-api";
 
 export const prerender = false;
 
+/** Accepts a provider webhook POST and returns the Mika receive result as JSON. */
 export const POST: APIRoute = async ({ params, request, url }) => {
   const provider = params["provider"];
   if (!provider) return new Response("Missing provider.", { status: 400 });

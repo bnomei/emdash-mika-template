@@ -1,4 +1,9 @@
 ---
+/**
+ * Route: `/account`
+ * Authenticated account hub: overview, billing portal, export, and deletion.
+ * Boundary: Mika session required; magic-link sign-in when unauthenticated; portal action may redirect off-site.
+ */
 import { actions, isInputError } from "astro:actions";
 import { Button, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
