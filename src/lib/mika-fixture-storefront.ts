@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 import type { MikaApiOverrides, MikaRequestContext } from "@bnomei/emdash-mika/server";
@@ -218,7 +218,6 @@ interface TemplateSessionStateSnapshot {
   readonly subscriptionStatus?: SubscriptionDTO["status"];
 }
 
-const seed = readSeed();
 const sessionStates = new Map<string, TemplateSessionState>();
 const defaultCurrency = createCurrencyCode("EUR");
 const templateProvider = createProviderName("template");
@@ -776,7 +775,7 @@ function taxonomyTerm(taxonomyName: string, slug: string): SeedTaxonomyTerm | un
 }
 
 function taxonomyTerms(taxonomyName: string): readonly SeedTaxonomyTerm[] {
-  return seed.taxonomies?.find((taxonomy) => taxonomy.name === taxonomyName)?.terms ?? [];
+  return seed().taxonomies?.find((taxonomy) => taxonomy.name === taxonomyName)?.terms ?? [];
 }
 
 function taxonomyHref(taxonomyName: string, slug: string): string {
@@ -797,8 +796,30 @@ function titleFromSlug(slug: string): string {
     .join(" ");
 }
 
+function seedPath(): string {
+  return process.env["EMDASH_MIKA_TEMPLATE_SEED"] ?? join(process.cwd(), "seed/mika-actions.seed.json");
+}
+
 function readSeed(): SeedFile {
-  return JSON.parse(readFileSync(join(process.cwd(), "seed/mika-actions.seed.json"), "utf8")) as SeedFile;
+  return JSON.parse(readFileSync(seedPath(), "utf8")) as SeedFile;
+}
+
+let seedCache: { path: string; mtimeMs: number; value: SeedFile } | undefined;
+
+// Lazily read the storefront seed and reload when the on-disk file changes (path or mtime), so editing
+// seed/mika-actions.seed.json and running `fixture:reset` is reflected without restarting the dev server.
+function seed(): SeedFile {
+  const path = seedPath();
+  let mtimeMs: number;
+  try {
+    mtimeMs = statSync(path).mtimeMs;
+  } catch {
+    return seedCache?.value ?? readSeed();
+  }
+  if (!seedCache || seedCache.path !== path || seedCache.mtimeMs !== mtimeMs) {
+    seedCache = { path, mtimeMs, value: readSeed() };
+  }
+  return seedCache.value;
 }
 
 function ok<TData>(data: TData, status = 200): MikaApiResult<TData> {
@@ -821,35 +842,35 @@ function fail<TData>(
 }
 
 function products(): readonly SeedEntry[] {
-  return seed.content?.["products"] ?? [];
+  return seed().content?.["products"] ?? [];
 }
 
 function stockItems(): readonly SeedEntry[] {
-  return seed.content?.["stock_items"] ?? [];
+  return seed().content?.["stock_items"] ?? [];
 }
 
 function customers(): readonly SeedEntry[] {
-  return seed.content?.["customers"] ?? [];
+  return seed().content?.["customers"] ?? [];
 }
 
 function orders(): readonly SeedEntry[] {
-  return seed.content?.["orders"] ?? [];
+  return seed().content?.["orders"] ?? [];
 }
 
 function entitlements(): readonly SeedEntry[] {
-  return seed.content?.["entitlements"] ?? [];
+  return seed().content?.["entitlements"] ?? [];
 }
 
 function downloads(): readonly SeedEntry[] {
-  return seed.content?.["downloads"] ?? [];
+  return seed().content?.["downloads"] ?? [];
 }
 
 function licenses(): readonly SeedEntry[] {
-  return seed.content?.["licenses"] ?? [];
+  return seed().content?.["licenses"] ?? [];
 }
 
 function checkoutSessions(): readonly SeedEntry[] {
-  return seed.content?.["checkout_sessions"] ?? [];
+  return seed().content?.["checkout_sessions"] ?? [];
 }
 
 function findProduct(idOrSlug: string): SeedEntry | undefined {

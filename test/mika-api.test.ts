@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -263,6 +263,35 @@ describe("Mika template action overrides", { concurrency: false }, () => {
 
 
 describe("Mika template storefront overrides", { concurrency: false }, () => {
+  it("reloads the storefront seed when the on-disk seed file changes", async () => {
+    const realSeed = JSON.parse(readFileSync(join(root, "seed/mika-actions.seed.json"), "utf8"));
+    const tmpSeedPath = join(tempDir, "seed-reload.json");
+    const writeClipStock = (onHand) => {
+      const clone = structuredClone(realSeed);
+      const stock = clone.content.stock_items.find((entry) => entry.slug === "mira-clipboard-stock");
+      stock.data.quantities.quantityOnHand = onHand;
+      writeFileSync(tmpSeedPath, JSON.stringify(clone));
+    };
+
+    const previous = process.env.EMDASH_MIKA_TEMPLATE_SEED;
+    try {
+      writeClipStock(100);
+      process.env.EMDASH_MIKA_TEMPLATE_SEED = tmpSeedPath;
+      const first = await api.stock.availability({ sellableId: "sellable_bw_clip_mini" });
+      assert.equal(first.ok, true);
+      assert.equal(first.data.availableQuantity, 97); // 100 on hand - 3 reserved
+
+      writeClipStock(50);
+      const future = new Date(Date.now() + 5000);
+      utimesSync(tmpSeedPath, future, future); // ensure a distinct mtime so the cache reloads
+      const second = await api.stock.availability({ sellableId: "sellable_bw_clip_mini" });
+      assert.equal(second.data.availableQuantity, 47); // 50 on hand - 3 reserved
+    } finally {
+      if (previous === undefined) delete process.env.EMDASH_MIKA_TEMPLATE_SEED;
+      else process.env.EMDASH_MIKA_TEMPLATE_SEED = previous;
+    }
+  });
+
   it("returns sellables and stock availability from the seed", async () => {
     const result = await api.catalog.sellables({
       contentRef: {
