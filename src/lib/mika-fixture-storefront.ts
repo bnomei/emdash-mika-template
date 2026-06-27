@@ -597,6 +597,14 @@ export const mikaStorefrontApiOverrides = {
               ? createMikaId(ctxOrInput)
               : (ctxOrInput as { readonly orderId?: MikaId }).orderId);
       if (!orderId) return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
+      // Only issue an invoice for a real order (seeded or a session checkout order); a bogus
+      // ?invoice= deep link must not render an "Invoice ready" banner.
+      const sessionOrders = isRequestContextInput(ctxOrInput)
+        ? (await sessionState(ctxOrInput)).checkoutOrders
+        : undefined;
+      if (!seededOrderIds().has(String(orderId)) && !sessionOrders?.has(String(orderId))) {
+        return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
+      }
       return ok({
         orderId,
         href: `/account/orders?invoice=${encodeURIComponent(orderId)}`,
@@ -1298,6 +1306,15 @@ function downloadSummary(entry: SeedEntry): TemplateAccountDownloadDTO {
     expiresAt: maybeIso(issue["expiresAt"]) ?? fallbackExpiresAt,
     status,
   };
+}
+
+function seededOrderIds(): Set<string> {
+  return new Set(
+    orders().map((entry) => {
+      const ref = isRecord(entry.data?.["order_ref"]) ? entry.data["order_ref"] : {};
+      return stringValue(ref["orderId"], entry.id);
+    }),
+  );
 }
 
 function orderSummary(entry: SeedEntry): OrderSummaryDTO {

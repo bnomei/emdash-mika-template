@@ -825,6 +825,11 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(invoiceByString.ok, true);
     assert.equal(invoiceByString.data.href, "/account/orders?invoice=order_buttonwood_1001");
 
+    // A bogus order id must not yield an invoice.
+    const missingInvoice = await api.order.invoice("order_does_not_exist");
+    assert.equal(missingInvoice.ok, false);
+    assert.equal(missingInvoice.status, 404);
+
     const webhook = await api.webhook.receive(ctx, {
       provider: "stripe_test",
       eventType: "fixture.test",
