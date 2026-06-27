@@ -363,6 +363,11 @@ export const mikaStorefrontApiOverrides = {
       if (lines.some((line) => !findVariantBySellable(line.sellableId, line.priceId))) {
         return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
       }
+      // Enforce stock and max-per-order server-side, mirroring mikaTemplateCartCheckoutIssues so a
+      // direct/buy-now checkout cannot complete purchases the cart UI marks as blocked.
+      if (lines.some((line) => isCheckoutLineBlocked(line))) {
+        return fail("CHECKOUT_UNAVAILABLE", "Template checkout has unavailable lines.", 409);
+      }
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
       const orderId = createMikaId(`order_${checkoutId}`);
@@ -1117,6 +1122,13 @@ function checkoutLines(
   }
 
   return [...state.cartItems.values()];
+}
+
+function isCheckoutLineBlocked(line: SessionCartItem): boolean {
+  const availability = availabilityFor(line.sellableId);
+  if (availability.status === "out_of_stock") return true;
+  const maxPerOrder = availability.maxPerOrder;
+  return typeof maxPerOrder === "number" && maxPerOrder > 0 && line.quantity > maxPerOrder;
 }
 
 function checkoutMode(lines: readonly SessionCartItem[]): PurchaseMode {

@@ -452,6 +452,25 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("rejects checkout when a cart line is out of stock", async () => {
+    const ctx = storefrontCtx("checkout-oos");
+    const add = await api.cart.add(ctx, {
+      sellableId: "sellable_bw_lettering_license",
+      priceId: "price_bw_lettering_license",
+      quantity: 1,
+    });
+    assert.equal(add.ok, true);
+    assert.ok(mikaTemplateCartCheckoutIssues(add.data).length > 0);
+
+    const checkout = await api.checkout.start(ctx, { successPath: "/checkout/success" });
+    assert.equal(checkout.ok, false);
+    assert.equal(checkout.status, 409);
+
+    const account = await api.account.get(ctx);
+    assert.equal(account.ok, true);
+    assert.equal(account.data.orders.some((order) => order.total.amount === 0), false);
+  });
+
   it("rejects buy-now checkout for mismatched sellable/price pairs", async () => {
     const ctx = storefrontCtx("checkout-invalid-pair");
     const checkout = await api.checkout.start(ctx, {
