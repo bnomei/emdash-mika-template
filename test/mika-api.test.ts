@@ -248,6 +248,16 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(availability.ok, true);
     assert.equal(availability.data.availableQuantity, 39);
     assert.equal(availability.data.status, "available");
+
+    // A sellable with no stock-tracking row is untracked (available), not sold out.
+    const untracked = await api.stock.availability({ sellableId: "sellable_bw_clip_standard" });
+    assert.equal(untracked.ok, true);
+    assert.equal(untracked.data.status, "untracked");
+    assert.notEqual(untracked.data.status, "out_of_stock");
+
+    const byVariant = new Map(result.data.map((sellable) => [sellable.id, sellable.availability]));
+    assert.equal(byVariant.get("sellable_bw_clip_standard")?.status, "untracked");
+    assert.equal(byVariant.get("sellable_bw_clip_bundle")?.status, "untracked");
   });
 
   it("returns showcase price modes, fulfillment kinds, and stock states", async () => {

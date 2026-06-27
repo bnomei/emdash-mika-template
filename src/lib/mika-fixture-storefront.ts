@@ -844,7 +844,13 @@ function variantOption(variant: ProductVariant, option = "size"): VariantOptionV
 
 function availabilityFor(sellableId: MikaId): AvailabilityDTO {
   const stock = stockItems().find((entry) => stockRef(entry)["sellableId"] === sellableId);
-  const quantities = isRecord(stock?.data?.["quantities"]) ? stock.data["quantities"] : {};
+  // A sellable with no stock-tracking row is untracked (available), not sold out. Deliberate
+  // out-of-stock is modeled with an explicit zero-quantity row, so an absent row must not block
+  // purchase. This matches the display layer, which treats a missing status as "untracked".
+  if (!stock) {
+    return { sellableId, status: "untracked" };
+  }
+  const quantities = isRecord(stock.data?.["quantities"]) ? stock.data["quantities"] : {};
   const quantityOnHand = numberValue(quantities["quantityOnHand"]);
   const quantityReserved = numberValue(quantities["quantityReserved"]);
   const lowStockThreshold = numberValue(quantities["lowStockThreshold"], 5);
