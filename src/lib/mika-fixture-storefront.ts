@@ -358,6 +358,11 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
       if (lines.length === 0) return fail("CHECKOUT_EMPTY", "Template checkout is empty.", 400);
+      // Reject non-resolvable sellable/price pairs (e.g. a tampered buy-now POST), matching
+      // cart.add, so checkout never records a zero-total paid order for a missing catalog line.
+      if (lines.some((line) => !findVariantBySellable(line.sellableId, line.priceId))) {
+        return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
+      }
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
       const orderId = createMikaId(`order_${checkoutId}`);
