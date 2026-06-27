@@ -525,7 +525,20 @@ export const mikaApiOverrides = {
           ["order_ref", "order_cancel"],
           (values) => matchJsonId(values, ["order_ref", "order_cancel"], "orderId", input.orderId),
         );
-        if (!row) return false;
+        if (!row) return { updated: false, conflict: false };
+
+        // Do not clobber a terminal payment state: an order already refunded, partially refunded, or
+        // cancelled must not be silently overwritten with a cancelled status.
+        const paymentStatus = String(row["payment_status"] ?? "");
+        const fixtureStatus = String(row["fixture_status"] ?? "");
+        if (
+          paymentStatus === "refunded" ||
+          paymentStatus === "partially_refunded" ||
+          paymentStatus === "cancelled" ||
+          fixtureStatus === "cancelled"
+        ) {
+          return { updated: false, conflict: true };
+        }
 
         const orderRef = readJsonObject(row["order_ref"]);
         const orderCancel = readJsonObject(row["order_cancel"]);
@@ -550,10 +563,18 @@ export const mikaApiOverrides = {
           },
           now,
         );
-        return true;
+        return { updated: true, conflict: false };
       });
 
-      if (!updated) {
+      if (updated.conflict) {
+        return failed(
+          actionId("order_cancel"),
+          "Template order cannot be cancelled after it was refunded or cancelled.",
+          { orders: 0 },
+        );
+      }
+
+      if (!updated.updated) {
         return failed(actionId("order_cancel"), "No template order matched " + input.orderId + ".", {
           orders: 0,
         });

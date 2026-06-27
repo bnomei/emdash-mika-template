@@ -197,6 +197,15 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     assert.equal(rowBySlug("ec_orders", "order-buttonwood-1003").payment_status, "refunded");
     assert.equal(jsonBySlug("ec_orders", "order-buttonwood-1003", "order_ref").refundAmount, 1099);
 
+    // Cancelling an already-refunded order must fail and not clobber its terminal payment status.
+    const cancelRefunded = await api.admin.orderCancel({
+      orderId: "order_buttonwood_1001",
+      reason: "fixture_cancel",
+    });
+    assert.equal(cancelRefunded.ok, true);
+    assert.equal(cancelRefunded.data.status, "failed");
+    assert.equal(rowBySlug("ec_orders", "order-buttonwood-1001").payment_status, "partially_refunded");
+
     assertCompleted(
       await api.admin.orderCancel({
         orderId: "order_buttonwood_1002",
