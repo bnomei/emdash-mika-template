@@ -223,6 +223,14 @@ const templateSessionStorageKey = "mika-template-storefront";
 // Canonical fixture magic-link token. verify only accepts this token paired with a pending
 // challenge from magicLink.request, so arbitrary (e.g. email-shaped) tokens cannot establish identity.
 const templateMagicLinkToken = "template-login";
+// Allowlist of valid coupon codes; unknown codes never change cart totals.
+const templateCouponCodes = new Set(["BUTTONWOOD10"]);
+
+function validCouponCode(code: string | undefined): string | undefined {
+  if (!code) return undefined;
+  const normalized = code.trim().toUpperCase();
+  return templateCouponCodes.has(normalized) ? normalized : undefined;
+}
 
 export const mikaStorefrontApiOverrides = {
   catalog: {
@@ -244,7 +252,8 @@ export const mikaStorefrontApiOverrides = {
     },
     async quote(ctx, input = {}) {
       const cart = cartFor(await sessionState(ctx));
-      return ok(cartQuote(cart, input.couponCode));
+      // Ignore unknown coupon codes so a quote never previews a discount for an invalid code.
+      return ok(cartQuote(cart, validCouponCode(input.couponCode)));
     },
     async add(ctx, input) {
       const state = await sessionState(ctx);
@@ -287,8 +296,11 @@ export const mikaStorefrontApiOverrides = {
       return ok(cartFor(await sessionState(ctx)));
     },
     async applyCoupon(ctx, input) {
+      // Reject codes outside the fixture allowlist so arbitrary strings cannot discount the cart.
+      const code = validCouponCode(input.code);
+      if (!code) return fail("COUPON_INVALID", "Template coupon code is not valid.", 422);
       const state = await sessionState(ctx);
-      state.couponCode = input.code.trim().toUpperCase();
+      state.couponCode = code;
       await persistSessionState(ctx, state);
       return ok(cartFor(state));
     },

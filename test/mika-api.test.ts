@@ -333,6 +333,17 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(update.ok, true);
     assert.equal(update.data.items[0].quantity, 3);
 
+    // An unknown coupon code is rejected and does not discount the cart.
+    const invalidCoupon = await api.cart.applyCoupon(ctx, { code: "NOTAREALCODE" });
+    assert.equal(invalidCoupon.ok, false);
+    assert.equal(invalidCoupon.status, 422);
+    const afterInvalid = await api.cart.get(ctx);
+    assert.equal(afterInvalid.data.coupon, undefined);
+    assert.equal(afterInvalid.data.total.amount, 1497);
+    const invalidQuote = await api.cart.quote(ctx, { couponCode: "NOTAREALCODE" });
+    assert.equal(invalidQuote.data.discount, undefined);
+    assert.equal(invalidQuote.data.total.amount, 1497);
+
     const coupon = await api.cart.applyCoupon(ctx, { code: "BUTTONWOOD10" });
     assert.equal(coupon.ok, true);
     assert.equal(coupon.data.coupon.code, "BUTTONWOOD10");
