@@ -141,6 +141,15 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     );
     assert.equal(rowBySlug("ec_webhooks", "refund-failed-1002").fixture_status, "replayed");
 
+    const overRefund = await api.admin.orderRefund({
+      amount: 100000,
+      orderId: "order_buttonwood_1001",
+      reason: "fixture_refund",
+    });
+    assert.equal(overRefund.ok, true);
+    assert.equal(overRefund.data.status, "failed");
+    assert.notEqual(rowBySlug("ec_orders", "order-buttonwood-1001").payment_status, "refunded");
+
     const refund = await api.admin.orderRefund({
       amount: 499,
       orderId: "order_buttonwood_1001",

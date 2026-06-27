@@ -428,12 +428,17 @@ export const mikaApiOverrides = {
           ["order_ref", "order_refund"],
           (values) => matchJsonId(values, ["order_ref", "order_refund"], "orderId", input.orderId),
         );
-        if (!row) return { updated: false, refundAmount: input.amount ?? 0 };
+        if (!row) return { updated: false, exceedsTotal: false, refundAmount: input.amount ?? 0 };
 
         const orderRef = readJsonObject(row["order_ref"]);
         const orderRefund = readJsonObject(row["order_refund"]);
         const totalAmount = numberValue(row["total_amount"]);
         const refundAmount = input.amount ?? numberValue(orderRefund["amount"], totalAmount);
+        // A single refund must not exceed the order total; reject rather than persist an
+        // over-refunded order that would corrupt fixture payment state.
+        if (refundAmount > totalAmount) {
+          return { updated: false, exceedsTotal: true, refundAmount };
+        }
         const refundStatus = refundAmount >= totalAmount ? "refunded" : "partially_refunded";
         updateFixtureRow(
           db,
@@ -459,8 +464,16 @@ export const mikaApiOverrides = {
           },
           now,
         );
-        return { updated: true, refundAmount };
+        return { updated: true, exceedsTotal: false, refundAmount };
       });
+
+      if (result.exceedsTotal) {
+        return failed(
+          actionId("order_refund"),
+          "Template order refund exceeds the order total.",
+          { orders: 0, refundAmount: result.refundAmount },
+        );
+      }
 
       if (!result.updated) {
         return failed(actionId("order_refund"), "No template order matched " + input.orderId + ".", {
