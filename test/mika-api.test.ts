@@ -309,8 +309,9 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
   });
 
   it("keeps anonymous cart state across Astro action and page contexts", async () => {
-    const actionCtx = astroCtx("astro-action-session");
-    const pageCtx = astroCtx("astro-page-session");
+    // A single browser carries the same Astro session id across action and page requests.
+    const actionCtx = astroCtx("astro-shared-session");
+    const pageCtx = astroCtx("astro-shared-session");
     const add = await api.cart.add(actionCtx, {
       sellableId: "sellable_bw_panel_pack",
       priceId: "price_bw_panel_pack",
@@ -326,6 +327,25 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(pageCart.data.items[0].title, "Buttonwood Creator Bundle - Panel Pack Download");
 
     await api.cart.remove(pageCtx, { lineId: pageCart.data.items[0].id });
+  });
+
+  it("isolates anonymous cart state between distinct browser sessions", async () => {
+    const visitorA = astroCtx("astro-visitor-a");
+    const visitorB = astroCtx("astro-visitor-b");
+    const add = await api.cart.add(visitorA, {
+      sellableId: "sellable_bw_panel_pack",
+      priceId: "price_bw_panel_pack",
+      quantity: 1,
+    });
+
+    assert.equal(add.ok, true);
+    assert.equal(add.data.items.length, 1);
+
+    const visitorBCart = await api.cart.get(visitorB);
+    assert.equal(visitorBCart.ok, true);
+    assert.equal(visitorBCart.data.items.length, 0);
+
+    await api.cart.remove(visitorA, { lineId: add.data.items[0].id });
   });
 
   it("reports cart checkout blockers for unavailable lines", async () => {

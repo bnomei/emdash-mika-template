@@ -941,8 +941,13 @@ function templateSessionKey(ctx: MikaRequestContext): string {
   if (ctx.customerId) return `customer:${ctx.customerId}`;
   if (ctx.userId) return `user:${ctx.userId}`;
   if (ctx.sessionId?.startsWith("template-test-")) return ctx.sessionId;
+  // Partition anonymous visitors on the Astro per-browser session id so unrelated
+  // browsers on the same Node process never share one in-memory session bucket.
+  if (ctx.sessionId) return `session:${ctx.sessionId}`;
+  const cookie = templateSessionCookie(ctx);
+  if (cookie) return cookie;
 
-  return templateSessionCookie(ctx) ?? "template-browser-session";
+  return "template-browser-session";
 }
 
 function templateSessionCookie(ctx: MikaRequestContext): string | undefined {
