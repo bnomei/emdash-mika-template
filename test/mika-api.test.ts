@@ -315,6 +315,23 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.deepEqual(paperPrintables, []);
   });
 
+  it("clamps cart.update quantity to availability maxPerOrder", async () => {
+    const ctx = storefrontCtx("cart-update-clamp");
+    const add = await api.cart.add(ctx, {
+      sellableId: "sellable_bw_clip_mini",
+      priceId: "price_bw_clip_mini",
+      quantity: 1,
+    });
+    assert.equal(add.ok, true);
+    const lineId = add.data.items[0].id;
+    assert.equal(add.data.items[0].availability.maxPerOrder, 39);
+
+    const update = await api.cart.update(ctx, { lineId, quantity: 100 });
+    assert.equal(update.ok, true);
+    assert.equal(update.data.items[0].quantity, 39);
+    assert.deepEqual(mikaTemplateCartCheckoutIssues(update.data), []);
+  });
+
   it("runs cart and coupon flows with session-scoped fixture state", async () => {
     const ctx = storefrontCtx("cart-flow");
     const add = await api.cart.add(ctx, {

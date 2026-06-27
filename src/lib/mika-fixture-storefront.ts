@@ -281,9 +281,13 @@ export const mikaStorefrontApiOverrides = {
       const current = state.cartItems.get(input.lineId);
       if (!current) return fail("SELLABLE_NOT_FOUND", "Template cart line not found.", 404);
 
+      // Clamp to availability.maxPerOrder server-side (the same bound the checkout blockers use), so a
+      // tampered/direct update cannot inflate a cart line past what is purchasable.
+      const maxPerOrder = maxPerOrderFor(current.sellableId);
+      const requested = Math.max(1, input.quantity);
       state.cartItems.set(input.lineId, {
         ...current,
-        quantity: Math.max(1, input.quantity),
+        quantity: maxPerOrder === undefined ? requested : Math.min(requested, maxPerOrder),
       });
       await persistSessionState(ctx, state);
 
@@ -1183,6 +1187,11 @@ function checkoutLines(
   }
 
   return [...state.cartItems.values()];
+}
+
+function maxPerOrderFor(sellableId: MikaId): number | undefined {
+  const max = availabilityFor(sellableId).maxPerOrder;
+  return typeof max === "number" && max > 0 ? max : undefined;
 }
 
 function isCheckoutLineBlocked(line: SessionCartItem): boolean {
