@@ -299,8 +299,26 @@ export const mikaStorefrontApiOverrides = {
       await persistSessionState(ctx, state);
       return ok(cartFor(state));
     },
-    async merge(ctx) {
-      return ok(cartFor(await sessionState(ctx)));
+    async merge(ctx, input) {
+      const state = await sessionState(ctx);
+      const sourceSessionId = input?.sourceSessionId;
+      const source = sourceSessionId ? findSourceSessionState(String(sourceSessionId)) : undefined;
+      // Merge the guest/source session's open cart lines into the caller's cart (quantities combined
+      // per line), so a guest-to-auth handoff does not silently drop the guest cart.
+      if (source && source !== state) {
+        for (const item of source.cartItems.values()) {
+          const lineId = cartLineId(item.sellableId, item.priceId);
+          const existing = state.cartItems.get(lineId)?.quantity ?? 0;
+          state.cartItems.set(lineId, {
+            lineId: createMikaId(lineId),
+            sellableId: item.sellableId,
+            priceId: item.priceId,
+            quantity: existing + item.quantity,
+          });
+        }
+        await persistSessionState(ctx, state);
+      }
+      return ok(cartFor(state));
     },
     async applyCoupon(ctx, input) {
       // Reject codes outside the fixture allowlist so arbitrary strings cannot discount the cart.
@@ -1042,6 +1060,16 @@ function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSna
     pendingEmail: state.pendingEmail,
     subscriptionStatus: state.subscriptionStatus,
   };
+}
+
+function findSourceSessionState(sourceSessionId: string): TemplateSessionState | undefined {
+  // Accept either a raw session id (resolved to its anonymous-browser key) or an exact session key.
+  return (
+    sessionStates.get(sourceSessionId) ??
+    sessionStates.get(`session:${sourceSessionId}`) ??
+    sessionStates.get(`customer:${sourceSessionId}`) ??
+    sessionStates.get(`user:${sourceSessionId}`)
+  );
 }
 
 function templateSessionKey(ctx: MikaRequestContext): string {

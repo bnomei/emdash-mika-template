@@ -347,6 +347,29 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.deepEqual(paperPrintables, []);
   });
 
+  it("merges a source session cart into the caller via cart.merge", async () => {
+    const sourceCtx = storefrontCtx("merge-source");
+    await api.cart.add(sourceCtx, {
+      sellableId: "sellable_bw_panel_pack",
+      priceId: "price_bw_panel_pack",
+      quantity: 2,
+    });
+
+    const destCtx = storefrontCtx("merge-dest");
+    await api.cart.add(destCtx, {
+      sellableId: "sellable_bw_pennant_rain",
+      priceId: "price_bw_pennant_rain",
+      quantity: 1,
+    });
+
+    const merged = await api.cart.merge(destCtx, { sourceSessionId: "template-test-merge-source" });
+    assert.equal(merged.ok, true);
+    const sellables = merged.data.items.map((item) => item.sellableId).sort();
+    assert.deepEqual(sellables, ["sellable_bw_panel_pack", "sellable_bw_pennant_rain"]);
+    const panel = merged.data.items.find((item) => item.sellableId === "sellable_bw_panel_pack");
+    assert.equal(panel.quantity, 2);
+  });
+
   it("clamps cart.update quantity to availability maxPerOrder", async () => {
     const ctx = storefrontCtx("cart-update-clamp");
     const add = await api.cart.add(ctx, {
