@@ -452,6 +452,29 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("persists checkout order total including the applied coupon discount", async () => {
+    const ctx = storefrontCtx("coupon-order-total");
+    await api.cart.add(ctx, {
+      sellableId: "sellable_bw_clip_mini",
+      priceId: "price_bw_clip_mini",
+      quantity: 3,
+    });
+    const coupon = await api.cart.applyCoupon(ctx, { code: "BUTTONWOOD10" });
+    assert.equal(coupon.ok, true);
+    const discountedCartTotal = coupon.data.total.amount;
+    assert.ok(coupon.data.coupon, "coupon should be applied");
+    assert.ok(discountedCartTotal < coupon.data.subtotal.amount, "coupon should reduce total");
+
+    const checkout = await api.checkout.start(ctx, { successPath: "/checkout/success" });
+    assert.equal(checkout.ok, true);
+
+    const account = await api.account.get(ctx);
+    assert.equal(account.ok, true);
+    const order = account.data.orders.find((item) => item.id === checkout.data.orderId);
+    assert.ok(order, "checkout order should be in account");
+    assert.equal(order.total.amount, discountedCartTotal);
+  });
+
   it("serves account, download, order, and webhook fixture surfaces", async () => {
     const ctx = storefrontCtx("account-flow");
     assert.equal((await api.magicLink.request(ctx, { email: "mira.monday@example.test" })).ok, true);

@@ -373,7 +373,11 @@ export const mikaStorefrontApiOverrides = {
         orderId,
       };
       state.checkouts.set(checkoutId, { ...checkout, status: "completed" });
-      state.checkoutOrders.set(orderId, checkoutOrderSummary(orderId, lines));
+      // Apply the cart coupon only to full-cart checkouts (buy-now bypasses the cart coupon).
+      state.checkoutOrders.set(
+        orderId,
+        checkoutOrderSummary(orderId, lines, input.sellableId ? undefined : state.couponCode),
+      );
       // Defer emptying the cart until the checkout's completion is confirmed (success page).
       // Starting a full-cart checkout no longer clears the cart, so a buyer who abandons before
       // payment keeps their lines and coupon, matching the /checkout/cancel page promise.
@@ -1227,11 +1231,19 @@ function orderSummary(entry: SeedEntry): OrderSummaryDTO {
   };
 }
 
-function checkoutOrderSummary(orderId: MikaId, lines: readonly SessionCartItem[]): OrderSummaryDTO {
-  const totalAmount = lines.reduce((sum, line) => {
+function checkoutOrderSummary(
+  orderId: MikaId,
+  lines: readonly SessionCartItem[],
+  couponCode?: string,
+): OrderSummaryDTO {
+  const subtotalAmount = lines.reduce((sum, line) => {
     const variant = findVariantBySellable(line.sellableId, line.priceId);
     return sum + (variant?.amount ?? 0) * line.quantity;
   }, 0);
+  // Mirror cartFor's discount so the persisted order total matches the cart total the customer
+  // saw immediately before checkout when a coupon was applied.
+  const discountAmount = couponCode ? Math.round(subtotalAmount * 0.1) : 0;
+  const totalAmount = Math.max(0, subtotalAmount - discountAmount);
 
   return {
     id: orderId,
