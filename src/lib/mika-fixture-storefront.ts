@@ -403,8 +403,28 @@ export const mikaStorefrontApiOverrides = {
 
       return ok(wishlistFor(state));
     },
-    async merge(ctx) {
-      return ok(wishlistFor(await sessionState(ctx)));
+    async merge(ctx, input) {
+      const state = await sessionState(ctx);
+      const sourceSessionId = input?.sourceSessionId;
+      const source = sourceSessionId ? findSourceSessionState(String(sourceSessionId)) : undefined;
+      // Union the guest/source session's wishlist items into the caller's wishlist so a
+      // guest-to-auth handoff does not lose saved items.
+      if (source && source !== state) {
+        for (const item of source.wishlistItems.values()) {
+          const itemId = wishlistItemId(item.sellableId, item.priceId);
+          if (!state.wishlistItems.has(itemId)) {
+            state.wishlistItems.set(itemId, {
+              itemId: createMikaId(itemId),
+              sellableId: item.sellableId,
+              priceId: item.priceId,
+              addedAt: item.addedAt,
+              quantity: item.quantity,
+            });
+          }
+        }
+        await persistSessionState(ctx, state);
+      }
+      return ok(wishlistFor(state));
     },
   },
   checkout: {

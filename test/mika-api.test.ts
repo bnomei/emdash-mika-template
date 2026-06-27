@@ -347,6 +347,25 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.deepEqual(paperPrintables, []);
   });
 
+  it("merges a source session wishlist into the caller via wishlist.merge", async () => {
+    const sourceCtx = storefrontCtx("wishlist-merge-source");
+    await api.wishlist.add(sourceCtx, {
+      sellableId: "sellable_bw_pennant_rain",
+      priceId: "price_bw_pennant_rain",
+    });
+
+    const destCtx = storefrontCtx("wishlist-merge-dest");
+    const before = await api.wishlist.get(destCtx);
+    assert.equal(before.data.items.length, 0);
+
+    const merged = await api.wishlist.merge(destCtx, {
+      sourceSessionId: "template-test-wishlist-merge-source",
+    });
+    assert.equal(merged.ok, true);
+    assert.equal(merged.data.items.length, 1);
+    assert.equal(merged.data.items[0].sellableId, "sellable_bw_pennant_rain");
+  });
+
   it("merges a source session cart into the caller via cart.merge", async () => {
     const sourceCtx = storefrontCtx("merge-source");
     await api.cart.add(sourceCtx, {
