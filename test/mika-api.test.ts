@@ -405,10 +405,12 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.match(checkout.data.redirectUrl, /^\/checkout\/success\?checkoutId=/);
 
     const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get("checkoutId");
-    const status = await api.checkout.status({ checkoutId });
-    assert.equal(status.ok, true);
-    assert.equal(status.data.status, "completed");
-    assert.ok(status.data.orderId);
+
+    // A dynamic checkout id is session-scoped: a bare lookup without the creating session's context
+    // must not resolve it (no process-global fallback).
+    const unscoped = await api.checkout.status({ checkoutId });
+    assert.equal(unscoped.ok, false);
+    assert.equal(unscoped.status, 404);
 
     // Starting a full-cart checkout must not empty the cart: a buyer who abandons before payment
     // keeps their lines, matching the /checkout/cancel page promise.
@@ -420,6 +422,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     const confirmed = await api.checkout.status(ctx, { checkoutId });
     assert.equal(confirmed.ok, true);
     assert.equal(confirmed.data.status, "completed");
+    assert.ok(confirmed.data.orderId);
 
     const cartAfterCheckout = await api.cart.get(ctx);
     assert.equal(cartAfterCheckout.ok, true);
@@ -427,7 +430,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     const accountAfterCheckout = await api.account.get(ctx);
     assert.equal(accountAfterCheckout.ok, true);
-    assert.equal(accountAfterCheckout.data.orders[0].id, status.data.orderId);
+    assert.equal(accountAfterCheckout.data.orders[0].id, confirmed.data.orderId);
 
     const seeded = await api.checkout.status({ checkoutId: "checkout_buttonwood_1001" });
     assert.equal(seeded.ok, true);
@@ -450,6 +453,31 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     });
     assert.equal(subscriptionCheckout.ok, true);
     assert.equal(subscriptionCheckout.data.mode, "subscription");
+  });
+
+  it("does not resolve a dynamic checkout id across unrelated sessions", async () => {
+    const sessionA = storefrontCtx("checkout-owner");
+    await api.cart.add(sessionA, {
+      sellableId: "sellable_bw_panel_pack",
+      priceId: "price_bw_panel_pack",
+      quantity: 1,
+    });
+    const checkout = await api.checkout.start(sessionA, { successPath: "/checkout/success" });
+    assert.equal(checkout.ok, true);
+    const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get(
+      "checkoutId",
+    );
+
+    // Session B holds the leaked checkoutId but lacks session A's context.
+    const sessionB = storefrontCtx("checkout-stranger");
+    const leaked = await api.checkout.status(sessionB, { checkoutId });
+    assert.equal(leaked.ok, false);
+    assert.equal(leaked.status, 404);
+
+    // The owning session still resolves it.
+    const owner = await api.checkout.status(sessionA, { checkoutId });
+    assert.equal(owner.ok, true);
+    assert.equal(owner.data.status, "completed");
   });
 
   it("rejects checkout when a cart line is out of stock", async () => {

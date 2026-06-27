@@ -438,11 +438,9 @@ export const mikaStorefrontApiOverrides = {
         }
       }
 
-      for (const state of sessionStates.values()) {
-        const checkout = state.checkouts.get(checkoutId);
-        if (checkout) return ok(checkout);
-      }
-
+      // No process-global fallback: dynamic checkouts are session-scoped, so an unrelated visitor
+      // holding a leaked checkoutId (URLs, referrers, logs) cannot resolve another session's order
+      // metadata. Production Mika backends bind status to the creating session the same way.
       return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
     },
   },
