@@ -62,6 +62,20 @@ After working this report, preserve the original finding body. Update line 2 `St
   test to assert the cart survives `start` and empties only after a ctx-confirmed completion. The
   abandonment path (reaching `/checkout/cancel` without the completed checkout id) now preserves the
   cart. `npm test` (16 passing) and `tsc --noEmit` green.
+- 2026-06-27: reopened. Revalidated the current code against the original cancel-page invariant and found
+  the fix incomplete: `checkout.start` still stores fixture checkouts as `status: "completed"` and adds
+  full-cart ids to `pendingCartCheckouts`; `/checkout/cancel?checkoutId=<id>` calls `Mika.checkout.status`
+  with the same request context, and `checkout.status` clears `cartItems`/`couponCode` whenever it sees a
+  completed pending checkout. Concrete remaining path: start a full-cart checkout, visit the cancel page
+  with that checkout id before visiting success, then return to cart; the cart is empty despite the cancel
+  page promise.
+- 2026-06-27: fixed. The cancel page no longer creates a Mika client or calls `checkout.status`, so landing
+  on `/checkout/cancel?checkoutId=<id>` cannot confirm completion and cannot trigger the pending-checkout
+  cart clear. The success page remains the path that calls `checkout.status` and clears the cart after
+  completion. Added a regression flow that starts a full-cart checkout with a coupon, executes the
+  cancel-page view state with the same session and checkout id, confirms the cart line and coupon survive
+  cancel, and confirms the success/status path still clears them. `npm test` (33 passing) and
+  `npm run build` green after rebuilding the local `better-sqlite3` native module for the active Node ABI.
 
 DEVANA-KEY: src/lib/mika-fixture-storefront.ts:373-376 | P1 | checkout-clears-cart-early
-DEVANA-SUMMARY: Status=fixed | P1 high src/lib/mika-fixture-storefront.ts:373-376 - Full-cart checkout.start cleared the cart and coupon immediately; deferred clearing until the success page confirms completion so abandonment keeps the cart, matching the /checkout/cancel promise.
+DEVANA-SUMMARY: Status=fixed | P1 high src/lib/mika-fixture-storefront.ts:373-376 - Cancel page no longer calls checkout.status, so cancellation cannot confirm completion or clear the pending full-cart checkout; success remains the completion-confirming path.

@@ -1,6 +1,6 @@
 import { createMika } from "@bnomei/emdash-mika/astro";
-import { mikaTemplateCartItemCount } from "./display";
-import { mikaApiOverrides } from "./mika-api";
+import { mikaTemplateCartItemCount } from "./display.ts";
+import { mikaApiOverrides } from "./mika-api.ts";
 
 export async function mikaTemplateCurrentCartItemCount(
   ctx: Parameters<typeof createMika>[0],

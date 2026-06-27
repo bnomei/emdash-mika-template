@@ -1,25 +1,14 @@
 ---
-import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
-import { createMika } from "@bnomei/emdash-mika/astro";
+import { Badge, Link, Text } from "@cloudflare/kumo";
 import CheckoutSteps from "../../components/CheckoutSteps.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
-import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
-import { mikaApiOverrides } from "../../lib/mika-api";
+import { mikaTemplateCheckoutCancelView } from "../../lib/checkout-cancel";
 import { mikaTemplateRoutes } from "../../lib/routes";
 import { mikaTemplateStatusLabel, mikaTemplateStatusVariant } from "../../lib/display";
 
 export const prerender = false;
 
-const checkoutId =
-  Astro.url.searchParams.get("checkoutId") ??
-  Astro.url.searchParams.get("checkout_id") ??
-  Astro.url.searchParams.get("session_id");
-const Mika = createMika(Astro, { api: mikaApiOverrides });
-const result = checkoutId ? await Mika.checkout.status(checkoutId) : null;
-const checkout = result?.ok ? result.data : null;
-const lookupError = result && !result.ok ? result.error.message : null;
-const status = checkout?.status ?? (lookupError ? "expired" : "cancelled");
-const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
+const { checkoutId, status, cartItemCount } = await mikaTemplateCheckoutCancelView(Astro);
 ---
 
 <MikaKumoPage title="Checkout cancelled" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-cancel>
@@ -37,7 +26,6 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
     <Text as="p" variant="secondary">
       Your cart is still the place to review quantities, apply a coupon, save items for later, or start checkout again.
     </Text>
-    {lookupError && <Banner variant="secondary" title="Checkout reference" description={lookupError} />}
 
     <div class="mika-kumo-actions">
       <Link href={mikaTemplateRoutes.cart}>Return to cart</Link>

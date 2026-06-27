@@ -15,6 +15,7 @@ let api;
 let templateProductFilters;
 let templateProductSummaries;
 let mikaTemplateCartCheckoutIssues;
+let mikaTemplateCheckoutCancelView;
 let db;
 let tempDir;
 
@@ -45,6 +46,7 @@ before(async () => {
   db = new Database(dbPath);
   ({ api, templateProductFilters, templateProductSummaries } = await import("../src/lib/mika-api.ts"));
   ({ mikaTemplateCartCheckoutIssues } = await import("../src/lib/display.ts"));
+  ({ mikaTemplateCheckoutCancelView } = await import("../src/lib/checkout-cancel.ts"));
 });
 
 after(() => {
@@ -665,6 +667,57 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     });
     assert.equal(subscriptionCheckout.ok, true);
     assert.equal(subscriptionCheckout.data.mode, "subscription");
+  });
+
+  it("preserves cart and coupon when checkout is cancelled before success", async () => {
+    const ctx = astroCtx("template-test-checkout-cancel-preserves-cart");
+    await api.cart.add(ctx, {
+      sellableId: "sellable_bw_clip_mini",
+      priceId: "price_bw_clip_mini",
+      quantity: 2,
+    });
+    const coupon = await api.cart.applyCoupon(ctx, { code: "BUTTONWOOD10" });
+    assert.equal(coupon.ok, true);
+    assert.equal(coupon.data.items.length, 1);
+    assert.equal(coupon.data.coupon.code, "BUTTONWOOD10");
+
+    const checkout = await api.checkout.start(ctx, {
+      successPath: "/checkout/success",
+      cancelPath: "/checkout/cancel",
+    });
+    assert.equal(checkout.ok, true);
+    const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get("checkoutId");
+    assert.ok(checkoutId);
+
+    const cancelView = await mikaTemplateCheckoutCancelView({
+      ...ctx,
+      request: new Request("https://template.test/checkout/cancel?checkoutId=" + encodeURIComponent(checkoutId)),
+      url: new URL("https://template.test/checkout/cancel?checkoutId=" + encodeURIComponent(checkoutId)),
+      session: {
+        sessionID: ctx.sessionId,
+        async get() {
+          return undefined;
+        },
+        async set() {},
+      },
+    });
+    assert.equal(cancelView.checkoutId, checkoutId);
+    assert.equal(cancelView.status, "cancelled");
+    assert.equal(cancelView.cartItemCount, 2);
+
+    const cartAfterCancel = await api.cart.get(ctx);
+    assert.equal(cartAfterCancel.ok, true);
+    assert.equal(cartAfterCancel.data.items.length, 1);
+    assert.equal(cartAfterCancel.data.items[0].quantity, 2);
+    assert.equal(cartAfterCancel.data.coupon.code, "BUTTONWOOD10");
+
+    const confirmed = await api.checkout.status(ctx, { checkoutId });
+    assert.equal(confirmed.ok, true);
+    assert.equal(confirmed.data.status, "completed");
+    const cartAfterSuccess = await api.cart.get(ctx);
+    assert.equal(cartAfterSuccess.ok, true);
+    assert.equal(cartAfterSuccess.data.items.length, 0);
+    assert.equal(cartAfterSuccess.data.coupon, undefined);
   });
 
   it("rejects magic-link verify for tokens without a matching request", async () => {
