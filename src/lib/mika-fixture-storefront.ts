@@ -549,7 +549,7 @@ export const mikaStorefrontApiOverrides = {
       if (!orderId) return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
       return ok({
         orderId,
-        href: `/account?invoice=${encodeURIComponent(orderId)}`,
+        href: `/account/orders?invoice=${encodeURIComponent(orderId)}`,
         expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
       } satisfies OrderInvoiceDTO);
     },

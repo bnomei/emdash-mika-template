@@ -628,11 +628,11 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     const invoice = await api.order.invoice({ orderId: "order_buttonwood_1001" });
     assert.equal(invoice.ok, true);
-    assert.equal(invoice.data.href, "/account?invoice=order_buttonwood_1001");
+    assert.equal(invoice.data.href, "/account/orders?invoice=order_buttonwood_1001");
 
     const invoiceByString = await api.order.invoice("order_buttonwood_1001");
     assert.equal(invoiceByString.ok, true);
-    assert.equal(invoiceByString.data.href, "/account?invoice=order_buttonwood_1001");
+    assert.equal(invoiceByString.data.href, "/account/orders?invoice=order_buttonwood_1001");
 
     const webhook = await api.webhook.receive(ctx, {
       provider: "stripe_test",
