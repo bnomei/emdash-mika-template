@@ -220,6 +220,9 @@ const sessionStates = new Map<string, TemplateSessionState>();
 const defaultCurrency = createCurrencyCode("EUR");
 const templateProvider = createProviderName("template");
 const templateSessionStorageKey = "mika-template-storefront";
+// Canonical fixture magic-link token. verify only accepts this token paired with a pending
+// challenge from magicLink.request, so arbitrary (e.g. email-shaped) tokens cannot establish identity.
+const templateMagicLinkToken = "template-login";
 
 export const mikaStorefrontApiOverrides = {
   catalog: {
@@ -472,13 +475,13 @@ export const mikaStorefrontApiOverrides = {
     },
     async verify(ctx, input) {
       const state = await sessionState(ctx);
-      // Establish identity from the verified challenge (the email the link was requested for),
-      // falling back to a token-encoded email or the default fixture customer.
-      const verifiedEmail =
-        state.pendingEmail ??
-        (input.token.includes("@") ? input.token : undefined) ??
-        defaultCustomer().email;
-      state.accountEmail = verifiedEmail;
+      // Identity is established only from a challenge created by magicLink.request: the presented
+      // token must equal the canonical fixture token AND a pending email must exist. This rejects
+      // arbitrary email-shaped tokens (impersonation) that were never requested.
+      if (!state.pendingEmail || input.token !== templateMagicLinkToken) {
+        return fail("MAGIC_LINK_INVALID", "Template magic link is invalid or expired.", 401);
+      }
+      state.accountEmail = state.pendingEmail;
       state.pendingEmail = undefined;
       await persistSessionState(ctx, state);
       return ok(accountFor(state));

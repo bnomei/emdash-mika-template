@@ -515,6 +515,23 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("rejects magic-link verify for tokens without a matching request", async () => {
+    const ctx = storefrontCtx("magic-link-impersonation");
+
+    // Email-shaped token with no prior request must not establish identity.
+    const forged = await api.magicLink.verify(ctx, { token: "attacker@evil.test" });
+    assert.equal(forged.ok, false);
+    assert.equal(forged.status, 401);
+
+    // The canonical token without a request is also rejected.
+    const noChallenge = await api.magicLink.verify(ctx, { token: "template-login" });
+    assert.equal(noChallenge.ok, false);
+
+    const account = await api.account.get(ctx);
+    assert.equal(account.ok, true);
+    assert.notEqual(account.data.customer.email, "attacker@evil.test");
+  });
+
   it("does not sign in the requested email before magic-link verify", async () => {
     const ctx = storefrontCtx("magic-link-preauth");
     const requested = await api.magicLink.request(ctx, { email: "attacker@evil.test" });
