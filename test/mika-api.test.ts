@@ -515,6 +515,18 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("sanitizes account.portal returnTo into a same-origin redirect", async () => {
+    const ctx = storefrontCtx("portal-open-redirect");
+    const offSite = await api.account.portal(ctx, { returnTo: "https://evil.example/phish" });
+    assert.equal(offSite.ok, true);
+    assert.equal(offSite.data.redirectUrl.includes("evil.example"), false);
+    assert.equal(offSite.data.redirectUrl, "/account");
+
+    const sameSite = await api.account.portal(ctx, { returnTo: "/account/subscriptions" });
+    assert.equal(sameSite.ok, true);
+    assert.equal(sameSite.data.redirectUrl, "/account/subscriptions");
+  });
+
   it("quotes buy-now preview lines so the total matches checkout.start", async () => {
     const ctx = storefrontCtx("buy-now-preview");
     const previewInput = {

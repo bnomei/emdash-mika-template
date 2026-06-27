@@ -505,7 +505,9 @@ export const mikaStorefrontApiOverrides = {
       return ok({ requested: true });
     },
     async portal(_ctx, input = {}) {
-      return ok({ redirectUrl: input.returnTo ?? "/account" });
+      // Sanitize the caller-supplied returnTo to an origin-relative path; account.astro redirects to
+      // this value, so echoing a raw absolute URL would be an open redirect.
+      return ok({ redirectUrl: mikaSafeReturnTo(input.returnTo, { fallback: "/account" }) });
     },
   },
   subscription: {
