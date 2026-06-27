@@ -117,8 +117,24 @@ describe("Mika template action overrides", { concurrency: false }, () => {
     );
   });
 
+  it("keeps active reservations when the cutoff predates their expiry", async () => {
+    const result = await api.admin.releaseExpiredReservations({
+      now: "2000-01-01T00:00:00.000Z",
+    });
+
+    assertCompleted(result);
+    assert.equal(result.data.affected.releasedReservations, 0);
+    assert.equal(result.data.affected.stockItems, 0);
+    assert.equal(
+      jsonBySlug("ec_stock_items", "mira-clipboard-stock", "quantities").quantityReserved,
+      3,
+    );
+  });
+
   it("releases stock reservations across fixture rows", async () => {
-    const result = await api.admin.releaseExpiredReservations();
+    const result = await api.admin.releaseExpiredReservations({
+      now: "2026-06-27T12:00:00.000Z",
+    });
 
     assertCompleted(result);
     assert.equal(result.data.affected.releasedReservations, 11);

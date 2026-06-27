@@ -340,6 +340,14 @@ export const mikaApiOverrides = {
           const quantityReserved = numberValue(quantities["quantityReserved"]);
           if (quantityReserved <= 0) continue;
 
+          // Only release reservations whose hold has expired as of `now`, mirroring the canonical
+          // storage contract (expires_at IS NOT NULL AND expires_at <= now). Active holds (no
+          // reservedUntil, or a reservedUntil after `now`) stay reserved to avoid freeing live
+          // stock and enabling oversell.
+          const reservedUntil =
+            typeof quantities["reservedUntil"] === "string" ? quantities["reservedUntil"] : "";
+          if (!reservedUntil || reservedUntil > now) continue;
+
           stockItems += 1;
           releasedReservations += quantityReserved;
           const quantityOnHand = numberValue(quantities["quantityOnHand"]);

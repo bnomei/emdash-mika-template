@@ -854,7 +854,8 @@
           "quantities": {
             "quantityOnHand": 42,
             "quantityReserved": 3,
-            "lowStockThreshold": 8
+            "lowStockThreshold": 8,
+            "reservedUntil": "2026-06-24T12:00:00.000Z"
           },
           "stock_adjust": {
             "stockItemId": "stock_bw_clip_mini",
@@ -877,7 +878,8 @@
           "quantities": {
             "quantityOnHand": 18,
             "quantityReserved": 6,
-            "lowStockThreshold": 10
+            "lowStockThreshold": 10,
+            "reservedUntil": "2026-06-24T12:00:00.000Z"
           },
           "stock_adjust": {
             "stockItemId": "stock_bw_pennant_rain",
@@ -900,7 +902,8 @@
           "quantities": {
             "quantityOnHand": 9,
             "quantityReserved": 1,
-            "lowStockThreshold": 5
+            "lowStockThreshold": 5,
+            "reservedUntil": "2026-06-24T12:00:00.000Z"
           },
           "stock_adjust": {
             "stockItemId": "stock_bw_zine_workshop",
@@ -946,7 +949,8 @@
           "quantities": {
             "quantityOnHand": 2,
             "quantityReserved": 1,
-            "lowStockThreshold": 3
+            "lowStockThreshold": 3,
+            "reservedUntil": "2026-06-24T12:00:00.000Z"
           },
           "stock_adjust": {
             "stockItemId": "stock_bw_sunday_club",
