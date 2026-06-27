@@ -1,4 +1,5 @@
 ---
+import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 import { actions, isInputError } from "astro:actions";
 import { Button, Text } from "@cloudflare/kumo";
 import MagicLinkForm from "../../components/MagicLinkForm.astro";
@@ -18,9 +19,14 @@ const requestError = isInputError(requestResult?.error)
   ? null
   : requestResult?.error?.message;
 const token = Astro.url.searchParams.get("token");
+// Preserve where sign-in was initiated (carried on the magic-link URL) so verify returns the
+// user to that protected page instead of always dropping them on the account overview.
+const returnTo = mikaSafeReturnTo(Astro.url.searchParams.get("returnTo"), {
+  fallback: mikaTemplateRoutes.account,
+});
 
 if (verifyResult?.data) {
-  return Astro.redirect(mikaTemplateRoutes.account);
+  return Astro.redirect(returnTo);
 }
 
 const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
@@ -35,13 +41,13 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
   {token ? (
     <form class="mika-kumo-form" action={actions.mika.magicLink.verify} method="post">
       <input type="hidden" {...mikaHiddenInput("token", token)} />
-      <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
+      <input type="hidden" {...mikaReturnToInput(returnTo)} />
       <Button type="submit" variant="primary">Continue</Button>
     </form>
   ) : (
     <MagicLinkForm
       id="mika-account-magic-link"
-      returnTo={mikaTemplateRoutes.account}
+      returnTo={returnTo}
       emailError={requestInputErrors.email?.join(", ")}
     />
   )}
