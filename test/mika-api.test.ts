@@ -410,6 +410,17 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(status.data.status, "completed");
     assert.ok(status.data.orderId);
 
+    // Starting a full-cart checkout must not empty the cart: a buyer who abandons before payment
+    // keeps their lines, matching the /checkout/cancel page promise.
+    const cartAfterStart = await api.cart.get(ctx);
+    assert.equal(cartAfterStart.ok, true);
+    assert.equal(cartAfterStart.data.items.length, 1);
+
+    // The success page confirms completion with the request context, which clears the cart.
+    const confirmed = await api.checkout.status(ctx, { checkoutId });
+    assert.equal(confirmed.ok, true);
+    assert.equal(confirmed.data.status, "completed");
+
     const cartAfterCheckout = await api.cart.get(ctx);
     assert.equal(cartAfterCheckout.ok, true);
     assert.equal(cartAfterCheckout.data.items.length, 0);

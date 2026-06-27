@@ -190,6 +190,9 @@ interface TemplateSessionState {
   readonly wishlistItems: Map<string, SessionWishlistItem>;
   readonly checkouts: Map<string, CheckoutSessionDTO>;
   readonly checkoutOrders: Map<string, OrderSummaryDTO>;
+  // Full-cart checkouts awaiting their post-payment cart clear. The cart is emptied only once
+  // the checkout's completion is confirmed (success page), so abandonment keeps the cart intact.
+  readonly pendingCartCheckouts: Set<string>;
   couponCode?: string;
   accountEmail?: string;
   subscriptionStatus?: SubscriptionDTO["status"];
@@ -200,6 +203,7 @@ interface TemplateSessionStateSnapshot {
   readonly wishlistItems?: readonly SessionWishlistItem[];
   readonly checkouts?: readonly CheckoutSessionDTO[];
   readonly checkoutOrders?: readonly OrderSummaryDTO[];
+  readonly pendingCartCheckouts?: readonly string[];
   readonly couponCode?: string;
   readonly accountEmail?: string;
   readonly subscriptionStatus?: SubscriptionDTO["status"];
@@ -370,9 +374,11 @@ export const mikaStorefrontApiOverrides = {
       };
       state.checkouts.set(checkoutId, { ...checkout, status: "completed" });
       state.checkoutOrders.set(orderId, checkoutOrderSummary(orderId, lines));
+      // Defer emptying the cart until the checkout's completion is confirmed (success page).
+      // Starting a full-cart checkout no longer clears the cart, so a buyer who abandons before
+      // payment keeps their lines and coupon, matching the /checkout/cancel page promise.
       if (!input.sellableId) {
-        state.cartItems.clear();
-        state.couponCode = undefined;
+        state.pendingCartCheckouts.add(String(checkoutId));
       }
       await persistSessionState(ctx, state);
 
@@ -405,8 +411,17 @@ export const mikaStorefrontApiOverrides = {
       if (seeded) return ok(seeded);
 
       if (isRequestContextInput(ctxOrInput)) {
-        const checkout = (await sessionState(ctxOrInput)).checkouts.get(checkoutId);
-        if (checkout) return ok(checkout);
+        const state = await sessionState(ctxOrInput);
+        const checkout = state.checkouts.get(checkoutId);
+        if (checkout) {
+          // Confirming a completed full-cart checkout empties the cart post-payment.
+          if (checkout.status === "completed" && state.pendingCartCheckouts.delete(checkoutId)) {
+            state.cartItems.clear();
+            state.couponCode = undefined;
+            await persistSessionState(ctxOrInput, state);
+          }
+          return ok(checkout);
+        }
       }
 
       for (const state of sessionStates.values()) {
@@ -893,6 +908,7 @@ function emptySessionState(): TemplateSessionState {
     wishlistItems: new Map(),
     checkouts: new Map(),
     checkoutOrders: new Map(),
+    pendingCartCheckouts: new Set(),
     accountEmail: defaultCustomer().email,
   };
 }
@@ -925,6 +941,7 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
     checkoutOrders: new Map(
       (snapshot.checkoutOrders ?? []).map((order) => [String(order.id), order]),
     ),
+    pendingCartCheckouts: new Set(snapshot.pendingCartCheckouts ?? []),
     couponCode: snapshot.couponCode,
     accountEmail: snapshot.accountEmail ?? defaultCustomer().email,
     subscriptionStatus: snapshot.subscriptionStatus,
@@ -937,6 +954,7 @@ function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSna
     wishlistItems: [...state.wishlistItems.values()],
     checkouts: [...state.checkouts.values()],
     checkoutOrders: [...state.checkoutOrders.values()],
+    pendingCartCheckouts: [...state.pendingCartCheckouts],
     couponCode: state.couponCode,
     accountEmail: state.accountEmail,
     subscriptionStatus: state.subscriptionStatus,
