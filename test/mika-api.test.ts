@@ -481,8 +481,13 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(renewSubscription.ok, true);
     assert.equal(renewSubscription.data.subscriptions[0].status, "active");
 
-    for (const token of seededDownloadTokens()) {
+    for (const { token, expired } of seededDownloadTokens()) {
       const download = await api.download.resolve({ token });
+      if (expired) {
+        assert.equal(download.ok, false);
+        assert.equal(download.status, 410);
+        continue;
+      }
       assert.equal(download.ok, true);
       assert.equal(download.data.redirectUrl, `/template-downloads/${token}.txt`);
       assert.equal(existsSync(join(root, "public", download.data.redirectUrl.replace(/^\//, ""))), true);
@@ -557,5 +562,8 @@ function jsonBySlug(table, slug, column) {
 
 function seededDownloadTokens() {
   const seed = JSON.parse(readFileSync(join(root, "seed/mika-actions.seed.json"), "utf8"));
-  return seed.content.downloads.map((entry) => entry.data.download_ref.downloadRef);
+  return seed.content.downloads.map((entry) => ({
+    token: entry.data.download_ref.downloadRef,
+    expired: entry.data.fixture_status === "expired",
+  }));
 }

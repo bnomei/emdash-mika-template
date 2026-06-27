@@ -493,6 +493,12 @@ export const mikaStorefrontApiOverrides = {
       const download = downloads().find((entry) => downloadRef(entry)["downloadRef"] === token);
       if (!download) return fail("TOKEN_INVALID", "Template download token not found.", 404);
 
+      // Keep resolution in agreement with the account surface: an entry the account UI marks
+      // expired (via fixture_status) must not grant file retrieval through /download/[token].
+      if (download.data?.["fixture_status"] === "expired") {
+        return fail("TOKEN_EXPIRED", "Template download token has expired.", 410);
+      }
+
       return ok({
         title: stringValue(download.data?.["title"], download.slug),
         redirectUrl: `/template-downloads/${encodeURIComponent(token)}.txt`,
