@@ -595,9 +595,9 @@ export const mikaStorefrontApiOverrides = {
       return ok(accountFor(state));
     },
     async change(ctx) {
+      // A plan change preserves the subscription's lifecycle state; it must not implicitly renew a
+      // pending cancel_at_period_end the way subscription.renew does.
       const state = await sessionState(ctx);
-      state.subscriptionStatus = "active";
-      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
     async renew(ctx) {

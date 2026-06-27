@@ -841,6 +841,15 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(accountAfterCancel.ok, true);
     assert.equal(accountAfterCancel.data.subscriptions[0].status, "cancel_at_period_end");
 
+    // Changing the plan must not undo a scheduled cancellation.
+    const changeSubscription = await api.subscription.change(ctx, {
+      subscriptionId: "sub_template_buttonwood_club",
+      priceId: "price_bw_sunday_club",
+    });
+    assert.equal(changeSubscription.ok, true);
+    assert.equal(changeSubscription.data.subscriptions[0].status, "cancel_at_period_end");
+    assert.equal(changeSubscription.data.subscriptions[0].cancelAtPeriodEnd, true);
+
     const renewSubscription = await api.subscription.renew(ctx, {
       subscriptionId: "sub_template_buttonwood_club",
     });
