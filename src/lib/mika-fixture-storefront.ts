@@ -411,12 +411,16 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const cart = cartFor(state);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
+      // Quote the same lines checkout.start will charge. For buy-now (sellableId set) the lines come
+      // from the input, not the session cart, and the cart coupon does not apply — mirroring
+      // checkout.start — so the preview total matches what the buyer is actually charged.
+      const quoteCart = input.sellableId ? cartFromLines(lines) : cart;
       const preview: CheckoutPreviewDTO = {
         id: createMikaId("preview_template"),
         status: cart.items.length > 0 || input.sellableId ? "requires_confirmation" : "unavailable",
         mode: checkoutMode(lines),
         provider: templateProvider,
-        quote: cartQuote(cart),
+        quote: cartQuote(quoteCart),
         requiredProofs: [],
       };
       return ok(preview);
@@ -1030,9 +1034,13 @@ function isRequestContextInput(value: unknown): value is MikaRequestContext {
 }
 
 function cartFor(state: TemplateSessionState): CartDTO {
-  const items = [...state.cartItems.values()].map(cartLine).filter((line): line is CartLineDTO => Boolean(line));
+  return cartFromLines([...state.cartItems.values()], state.couponCode);
+}
+
+function cartFromLines(lines: readonly SessionCartItem[], couponCode?: string): CartDTO {
+  const items = lines.map(cartLine).filter((line): line is CartLineDTO => Boolean(line));
   const subtotalAmount = items.reduce((sum, item) => sum + item.total.amount, 0);
-  const discountAmount = state.couponCode ? Math.round(subtotalAmount * 0.1) : 0;
+  const discountAmount = couponCode ? Math.round(subtotalAmount * 0.1) : 0;
   const totalAmount = Math.max(0, subtotalAmount - discountAmount);
 
   return {
@@ -1040,9 +1048,9 @@ function cartFor(state: TemplateSessionState): CartDTO {
     status: "open",
     currency: defaultCurrency,
     items,
-    coupon: state.couponCode
+    coupon: couponCode
       ? {
-          code: state.couponCode,
+          code: couponCode,
           label: "Buttonwood 10% discount",
           discount: money(discountAmount),
         }

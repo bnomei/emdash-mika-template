@@ -515,6 +515,27 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("quotes buy-now preview lines so the total matches checkout.start", async () => {
+    const ctx = storefrontCtx("buy-now-preview");
+    const previewInput = {
+      sellableId: "sellable_bw_zine_workshop",
+      priceId: "price_bw_zine_workshop",
+      quantity: 1,
+    };
+
+    const preview = await api.checkout.preview(ctx, previewInput);
+    assert.equal(preview.ok, true);
+    assert.equal(preview.data.status, "requires_confirmation");
+    assert.equal(preview.data.quote.items.length, 1);
+    assert.equal(preview.data.quote.total.amount, 1099);
+
+    const start = await api.checkout.start(ctx, { ...previewInput, successPath: "/checkout/success" });
+    assert.equal(start.ok, true);
+    const account = await api.account.get(ctx);
+    const order = account.data.orders.find((item) => item.id === start.data.orderId);
+    assert.equal(order.total.amount, preview.data.quote.total.amount);
+  });
+
   it("sanitizes an off-origin successPath into a same-origin redirect", async () => {
     const ctx = storefrontCtx("checkout-open-redirect");
     await api.cart.add(ctx, {
