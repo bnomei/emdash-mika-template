@@ -197,6 +197,9 @@ interface TemplateSessionState {
   readonly pendingCartCheckouts: Set<string>;
   couponCode?: string;
   accountEmail?: string;
+  // Email of an unverified magic-link challenge. Identity is only established from this on verify,
+  // so a request alone never signs the session in as the requested email.
+  pendingEmail?: string;
   subscriptionStatus?: SubscriptionDTO["status"];
 }
 
@@ -208,6 +211,7 @@ interface TemplateSessionStateSnapshot {
   readonly pendingCartCheckouts?: readonly string[];
   readonly couponCode?: string;
   readonly accountEmail?: string;
+  readonly pendingEmail?: string;
   readonly subscriptionStatus?: SubscriptionDTO["status"];
 }
 
@@ -460,13 +464,22 @@ export const mikaStorefrontApiOverrides = {
   magicLink: {
     async request(ctx, input) {
       const state = await sessionState(ctx);
-      state.accountEmail = input.email;
+      // Only record the pending challenge; identity is not established until verify succeeds, so a
+      // request alone cannot sign the session in as the requested email.
+      state.pendingEmail = input.email;
       await persistSessionState(ctx, state);
       return ok({ sent: true });
     },
     async verify(ctx, input) {
       const state = await sessionState(ctx);
-      state.accountEmail = input.token.includes("@") ? input.token : defaultCustomer().email;
+      // Establish identity from the verified challenge (the email the link was requested for),
+      // falling back to a token-encoded email or the default fixture customer.
+      const verifiedEmail =
+        state.pendingEmail ??
+        (input.token.includes("@") ? input.token : undefined) ??
+        defaultCustomer().email;
+      state.accountEmail = verifiedEmail;
+      state.pendingEmail = undefined;
       await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
@@ -977,6 +990,7 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
     pendingCartCheckouts: new Set(snapshot.pendingCartCheckouts ?? []),
     couponCode: snapshot.couponCode,
     accountEmail: snapshot.accountEmail ?? defaultCustomer().email,
+    pendingEmail: snapshot.pendingEmail,
     subscriptionStatus: snapshot.subscriptionStatus,
   };
 }
@@ -990,6 +1004,7 @@ function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSna
     pendingCartCheckouts: [...state.pendingCartCheckouts],
     couponCode: state.couponCode,
     accountEmail: state.accountEmail,
+    pendingEmail: state.pendingEmail,
     subscriptionStatus: state.subscriptionStatus,
   };
 }

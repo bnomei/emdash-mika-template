@@ -515,6 +515,20 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(subscriptionCheckout.data.mode, "subscription");
   });
 
+  it("does not sign in the requested email before magic-link verify", async () => {
+    const ctx = storefrontCtx("magic-link-preauth");
+    const requested = await api.magicLink.request(ctx, { email: "attacker@evil.test" });
+    assert.equal(requested.ok, true);
+
+    const beforeVerify = await api.account.get(ctx);
+    assert.equal(beforeVerify.ok, true);
+    assert.notEqual(beforeVerify.data.customer.email, "attacker@evil.test");
+
+    const verified = await api.magicLink.verify(ctx, { token: "template-login" });
+    assert.equal(verified.ok, true);
+    assert.equal(verified.data.customer.email, "attacker@evil.test");
+  });
+
   it("sanitizes account.portal returnTo into a same-origin redirect", async () => {
     const ctx = storefrontCtx("portal-open-redirect");
     const offSite = await api.account.portal(ctx, { returnTo: "https://evil.example/phish" });
