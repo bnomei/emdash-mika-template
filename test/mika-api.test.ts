@@ -457,6 +457,27 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(moved.data.items[0].quantity, 7);
   });
 
+  it("preserves cart quantity across save-for-later and back", async () => {
+    const ctx = storefrontCtx("save-for-later-roundtrip");
+    const added = await api.cart.add(ctx, {
+      sellableId: "sellable_bw_pennant_rain",
+      priceId: "price_bw_pennant_rain",
+      quantity: 5,
+    });
+    assert.equal(added.ok, true);
+    assert.equal(added.data.items[0].quantity, 5);
+
+    const lineId = added.data.items[0].id;
+    const saved = await api.wishlist.saveForLater(ctx, { lineId });
+    assert.equal(saved.ok, true);
+
+    // Restore without an explicit quantity: the saved 5 units must come back.
+    const moved = await api.wishlist.moveToCart(ctx, { itemId: saved.data.items[0].id });
+    assert.equal(moved.ok, true);
+    assert.equal(moved.data.items.length, 1);
+    assert.equal(moved.data.items[0].quantity, 5);
+  });
+
   it("starts and resolves fixture checkout sessions", async () => {
     const ctx = storefrontCtx("checkout-flow");
     await api.cart.add(ctx, {

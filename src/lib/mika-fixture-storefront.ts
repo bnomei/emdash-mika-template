@@ -185,6 +185,9 @@ interface SessionWishlistItem {
   readonly sellableId: MikaId;
   readonly priceId?: MikaId;
   readonly addedAt: ISODateTime;
+  // Quantity carried over when a cart line is saved for later, so moving it back restores the
+  // original units instead of defaulting to 1.
+  readonly quantity?: number;
 }
 
 interface TemplateSessionState {
@@ -347,11 +350,13 @@ export const mikaStorefrontApiOverrides = {
       // Merge with any existing cart line, matching cart.add, so moving a wishlist item never
       // drops units already in the cart.
       const existingQuantity = state.cartItems.get(lineId)?.quantity ?? 0;
+      // Prefer an explicit move quantity, else restore the quantity saved with the wishlist item.
+      const moveQuantity = input.quantity ?? item.quantity ?? 1;
       state.cartItems.set(lineId, {
         lineId: createMikaId(lineId),
         sellableId: item.sellableId,
         priceId: item.priceId,
-        quantity: Math.max(1, input.quantity ?? 1) + existingQuantity,
+        quantity: Math.max(1, moveQuantity) + existingQuantity,
       });
       await persistSessionState(ctx, state);
 
@@ -369,6 +374,8 @@ export const mikaStorefrontApiOverrides = {
         sellableId: item.sellableId,
         priceId: item.priceId,
         addedAt: nowIso(),
+        // Preserve the cart line quantity so a later moveToCart restores the same units.
+        quantity: item.quantity,
       });
       await persistSessionState(ctx, state);
 
@@ -995,6 +1002,7 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
           sellableId: createMikaId(String(item.sellableId)),
           priceId: item.priceId ? createMikaId(String(item.priceId)) : undefined,
           addedAt: createISODateTime(stringValue(item.addedAt, nowIso())),
+          quantity: item.quantity === undefined ? undefined : Math.max(1, numberValue(item.quantity, 1)),
         },
       ]),
     ),
