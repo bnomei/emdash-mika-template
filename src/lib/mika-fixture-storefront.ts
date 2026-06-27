@@ -322,11 +322,15 @@ export const mikaStorefrontApiOverrides = {
       if (!item) return fail("SELLABLE_NOT_FOUND", "Template wishlist item not found.", 404);
 
       state.wishlistItems.delete(input.itemId);
-      state.cartItems.set(cartLineId(item.sellableId, item.priceId), {
-        lineId: createMikaId(cartLineId(item.sellableId, item.priceId)),
+      const lineId = cartLineId(item.sellableId, item.priceId);
+      // Merge with any existing cart line, matching cart.add, so moving a wishlist item never
+      // drops units already in the cart.
+      const existingQuantity = state.cartItems.get(lineId)?.quantity ?? 0;
+      state.cartItems.set(lineId, {
+        lineId: createMikaId(lineId),
         sellableId: item.sellableId,
         priceId: item.priceId,
-        quantity: Math.max(1, input.quantity ?? 1),
+        quantity: Math.max(1, input.quantity ?? 1) + existingQuantity,
       });
       await persistSessionState(ctx, state);
 

@@ -395,6 +395,31 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(saved.data.items.length, 1);
   });
 
+  it("merges moveToCart quantity into an existing cart line", async () => {
+    const ctx = storefrontCtx("movetocart-merge");
+    const added = await api.cart.add(ctx, {
+      sellableId: "sellable_bw_pennant_rain",
+      priceId: "price_bw_pennant_rain",
+      quantity: 5,
+    });
+    assert.equal(added.ok, true);
+    assert.equal(added.data.items[0].quantity, 5);
+
+    const wishlist = await api.wishlist.add(ctx, {
+      sellableId: "sellable_bw_pennant_rain",
+      priceId: "price_bw_pennant_rain",
+    });
+    assert.equal(wishlist.ok, true);
+
+    const moved = await api.wishlist.moveToCart(ctx, {
+      itemId: wishlist.data.items[0].id,
+      quantity: 2,
+    });
+    assert.equal(moved.ok, true);
+    assert.equal(moved.data.items.length, 1);
+    assert.equal(moved.data.items[0].quantity, 7);
+  });
+
   it("starts and resolves fixture checkout sessions", async () => {
     const ctx = storefrontCtx("checkout-flow");
     await api.cart.add(ctx, {
