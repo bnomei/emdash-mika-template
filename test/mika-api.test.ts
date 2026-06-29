@@ -836,11 +836,17 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
   it("rejects buy-now checkout for mismatched sellable/price pairs", async () => {
     const ctx = storefrontCtx("checkout-invalid-pair");
-    const checkout = await api.checkout.start(ctx, {
+    const input = {
       sellableId: "sellable_bw_clip_mini",
       priceId: "price_bw_clip_standard",
       successPath: "/checkout/success",
-    });
+    };
+
+    const preview = await api.checkout.preview(ctx, input);
+    assert.equal(preview.ok, false);
+    assert.equal(preview.status, 404);
+
+    const checkout = await api.checkout.start(ctx, input);
     assert.equal(checkout.ok, false);
     assert.equal(checkout.status, 404);
 

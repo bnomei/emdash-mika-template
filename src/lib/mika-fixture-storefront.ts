@@ -453,6 +453,12 @@ export const mikaStorefrontApiOverrides = {
       const state = await sessionState(ctx);
       const cart = cartFor(state);
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
+      if (lines.some((line) => !findVariantBySellable(line.sellableId, line.priceId))) {
+        return fail("SELLABLE_NOT_FOUND", "Template sellable not found.", 404);
+      }
+      if (lines.some((line) => isCheckoutLineBlocked(line))) {
+        return fail("CHECKOUT_UNAVAILABLE", "Template checkout has unavailable lines.", 409);
+      }
       const quoteCart = input.sellableId ? cartFromLines(lines) : cart;
       const preview: CheckoutPreviewDTO = {
         id: createMikaId("preview_template"),
