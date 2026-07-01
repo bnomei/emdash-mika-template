@@ -425,19 +425,20 @@ export const mikaStorefrontApiOverrides = {
       }
 
       const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
+      const statusToken = `token_${checkoutId}`;
       const orderId = createMikaId(`order_${checkoutId}`);
       const successPath = mikaSafeReturnTo(input.successPath, { fallback: "/checkout/success" });
-      const separator = successPath.includes("?") ? "&" : "?";
-      const redirectUrl = `${successPath}${separator}checkoutId=${encodeURIComponent(checkoutId)}`;
+      const redirectUrl = checkoutRedirectUrl(successPath, checkoutId, statusToken);
       const checkout: CheckoutSessionDTO = {
         id: checkoutId,
         status: "redirected",
         mode: checkoutMode(lines),
         provider: input.provider ?? templateProvider,
         redirectUrl,
+        statusToken,
         orderId,
       };
-      state.checkouts.set(checkoutId, { ...checkout, status: "completed" });
+      state.checkouts.set(checkoutId, checkout);
       state.checkoutOrders.set(
         orderId,
         checkoutOrderSummary(orderId, lines, input.sellableId ? undefined : state.couponCode),
@@ -471,13 +472,7 @@ export const mikaStorefrontApiOverrides = {
       return ok(preview);
     },
     async status(ctxOrInput, input) {
-      const checkoutId =
-        typeof input === "string"
-          ? input
-          : input?.checkoutId ??
-            (typeof ctxOrInput === "string"
-              ? ctxOrInput
-              : (ctxOrInput as { readonly checkoutId?: string }).checkoutId);
+      const { checkoutId, token } = checkoutLookupInput(ctxOrInput, input);
       if (!checkoutId) return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
       const seeded = seededCheckout(checkoutId);
       if (seeded) return ok(seeded);
@@ -486,14 +481,34 @@ export const mikaStorefrontApiOverrides = {
         const state = await sessionState(ctxOrInput);
         const checkout = state.checkouts.get(checkoutId);
         if (checkout) {
-          if (checkout.status === "completed" && state.pendingCartCheckouts.delete(checkoutId)) {
-            state.cartItems.clear();
-            state.couponCode = undefined;
-            await persistSessionState(ctxOrInput, state);
-          }
-          return ok(checkout);
+          const completed = await completeCheckout(ctxOrInput, state, checkout);
+          return ok(completed);
         }
       }
+
+      const tokenMatch = token ? findCheckoutState(checkoutId, token) : undefined;
+      if (tokenMatch) return ok(await completeCheckout(undefined, tokenMatch.state, tokenMatch.checkout));
+
+      return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
+    },
+    async cancel(ctxOrInput, input) {
+      const { checkoutId, token } = checkoutLookupInput(ctxOrInput, input);
+      if (!checkoutId) return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
+      const seeded = seededCheckout(checkoutId);
+      if (seeded) return ok(seeded);
+
+      if (isRequestContextInput(ctxOrInput)) {
+        const state = await sessionState(ctxOrInput);
+        const checkout = state.checkouts.get(checkoutId);
+        if (checkout) {
+          const cancelled = cancelCheckout(state, checkout);
+          await persistSessionState(ctxOrInput, state);
+          return ok(cancelled);
+        }
+      }
+
+      const tokenMatch = token ? findCheckoutState(checkoutId, token) : undefined;
+      if (tokenMatch) return ok(cancelCheckout(tokenMatch.state, tokenMatch.checkout));
 
       return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
     },
@@ -573,18 +588,10 @@ export const mikaStorefrontApiOverrides = {
   },
   download: {
     async resolve({ token }) {
-      const download = downloads().find((entry) => downloadRef(entry)["downloadRef"] === token);
-      if (!download) return fail("TOKEN_INVALID", "Template download token not found.", 404);
-
-      if (download.data?.["fixture_status"] === "expired") {
-        return fail("TOKEN_EXPIRED", "Template download token has expired.", 410);
-      }
-
-      return ok({
-        title: stringValue(download.data?.["title"], download.slug),
-        redirectUrl: `/template-downloads/${encodeURIComponent(token)}.txt`,
-        expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
-      } satisfies DownloadResolutionDTO);
+      return resolveTemplateDownload(token);
+    },
+    async confirm({ token }) {
+      return resolveTemplateDownload(token);
     },
   },
   order: {
@@ -1407,6 +1414,118 @@ function seededCheckout(checkoutId: string): CheckoutSessionDTO | undefined {
     redirectUrl: stringValue(entry.data?.["redirect_url"], ""),
     ...(orderId ? { orderId: createMikaId(orderId) } : {}),
   };
+}
+
+function checkoutRedirectUrl(path: string, checkoutId: MikaId, token: string): string {
+  const separator = path.includes("?") ? "&" : "?";
+  const search = new URLSearchParams({ checkoutId, token });
+
+  return `${path}${separator}${search.toString()}`;
+}
+
+function checkoutLookupInput(
+  ctxOrInput: unknown,
+  input: unknown,
+): { readonly checkoutId?: string; readonly token?: string } {
+  if (typeof input === "string") return { checkoutId: input };
+  if (isRecord(input)) {
+    return {
+      checkoutId: stringValue(input["checkoutId"], ""),
+      token: stringValue(input["token"], ""),
+    };
+  }
+  if (typeof ctxOrInput === "string") return { checkoutId: ctxOrInput };
+  if (isRecord(ctxOrInput)) {
+    return {
+      checkoutId: stringValue(ctxOrInput["checkoutId"], ""),
+      token: stringValue(ctxOrInput["token"], ""),
+    };
+  }
+
+  return {};
+}
+
+async function completeCheckout(
+  ctx: MikaRequestContext | undefined,
+  state: TemplateSessionState,
+  checkout: CheckoutSessionDTO,
+): Promise<CheckoutSessionDTO> {
+  if (
+    checkout.status !== "redirected" &&
+    checkout.status !== "pending" &&
+    checkout.status !== "created"
+  ) {
+    return checkout;
+  }
+
+  const completed: CheckoutSessionDTO = { ...checkout, status: "completed" };
+  state.checkouts.set(completed.id, completed);
+  if (state.pendingCartCheckouts.delete(completed.id)) {
+    state.cartItems.clear();
+    state.couponCode = undefined;
+  }
+  if (ctx) await persistSessionState(ctx, state);
+
+  return completed;
+}
+
+function cancelCheckout(
+  state: TemplateSessionState,
+  checkout: CheckoutSessionDTO,
+): CheckoutSessionDTO {
+  if (
+    checkout.status === "completed" ||
+    checkout.status === "cancelled" ||
+    checkout.status === "expired" ||
+    checkout.status === "failed"
+  ) {
+    return checkout;
+  }
+
+  if (checkout.orderId) state.checkoutOrders.delete(checkout.orderId);
+  state.pendingCartCheckouts.delete(checkout.id);
+
+  const cancelled: CheckoutSessionDTO = {
+    id: checkout.id,
+    status: "cancelled",
+    mode: checkout.mode,
+    provider: checkout.provider,
+    redirectUrl: checkout.redirectUrl,
+    statusToken: checkout.statusToken,
+    expiresAt: checkout.expiresAt,
+    paymentPending: checkout.paymentPending,
+    errors: checkout.errors,
+  };
+  state.checkouts.set(cancelled.id, cancelled);
+
+  return cancelled;
+}
+
+function findCheckoutState(
+  checkoutId: string,
+  token: string,
+): { readonly state: TemplateSessionState; readonly checkout: CheckoutSessionDTO } | undefined {
+  for (const state of sessionStates.values()) {
+    const checkout = state.checkouts.get(checkoutId);
+    if (checkout?.statusToken === token) return { state, checkout };
+  }
+
+  return undefined;
+}
+
+function resolveTemplateDownload(token: string): MikaApiResult<DownloadResolutionDTO> {
+  const download = downloads().find((entry) => downloadRef(entry)["downloadRef"] === token);
+  if (!download) return fail("TOKEN_INVALID", "Template download token not found.", 404);
+
+  if (download.data?.["fixture_status"] === "expired") {
+    return fail("TOKEN_EXPIRED", "Template download token has expired.", 410);
+  }
+
+  return ok({
+    title: stringValue(download.data?.["title"], download.slug),
+    redirectUrl: `/template-downloads/${encodeURIComponent(token)}.txt`,
+    expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
+  } satisfies DownloadResolutionDTO);
 }
 
 function findVariantBySellable(sellableId: MikaId, priceId?: MikaId): ProductVariant | undefined {

@@ -617,7 +617,10 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(checkout.data.mode, "payment");
     assert.match(checkout.data.redirectUrl, /^\/checkout\/success\?checkoutId=/);
 
-    const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get("checkoutId");
+    const checkoutUrl = new URL("http://template.test" + checkout.data.redirectUrl);
+    const checkoutId = checkoutUrl.searchParams.get("checkoutId");
+    const token = checkoutUrl.searchParams.get("token");
+    assert.ok(token);
 
     const unscoped = await api.checkout.status({ checkoutId });
     assert.equal(unscoped.ok, false);
@@ -627,7 +630,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(cartAfterStart.ok, true);
     assert.equal(cartAfterStart.data.items.length, 1);
 
-    const confirmed = await api.checkout.status(ctx, { checkoutId });
+    const confirmed = await api.checkout.status({ checkoutId, token });
     assert.equal(confirmed.ok, true);
     assert.equal(confirmed.data.status, "completed");
     assert.ok(confirmed.data.orderId);
@@ -680,13 +683,26 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
       cancelPath: "/checkout/cancel",
     });
     assert.equal(checkout.ok, true);
-    const checkoutId = new URL("http://template.test" + checkout.data.redirectUrl).searchParams.get("checkoutId");
+    const checkoutUrl = new URL("http://template.test" + checkout.data.redirectUrl);
+    const checkoutId = checkoutUrl.searchParams.get("checkoutId");
+    const token = checkoutUrl.searchParams.get("token");
     assert.ok(checkoutId);
+    assert.ok(token);
 
     const cancelView = await mikaTemplateCheckoutCancelView({
       ...ctx,
-      request: new Request("https://template.test/checkout/cancel?checkoutId=" + encodeURIComponent(checkoutId)),
-      url: new URL("https://template.test/checkout/cancel?checkoutId=" + encodeURIComponent(checkoutId)),
+      request: new Request(
+        "https://template.test/checkout/cancel?checkoutId=" +
+          encodeURIComponent(checkoutId) +
+          "&token=" +
+          encodeURIComponent(token),
+      ),
+      url: new URL(
+        "https://template.test/checkout/cancel?checkoutId=" +
+          encodeURIComponent(checkoutId) +
+          "&token=" +
+          encodeURIComponent(token),
+      ),
       session: {
         sessionID: ctx.sessionId,
         async get() {
@@ -697,6 +713,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     });
     assert.equal(cancelView.checkoutId, checkoutId);
     assert.equal(cancelView.status, "cancelled");
+    assert.equal(cancelView.orderId, undefined);
     assert.equal(cancelView.cartItemCount, 2);
 
     const cartAfterCancel = await api.cart.get(ctx);
@@ -705,13 +722,13 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(cartAfterCancel.data.items[0].quantity, 2);
     assert.equal(cartAfterCancel.data.coupon.code, "BUTTONWOOD10");
 
-    const confirmed = await api.checkout.status(ctx, { checkoutId });
-    assert.equal(confirmed.ok, true);
-    assert.equal(confirmed.data.status, "completed");
-    const cartAfterSuccess = await api.cart.get(ctx);
-    assert.equal(cartAfterSuccess.ok, true);
-    assert.equal(cartAfterSuccess.data.items.length, 0);
-    assert.equal(cartAfterSuccess.data.coupon, undefined);
+    const cancelled = await api.checkout.status(ctx, { checkoutId });
+    assert.equal(cancelled.ok, true);
+    assert.equal(cancelled.data.status, "cancelled");
+    const cartAfterStatus = await api.cart.get(ctx);
+    assert.equal(cartAfterStatus.ok, true);
+    assert.equal(cartAfterStatus.data.items.length, 1);
+    assert.equal(cartAfterStatus.data.coupon.code, "BUTTONWOOD10");
   });
 
   it("rejects magic-link verify for tokens without a matching request", async () => {
@@ -935,13 +952,18 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     for (const { token, expired } of seededDownloadTokens()) {
       const download = await api.download.resolve({ token });
+      const confirmedDownload = await api.download.confirm({ token });
       if (expired) {
         assert.equal(download.ok, false);
         assert.equal(download.status, 410);
+        assert.equal(confirmedDownload.ok, false);
+        assert.equal(confirmedDownload.status, 410);
         continue;
       }
       assert.equal(download.ok, true);
+      assert.equal(confirmedDownload.ok, true);
       assert.equal(download.data.redirectUrl, `/template-downloads/${token}.txt`);
+      assert.equal(confirmedDownload.data.redirectUrl, download.data.redirectUrl);
       assert.equal(existsSync(join(root, "public", download.data.redirectUrl.replace(/^\//, ""))), true);
     }
 

@@ -4,7 +4,7 @@
  * Landing for abandoned checkout with optional checkout status display.
  * Boundary: no payment capture; cart and catalog links remain available.
  */
-import { Badge, Link, Text } from "@cloudflare/kumo";
+import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import CheckoutSteps from "../../components/CheckoutSteps.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import { mikaTemplateCheckoutCancelView } from "../../lib/checkout-cancel";
@@ -13,7 +13,15 @@ import { mikaTemplateStatusLabel, mikaTemplateStatusVariant } from "../../lib/di
 
 export const prerender = false;
 
-const { checkoutId, status, cartItemCount } = await mikaTemplateCheckoutCancelView(Astro);
+const { checkoutId, status, orderId, lookupError, cartItemCount } = await mikaTemplateCheckoutCancelView(Astro);
+const statusMessage =
+  status === "missing"
+    ? "Checkout cancel link is missing. Your cart is still available if you were reviewing an order."
+    : lookupError
+      ? "Checkout cancellation could not be verified. Your cart is still available if no payment was completed."
+      : status === "completed"
+        ? "Payment was completed before this cancellation could be applied."
+        : "No payment was confirmed by this return page.";
 ---
 
 <MikaKumoPage title="Checkout cancelled" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-cancel>
@@ -28,11 +36,13 @@ const { checkoutId, status, cartItemCount } = await mikaTemplateCheckoutCancelVi
         </Badge>
       )}
     </div>
+    {lookupError && <Banner variant="error" title="Checkout lookup failed" description={lookupError} role="alert" />}
     <Text as="p" variant="secondary">
-      Your cart is still the place to review quantities, apply a coupon, save items for later, or start checkout again.
+      {statusMessage}
     </Text>
 
     <div class="mika-kumo-actions">
+      {orderId && <Link href={`${mikaTemplateRoutes.accountOrders}#order-${orderId}`}>View order</Link>}
       <Link href={mikaTemplateRoutes.cart}>Return to cart</Link>
       <Link href={mikaTemplateRoutes.products}>Continue shopping</Link>
       <Link href={mikaTemplateRoutes.wishlist}>Wishlist</Link>

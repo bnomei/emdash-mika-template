@@ -1,38 +1,25 @@
 /**
- * Hidden-field builders for Mika Astro action forms. Wraps `mikaSafeReturnTo` so
- * `returnTo`, `successPath`, and `cancelPath` POST values stay on-site and match
- * `mikaTemplateRoutes` fallbacks.
+ * Compatibility wrappers for Mika Astro form helpers. New helper logic lives in
+ * `@bnomei/emdash-mika/astro`; this module only pins template redirect fallbacks.
  */
-import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
+import {
+  mikaRedirectInputs as baseMikaRedirectInputs,
+  type MikaRedirectInputsInput,
+  type MikaRedirectInputsOptions,
+} from "@bnomei/emdash-mika/astro";
 
 import { mikaTemplateRoutes } from "./routes";
 
-export function mikaHiddenInput(name: string, value: string | number | null | undefined) {
-  return {
-    name,
-    value: value === null || value === undefined ? "" : String(value),
-  };
-}
-
-export function mikaReturnToInput(returnTo: string) {
-  return mikaHiddenInput("returnTo", mikaSafeReturnTo(returnTo));
-}
+export { mikaHiddenInput, mikaReturnToInput } from "@bnomei/emdash-mika/astro";
 
 /** Checkout/Buy-now bundle: success, cancel, and post-action return paths. */
-export function mikaRedirectInputs(input: {
-  readonly successPath: string;
-  readonly cancelPath: string;
-  readonly returnTo: string;
-}) {
-  return {
-    successPath: mikaHiddenInput(
-      "successPath",
-      mikaSafeReturnTo(input.successPath, { fallback: mikaTemplateRoutes.checkoutSuccess }),
-    ),
-    cancelPath: mikaHiddenInput(
-      "cancelPath",
-      mikaSafeReturnTo(input.cancelPath, { fallback: mikaTemplateRoutes.checkoutCancel }),
-    ),
-    returnTo: mikaReturnToInput(input.returnTo),
-  };
+export function mikaRedirectInputs(
+  input: MikaRedirectInputsInput,
+  options: MikaRedirectInputsOptions = {},
+) {
+  return baseMikaRedirectInputs(input, {
+    successFallback: mikaTemplateRoutes.checkoutSuccess,
+    cancelFallback: mikaTemplateRoutes.checkoutCancel,
+    ...options,
+  });
 }

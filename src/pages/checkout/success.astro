@@ -23,8 +23,9 @@ const checkoutId =
   Astro.url.searchParams.get("checkoutId") ??
   Astro.url.searchParams.get("checkout_id") ??
   Astro.url.searchParams.get("session_id");
+const token = Astro.url.searchParams.get("token") ?? undefined;
 const Mika = createMika(Astro, { api: mikaApiOverrides });
-const result = checkoutId ? await Mika.checkout.status(checkoutId) : null;
+const result = checkoutId ? await Mika.checkout.status({ checkoutId, token }) : null;
 const checkout = result?.ok ? result.data : null;
 const lookupError = result && !result.ok ? result.error.message : null;
 const status = !checkoutId
@@ -86,7 +87,7 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 
     <div class="mika-kumo-actions">
       {(["created", "redirected", "pending"].includes(status)) && checkoutId && (
-        <Link href={mikaTemplateCheckoutSuccessHref(checkoutId)}>Refresh status</Link>
+        <Link href={mikaTemplateCheckoutSuccessHref(checkoutId, token)}>Refresh status</Link>
       )}
       {checkout?.orderId && <Link href={`${mikaTemplateRoutes.accountOrders}#order-${checkout.orderId}`}>View order</Link>}
       {status === "completed" && <Link href={mikaTemplateRoutes.accountDownloads}>Downloads</Link>}
