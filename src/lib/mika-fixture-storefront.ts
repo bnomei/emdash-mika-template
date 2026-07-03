@@ -162,19 +162,12 @@ export interface TemplateAccountDTO extends AccountDTO {
   readonly downloads: readonly TemplateAccountDownloadDTO[];
 }
 
-interface TemplateWebhookReceiveInput {
-  readonly signatureHeaderPresent?: boolean;
-  readonly rawBodyLength?: number;
-}
-
 export interface TemplateWebhookReceiveDTO extends WebhookReceiveDTO {
   readonly fixture: {
     readonly provider: string;
     readonly providerEventId?: string;
     readonly eventType?: string;
     readonly rawBodyHash?: string;
-    readonly rawBodyLength?: number;
-    readonly signatureHeaderPresent: boolean;
     readonly signedWebhookMockBoundary: true;
   };
 }
@@ -619,7 +612,6 @@ export const mikaStorefrontApiOverrides = {
   },
   webhook: {
     async receive(_ctx, input) {
-      const fixtureInput = input as typeof input & TemplateWebhookReceiveInput;
       return ok({
         id: createMikaId(input.providerEventId ?? `webhook_${Date.now().toString(36)}`),
         status: "received",
@@ -629,8 +621,6 @@ export const mikaStorefrontApiOverrides = {
           providerEventId: input.providerEventId,
           eventType: input.eventType,
           rawBodyHash: input.payloadHash,
-          rawBodyLength: fixtureInput.rawBodyLength,
-          signatureHeaderPresent: fixtureInput.signatureHeaderPresent ?? false,
           signedWebhookMockBoundary: true,
         },
       } satisfies TemplateWebhookReceiveDTO);

@@ -1,7 +1,7 @@
 /**
  * View-model for the checkout cancel page. Provider redirects may attach checkout
- * identifiers under different query names; this module normalizes them, calls Mika's
- * cancel API when possible, and returns a live cart count for the landing page.
+ * identifiers as `checkoutId`; this module calls Mika's cancel API when possible
+ * and returns a live cart count for the landing page.
  */
 import { createMika } from "@bnomei/emdash-mika/astro";
 import { createMikaId } from "@bnomei/emdash-mika/types";
@@ -43,11 +43,7 @@ export async function mikaTemplateCheckoutCancelView(
   };
 }
 
-/** Accepts `checkoutId`, `checkout_id`, or `session_id` — common provider spellings. */
+/** Reads the Mika checkout id from the canonical `checkoutId` query parameter. */
 export function mikaTemplateCheckoutIdFromUrl(url: URL): string | null {
-  return (
-    url.searchParams.get("checkoutId") ??
-    url.searchParams.get("checkout_id") ??
-    url.searchParams.get("session_id")
-  );
+  return url.searchParams.get("checkoutId");
 }

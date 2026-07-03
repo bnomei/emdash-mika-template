@@ -23,8 +23,8 @@ should wire `createMikaBackendApi()` or explicit `MikaApi` overrides to durable
 repositories and provider adapters.
 
 The webhook route is a signed-webhook mock boundary: it preserves provider
-metadata, signature-header presence, and raw-body hash/length for smoke tests,
-but it does not verify provider signatures or implement a real adapter.
+metadata and raw-body hash for smoke tests, but it does not verify provider
+signatures or implement a real adapter.
 
 ## Admin Collections
 

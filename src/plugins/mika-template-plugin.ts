@@ -5,8 +5,11 @@
  * function-based `MikaApiOverrides` merge at runtime instead of serializing
  * through the plugin descriptor.
  */
-import { createPlugin as createMikaPlugin, type MikaCreatePluginOptions } from "@bnomei/emdash-mika";
-import type { MikaApiOverrides } from "@bnomei/emdash-mika/server";
+import {
+  createMikaPlugin,
+  type MikaApiOverrides,
+  type MikaCreatePluginOptions,
+} from "@bnomei/emdash-mika/server";
 import { mikaApiOverrides } from "../lib/mika-api";
 
 /**

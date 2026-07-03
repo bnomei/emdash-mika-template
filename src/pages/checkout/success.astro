@@ -1,7 +1,7 @@
 ---
 /**
  * Route: `/checkout/success`
- * Post-checkout status page keyed by `checkoutId`, `checkout_id`, or `session_id`.
+ * Post-checkout status page keyed by `checkoutId`.
  * Boundary: Mika checkout and account reads; links to orders, downloads, and licenses on completion.
  */
 import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
@@ -19,10 +19,7 @@ import { mikaTemplateStatusLabel, mikaTemplateStatusVariant } from "../../lib/di
 
 export const prerender = false;
 
-const checkoutId =
-  Astro.url.searchParams.get("checkoutId") ??
-  Astro.url.searchParams.get("checkout_id") ??
-  Astro.url.searchParams.get("session_id");
+const checkoutId = Astro.url.searchParams.get("checkoutId");
 const token = Astro.url.searchParams.get("token") ?? undefined;
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 const result = checkoutId ? await Mika.checkout.status({ checkoutId, token }) : null;

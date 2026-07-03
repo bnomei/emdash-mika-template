@@ -7,8 +7,6 @@
 export {
   /** Builds the typed Mika action tree for Astro server actions. */
   createMikaActions,
-  /** Default action tree using package-level API resolution. */
-  mika,
   type MikaActionName,
   type MikaActions,
   type MikaActionsOptions,

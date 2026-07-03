@@ -984,8 +984,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
       eventType: "fixture.test",
       payloadHash: "sha256:fixture",
       providerEventId: "evt_template_test",
-      rawBodyLength: 17,
-      signatureHeaderPresent: true,
     });
     assert.equal(webhook.ok, true);
     assert.equal(webhook.data.status, "received");
@@ -993,8 +991,6 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(webhook.data.fixture.providerEventId, "evt_template_test");
     assert.equal(webhook.data.fixture.eventType, "fixture.test");
     assert.equal(webhook.data.fixture.rawBodyHash, "sha256:fixture");
-    assert.equal(webhook.data.fixture.rawBodyLength, 17);
-    assert.equal(webhook.data.fixture.signatureHeaderPresent, true);
     assert.equal(webhook.data.fixture.signedWebhookMockBoundary, true);
   });
 });

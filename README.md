@@ -29,11 +29,11 @@ Useful paths:
 
 ## Template Shape
 
-The storefront files under `src/actions`, `src/components`, `src/lib/form.ts`,
-`src/lib/routes.ts`, `src/styles/kumo.css`, and the copied customer pages are
-intentionally close to `@bnomei/emdash-mika/templates/astro/*`. Keep reusable
-behavior upstream in Mika, and keep this repository focused on a runnable host
-app.
+The storefront files under `src/actions`, `src/components`, `src/lib/account.ts`,
+`src/lib/cart.ts`, `src/lib/display.ts`, `src/lib/form.ts`, `src/lib/routes.ts`,
+`src/pages`, and `src/styles/kumo.css` are intentionally close to
+`@bnomei/emdash-mika/templates/astro/*`. Keep reusable behavior upstream in
+Mika, and keep this repository focused on a runnable host app.
 
 Kumo setup lives in:
 
@@ -57,8 +57,9 @@ Host-specific pieces live here:
   fixture data.
 
 The local native plugin entrypoint is `src/plugins/mika-template-plugin.ts`. It
-calls Mika `createPlugin({ api })` directly so function-based API overrides are
-not serialized through EmDash descriptor options.
+calls Mika `createMikaPlugin({ api })` from `@bnomei/emdash-mika/server` so
+function-based API overrides are not serialized through EmDash descriptor
+options.
 
 ## TODO: Replace Local Mika Link Before Public Release
 

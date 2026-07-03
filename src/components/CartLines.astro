@@ -78,7 +78,7 @@ const hasEmptySlot = Astro.slots.has("empty");
                 </div>
               </Table.Cell>
               <Table.Cell className="mika-kumo-cart-cell" data-label={quantityLabel}>
-                <form class="mika-kumo-form mika-kumo-inline-form" action={actions.mika.cart.update} method="post">
+                <form class="mika-kumo-form mika-kumo-inline-form" action={actions.mika.cart.update.queryString} method="post">
                   <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                   <input type="hidden" {...mikaReturnToInput(returnTo)} />
                   <Input
@@ -104,14 +104,14 @@ const hasEmptySlot = Astro.slots.has("empty");
               </Table.Cell>
               <Table.Cell className="mika-kumo-cart-cell mika-kumo-cart-cell-actions" data-label={actionsLabel}>
                 <div class="mika-kumo-actions mika-kumo-cart-line-actions">
-                  <form class="mika-kumo-form" action={actions.mika.wishlist.saveForLater} method="post">
+                  <form class="mika-kumo-form" action={actions.mika.wishlist.saveForLater.queryString} method="post">
                     <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                     <input type="hidden" {...mikaReturnToInput(returnTo)} />
                     <Button type="submit" variant="secondary" aria-label={`${saveForLaterLabel} ${line.title}`}>
                       {saveForLaterLabel}
                     </Button>
                   </form>
-                  <form class="mika-kumo-form" action={actions.mika.cart.remove} method="post">
+                  <form class="mika-kumo-form" action={actions.mika.cart.remove.queryString} method="post">
                     <input type="hidden" {...mikaHiddenInput("lineId", line.id)} />
                     <input type="hidden" {...mikaReturnToInput(returnTo)} />
                     <Button type="submit" variant="secondary-destructive" aria-label={`${removeLabel} ${line.title}`}>

@@ -15,7 +15,9 @@ Key files:
 - `src/pages/index.astro`: product listing and smoke-check links.
 - `src/pages/products/[slug].astro`: host-owned product page.
 - `src/actions/index.ts` and `src/actions/mika.ts`: Astro Actions wiring.
-- `src/components/*.astro`: copied unstyled Mika storefront components.
+- `src/components/*.astro` and `src/components/*.tsx`: Kumo-backed Mika
+  storefront components, with Buttonwood-specific controls where this runnable
+  host app needs richer fixture UX.
 - `src/lib/mika-fixture-storefront.ts`: fixture `MikaApi` overrides for catalog,
   stock, cart, wishlist, checkout, account, download, order, and webhook flows.
 - `src/lib/mika-api.ts`: combines storefront and admin fixture APIs.
@@ -59,9 +61,9 @@ Action fields are normal EmDash JSON fields with `widget: "actions:button"`:
 manifest that the actions plugin consumes.
 
 `/api/mika-webhook/[provider]` is a signed-webhook fixture boundary. It records
-the provider name, optional event id/type headers, whether a common signature
-header was present, and the raw-body hash/length before handing the event to the
-fixture API. It is not a Stripe, Paddle, or other provider adapter.
+the provider name, optional event id/type headers, and raw-body hash before
+handing the event to the fixture API. It is not a Stripe, Paddle, or other
+provider adapter.
 
 ## Notifications And Email
 
@@ -82,15 +84,17 @@ session.
 
 ## TODO: Replace Local Package Links Before Public Release
 
-The template currently uses path dependencies for local development:
+The template currently uses one path dependency for local development:
 
 - `@bnomei/emdash-mika` -> `../emdash-mika`
-- `@bnomei/emdash-actions` -> `../emdash-actions`
+
+`@bnomei/emdash-actions` is installed from the public npm package.
 
 The template lifecycle scripts run `npm run local:build` before dev, build,
 typecheck, test, preview, and seed commands so clean local checkouts do not
 depend on stale ignored `dist` folders.
 
 This is a release blocker. Before this repository becomes a public GitHub
-template, replace those `file:../...` dependencies with released npm versions
-and remove any local package build workaround that no longer applies.
+template, replace the remaining `file:../emdash-mika` dependency with a
+released npm version and remove any local package build workaround that no
+longer applies.

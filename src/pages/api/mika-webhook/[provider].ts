@@ -1,11 +1,11 @@
 /**
  * Route: `POST /api/mika-webhook/:provider`
- * Payment-provider webhook ingress with payload hashing and signature metadata.
+ * Payment-provider webhook ingress with payload hashing and provider event metadata.
  * Boundary: delegates verification and handling to Mika; responds with JSON status from `webhook.receive`.
  */
 import { createHash } from "node:crypto";
 import { createMika } from "@bnomei/emdash-mika/astro";
-import { createProviderName } from "@bnomei/emdash-mika/types";
+import { createProviderName, type WebhookReceiveInput } from "@bnomei/emdash-mika/types";
 import type { APIRoute } from "astro";
 import { mikaApiOverrides } from "../../../lib/mika-api";
 
@@ -19,18 +19,11 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   const Mika = createMika({ request, url }, { includeWebhook: true, api: mikaApiOverrides });
   const rawBody = await request.clone().arrayBuffer();
   const payloadHash = "sha256:" + createHash("sha256").update(Buffer.from(rawBody)).digest("hex");
-  const signatureHeaderPresent =
-    request.headers.has("stripe-signature") ||
-    request.headers.has("paddle-signature") ||
-    request.headers.has("webhook-signature") ||
-    request.headers.has("x-mika-signature");
   const eventType = request.headers.get("x-event-type");
   const providerEventId = request.headers.get("x-provider-event-id");
-  const receiveInput = {
+  const receiveInput: WebhookReceiveInput = {
     provider: createProviderName(provider),
     payloadHash,
-    rawBodyLength: rawBody.byteLength,
-    signatureHeaderPresent,
     ...(eventType ? { eventType } : {}),
     ...(providerEventId ? { providerEventId } : {}),
   };
