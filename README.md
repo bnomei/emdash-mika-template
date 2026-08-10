@@ -25,7 +25,18 @@ Useful paths:
 - `/download/download_panel_pack_mira` for a seeded download redirect.
 - `/llms.txt` and `/.well-known/mika-agent.json` for agent-readable surfaces.
 - `/_emdash/admin` for the EmDash admin UI and Mika action fields.
-- `/api/mika-action-contract.json` for the admin action provider contract.
+- `/api/mika-action-contract.json` for the owner-protected admin action provider contract.
+
+In production, EmDash and the Mika management endpoints have a separate HTTP
+Basic owner gate in front of EmDash's own passkey/session, role, token-scope,
+and CSRF checks. Public storefront pages and EmDash media files do not pass
+through the owner gate. If either owner-gate variable is missing, protected
+routes fail closed with `503`.
+
+The currently unpatched `image-size` ICNS, JXL, and HEIF denial-of-service
+advisories are mitigated at runtime by disabling those metadata parsers before
+EmDash handles a media request. Remove the mitigation only after EmDash ships a
+fixed `image-size` release.
 
 ## Template Shape
 
@@ -61,25 +72,19 @@ calls Mika `createMikaPlugin({ api })` from `@bnomei/emdash-mika/server` so
 function-based API overrides are not serialized through EmDash descriptor
 options.
 
-## Local Mika Development Link
+## Mika Package
 
-This development checkout intentionally uses one local path dependency:
+This deployable template carries Mika as a vendored npm package archive:
 
-- `@bnomei/emdash-mika` -> `../emdash-mika`
+- `@bnomei/emdash-mika` -> `vendor/bnomei-emdash-mika-0.1.0.tgz`
 
 `@bnomei/emdash-actions` is installed from the public npm package.
 
-The lifecycle scripts run `npm run local:build` before dev, build, preview,
-typecheck, test, and seed commands. Set
-`EMDASH_MIKA_TEMPLATE_SKIP_LOCAL_BUILD=1` only when you intentionally want to
-use an already-built local Mika package.
-
-This sibling link is intentional for Mika development and does not block using
-this repository as a minimal runnable starter. Mika's release proof installs the
-candidate tarball into a disposable copy of the starter. Broader contract and
-edge-case coverage belongs to Mika's package tests and public docs. A downstream application should
-choose a published Mika version or its own workspace link and only keep the
-local build workaround when it uses sibling development.
+This makes isolated builds, including Railway, independent of a sibling checkout
+and private Git credentials. Refresh the archive from a local Mika checkout with
+the command in `vendor/README.md`. A downstream application can instead use a
+published Mika version or its own workspace link; the lifecycle helper only
+builds Mika when the dependency points to a sibling `file:../` path.
 
 ## Experimental Cloudflare Variant Files
 
@@ -131,3 +136,30 @@ npm run build
 
 Use `npm run fixture:reset` whenever you want to recreate the local SQLite
 database from the seed.
+
+## Railway Deployment
+
+The checked-in `Dockerfile` and `railway.json` deploy the Node 24/Astro variant.
+Attach one persistent volume at `/data`; it stores the SQLite database, media
+uploads, and server-side sessions. The production start script seeds the demo
+fixture only when the database does not exist, so restarts do not reset data.
+
+Before exposing the service, set these Railway service variables:
+
+```text
+EMDASH_OWNER_USERNAME=<your private username>
+EMDASH_OWNER_PASSWORD=<a long random password>
+EMDASH_ENCRYPTION_KEY=<output of npx emdash secrets generate>
+EMDASH_SITE_URL=https://mika-demo.bnomei.com
+```
+
+Generate the owner password locally with `openssl rand -base64 32`. Keep both
+secrets only in Railway; do not put their values in this repository. Then add
+the custom domain `mika-demo.bnomei.com`, install the DNS records Railway
+returns, and wait for the domain and TLS certificate to become active.
+
+Open `https://mika-demo.bnomei.com/_emdash/admin` and first satisfy the owner
+gate, then complete EmDash setup and register your passkey. The owner gate
+protects the setup wizard too, closing the first-visitor account-takeover
+window. Keep the service at one replica because the deployment uses one SQLite
+database and filesystem sessions on one attached volume.

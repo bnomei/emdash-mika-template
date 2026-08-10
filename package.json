@@ -9,11 +9,12 @@
     "dev": "astro dev",
     "prebuild": "npm run local:build",
     "build": "astro build",
+    "start": "node scripts/start-production.mjs",
     "prepreview": "npm run local:build",
     "preview": "astro preview",
     "astro": "astro",
     "preseed:apply": "npm run local:build",
-    "seed:apply": "mkdir -p ./.emdash/uploads && emdash seed seed/mika-actions.seed.json -d ./.emdash/mika-template.sqlite --uploads-dir ./.emdash/uploads --on-conflict update",
+    "seed:apply": "node scripts/seed-fixture.mjs",
     "pretypecheck": "npm run local:build",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run local:build",
@@ -25,12 +26,13 @@
     "@astrojs/node": "^11.1.0",
     "@astrojs/react": "^6.0.2",
     "@bnomei/emdash-actions": "^0.4.1",
-    "@bnomei/emdash-mika": "file:../emdash-mika",
+    "@bnomei/emdash-mika": "file:vendor/bnomei-emdash-mika-0.1.0.tgz",
     "@cloudflare/kumo": "^2.5.2",
     "@phosphor-icons/react": "^2.1.10",
     "astro": "^7.2.0",
     "better-sqlite3": "^12.11.1",
-    "emdash": "^0.22.0",
+    "emdash": "^0.32.0",
+    "image-size": "2.0.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sharp": "^0.35.3"
@@ -42,7 +44,7 @@
     "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.0.0"
   },
   "packageManager": "npm@11.16.0",
   "emdash": {

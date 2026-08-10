@@ -2,12 +2,20 @@
  * Pre-dev/build hook: installs and builds sibling `../emdash-mika` so the
  * `file:` dependency is ready. Skipped when `EMDASH_MIKA_TEMPLATE_SKIP_LOCAL_BUILD=1`.
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const rootPackage = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const mikaDependency = rootPackage.dependencies?.["@bnomei/emdash-mika"] ?? "";
+
+if (!mikaDependency.startsWith("file:../")) {
+  console.log("Using the self-contained Mika package; no sibling build is needed.");
+  process.exit(0);
+}
+
 const packages = [
   {
     name: "@bnomei/emdash-mika",
