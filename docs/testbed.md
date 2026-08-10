@@ -3,6 +3,8 @@
 The seed is a resettable Buttonwood Lot-themed commerce data set for storefront pages
 and EmDash admin action fields.
 
+This fixture is representative rather than exhaustive; Mika's package tests own edge-case and contract coverage.
+
 ## Storefront Data
 
 The storefront reads product, variant, and stock data from the seed:

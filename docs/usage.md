@@ -95,7 +95,8 @@ typecheck, test, preview, and seed commands so clean local checkouts do not
 depend on stale ignored `dist` folders.
 
 This sibling link is intentional for Mika development and does not block using
-this repository as the full demo. Mika's release proof installs the candidate
-tarball into a disposable copy of the demo. A downstream application should
+this repository as a minimal runnable starter. Mika's release proof installs the
+candidate tarball into a disposable copy of the starter. Broader contract and
+edge-case coverage belongs to Mika's package tests and public docs. A downstream application should
 choose a published Mika version or its own workspace link and only keep the
 local build workaround when it uses sibling development.
