@@ -61,7 +61,7 @@ calls Mika `createMikaPlugin({ api })` from `@bnomei/emdash-mika/server` so
 function-based API overrides are not serialized through EmDash descriptor
 options.
 
-## TODO: Replace Local Mika Link Before Public Release
+## Local Mika Development Link
 
 This development checkout intentionally uses one local path dependency:
 
@@ -74,10 +74,11 @@ typecheck, test, and seed commands. Set
 `EMDASH_MIKA_TEMPLATE_SKIP_LOCAL_BUILD=1` only when you intentionally want to
 use an already-built local Mika package.
 
-This is a release blocker. Before publishing this repository as a public GitHub
-template, replace the remaining `file:../emdash-mika` dependency in
-`package.json` with a released npm version and remove the local Mika build
-workaround if it is no longer needed.
+This sibling link is intentional for Mika development and does not block using
+this repository as the full demo. Mika's release proof installs the candidate
+tarball into a disposable copy of the demo. A downstream application should
+choose a published Mika version or its own workspace link and only keep the
+local build workaround when it uses sibling development.
 
 ## Experimental Cloudflare Variant Files
 
