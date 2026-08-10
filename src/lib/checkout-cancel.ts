@@ -4,7 +4,7 @@
  * and returns a live cart count for the landing page.
  */
 import { createMika } from "@bnomei/emdash-mika/astro";
-import { createMikaId } from "@bnomei/emdash-mika/types";
+import { createCheckoutSessionId } from "@bnomei/emdash-mika/types";
 import type { CheckoutSessionDTO } from "@bnomei/emdash-mika/types";
 
 import { mikaTemplateCurrentCartItemCount } from "./cart.ts";
@@ -29,7 +29,7 @@ export async function mikaTemplateCheckoutCancelView(
   const token = ctx.url.searchParams.get("token") ?? undefined;
   const Mika = createMika(ctx, { api: mikaApiOverrides });
   const result = checkoutId
-    ? await Mika.checkout.cancel({ checkoutId: createMikaId(checkoutId), token })
+    ? await Mika.checkout.cancel({ checkoutId: createCheckoutSessionId(checkoutId), token })
     : null;
   const checkout = result?.ok ? result.data : null;
 

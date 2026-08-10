@@ -15,16 +15,25 @@ import {
   mikaTemplatePriceRangeLabel,
 } from "./display.ts";
 import {
+  createCartId,
+  createCheckoutSessionId,
   createCurrencyCode,
   createISODateTime,
   createMikaId,
+  createOrderId,
+  createPriceId,
   createProviderName,
+  createSellableId,
+  type CheckoutSessionId,
   type CurrencyCode,
   type FulfillmentKind,
   type ISODateTime,
   type JsonObject,
   type MikaId,
+  type OrderId,
+  type PriceId,
   type PurchaseMode,
+  type SellableId,
 } from "@bnomei/emdash-mika/types";
 import type {
   AccountDTO,
@@ -149,7 +158,7 @@ export interface TemplateAccountLicenseDTO {
   readonly title: string;
   readonly status: "active" | "revoked";
   readonly displayKeySuffix?: string;
-  readonly orderId?: MikaId;
+  readonly orderId?: OrderId;
   readonly downloadHref?: string;
 }
 
@@ -174,15 +183,15 @@ export interface TemplateWebhookReceiveDTO extends WebhookReceiveDTO {
 
 interface SessionCartItem {
   readonly lineId: MikaId;
-  readonly sellableId: MikaId;
-  readonly priceId?: MikaId;
+  readonly sellableId: SellableId;
+  readonly priceId?: PriceId;
   readonly quantity: number;
 }
 
 interface SessionWishlistItem {
   readonly itemId: MikaId;
-  readonly sellableId: MikaId;
-  readonly priceId?: MikaId;
+  readonly sellableId: SellableId;
+  readonly priceId?: PriceId;
   readonly addedAt: ISODateTime;
   readonly quantity?: number;
 }
@@ -236,7 +245,7 @@ export const mikaStorefrontApiOverrides = {
   },
   stock: {
     async availability({ sellableId }) {
-      return ok(availabilityFor(createMikaId(sellableId)));
+      return ok(availabilityFor(createSellableId(sellableId)));
     },
   },
   cart: {
@@ -417,9 +426,9 @@ export const mikaStorefrontApiOverrides = {
         return fail("CHECKOUT_UNAVAILABLE", "Template checkout has unavailable lines.", 409);
       }
 
-      const checkoutId = createMikaId(`checkout_template_${Date.now().toString(36)}`);
+      const checkoutId = createCheckoutSessionId(`checkout_template_${Date.now().toString(36)}`);
       const statusToken = `token_${checkoutId}`;
-      const orderId = createMikaId(`order_${checkoutId}`);
+      const orderId = createOrderId(`order_${checkoutId}`);
       const successPath = mikaSafeReturnTo(input.successPath, { fallback: "/checkout/success" });
       const redirectUrl = checkoutRedirectUrl(successPath, checkoutId, statusToken);
       const checkout: CheckoutSessionDTO = {
@@ -480,7 +489,8 @@ export const mikaStorefrontApiOverrides = {
       }
 
       const tokenMatch = token ? findCheckoutState(checkoutId, token) : undefined;
-      if (tokenMatch) return ok(await completeCheckout(undefined, tokenMatch.state, tokenMatch.checkout));
+      if (tokenMatch)
+        return ok(await completeCheckout(undefined, tokenMatch.state, tokenMatch.checkout));
 
       return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
     },
@@ -591,11 +601,11 @@ export const mikaStorefrontApiOverrides = {
     async invoice(ctxOrInput, input) {
       const orderId =
         typeof input === "string"
-          ? createMikaId(input)
-          : input?.orderId ??
+          ? createOrderId(input)
+          : (input?.orderId ??
             (typeof ctxOrInput === "string"
-              ? createMikaId(ctxOrInput)
-              : (ctxOrInput as { readonly orderId?: MikaId }).orderId);
+              ? createOrderId(ctxOrInput)
+              : (ctxOrInput as { readonly orderId?: OrderId }).orderId));
       if (!orderId) return fail("ORDER_NOT_FOUND", "Template order not found.", 404);
       const sessionOrders = isRequestContextInput(ctxOrInput)
         ? (await sessionState(ctxOrInput)).checkoutOrders
@@ -632,11 +642,15 @@ export const mikaStorefrontApiOverrides = {
 export function templateProductSummaries(
   filters: TemplateProductFilterInput = {},
 ): readonly TemplateProductSummary[] {
-  return products().map(templateProductSummary).filter((product) => productMatchesFilters(product, filters));
+  return products()
+    .map(templateProductSummary)
+    .filter((product) => productMatchesFilters(product, filters));
 }
 
 /** Filter sidebar state: term counts, active slugs, and filtered vs total product counts. */
-export function templateProductFilters(filters: TemplateProductFilterInput = {}): TemplateProductFilterState {
+export function templateProductFilters(
+  filters: TemplateProductFilterInput = {},
+): TemplateProductFilterState {
   const summaries = products().map(templateProductSummary);
   const filteredProducts = summaries.filter((product) => productMatchesFilters(product, filters));
   const activeCategory = normalizeFilterSlug(filters.category);
@@ -740,7 +754,8 @@ function taxonomyTerms(taxonomyName: string): readonly SeedTaxonomyTerm[] {
 }
 
 function taxonomyHref(taxonomyName: string, slug: string): string {
-  const param = taxonomyName === "category" ? "category" : taxonomyName === "tag" ? "tag" : taxonomyName;
+  const param =
+    taxonomyName === "category" ? "category" : taxonomyName === "tag" ? "tag" : taxonomyName;
   return `/?${param}=${encodeURIComponent(slug)}`;
 }
 
@@ -758,7 +773,9 @@ function titleFromSlug(slug: string): string {
 }
 
 function seedPath(): string {
-  return process.env["EMDASH_MIKA_TEMPLATE_SEED"] ?? join(process.cwd(), "seed/mika-actions.seed.json");
+  return (
+    process.env["EMDASH_MIKA_TEMPLATE_SEED"] ?? join(process.cwd(), "seed/mika-actions.seed.json")
+  );
 }
 
 function readSeed(): SeedFile {
@@ -840,9 +857,7 @@ function productVariants(product: SeedEntry): readonly ProductVariant[] {
   const value = product.data?.["variants"];
   if (!Array.isArray(value)) return [];
 
-  return value
-    .filter(isProductVariant)
-    .toSorted((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  return value.filter(isProductVariant).toSorted((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 function isProductVariant(value: unknown): value is ProductVariant {
@@ -872,10 +887,10 @@ function productSellables(product: SeedEntry): readonly SellableDTO[] {
     : [];
 
   return variants.map((variant) => {
-    const sellableId = createMikaId(variant.sellableId);
+    const sellableId = createSellableId(variant.sellableId);
     const interval = billingInterval(variant.interval);
     const price: PriceDTO = {
-      id: createMikaId(variant.priceId),
+      id: createPriceId(variant.priceId),
       sellableId,
       amount: variant.amount,
       currency: createCurrencyCode(variant.currency),
@@ -906,7 +921,9 @@ function productSellables(product: SeedEntry): readonly SellableDTO[] {
 }
 
 function variantGroupOption(variants: readonly ProductVariant[]): string {
-  return variants.some((variant) => variant.mode || variant.fulfillmentKind) ? "fulfillment" : "size";
+  return variants.some((variant) => variant.mode || variant.fulfillmentKind)
+    ? "fulfillment"
+    : "size";
 }
 
 function variantOption(variant: ProductVariant, option = "size"): VariantOptionValueDTO {
@@ -917,7 +934,7 @@ function variantOption(variant: ProductVariant, option = "size"): VariantOptionV
   };
 }
 
-function availabilityFor(sellableId: MikaId): AvailabilityDTO {
+function availabilityFor(sellableId: SellableId): AvailabilityDTO {
   const stock = stockItems().find((entry) => stockRef(entry)["sellableId"] === sellableId);
   if (!stock) {
     return { sellableId, status: "untracked" };
@@ -1015,8 +1032,8 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
         String(item.lineId),
         {
           lineId: createMikaId(String(item.lineId)),
-          sellableId: createMikaId(String(item.sellableId)),
-          priceId: item.priceId ? createMikaId(String(item.priceId)) : undefined,
+          sellableId: createSellableId(String(item.sellableId)),
+          priceId: item.priceId ? createPriceId(String(item.priceId)) : undefined,
           quantity: Math.max(1, numberValue(item.quantity, 1)),
         },
       ]),
@@ -1026,14 +1043,17 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
         String(item.itemId),
         {
           itemId: createMikaId(String(item.itemId)),
-          sellableId: createMikaId(String(item.sellableId)),
-          priceId: item.priceId ? createMikaId(String(item.priceId)) : undefined,
+          sellableId: createSellableId(String(item.sellableId)),
+          priceId: item.priceId ? createPriceId(String(item.priceId)) : undefined,
           addedAt: createISODateTime(stringValue(item.addedAt, nowIso())),
-          quantity: item.quantity === undefined ? undefined : Math.max(1, numberValue(item.quantity, 1)),
+          quantity:
+            item.quantity === undefined ? undefined : Math.max(1, numberValue(item.quantity, 1)),
         },
       ]),
     ),
-    checkouts: new Map((snapshot.checkouts ?? []).map((checkout) => [String(checkout.id), checkout])),
+    checkouts: new Map(
+      (snapshot.checkouts ?? []).map((checkout) => [String(checkout.id), checkout]),
+    ),
     checkoutOrders: new Map(
       (snapshot.checkoutOrders ?? []).map((order) => [String(order.id), order]),
     ),
@@ -1118,7 +1138,7 @@ function cartFromLines(lines: readonly SessionCartItem[], couponCode?: string): 
   const totalAmount = Math.max(0, subtotalAmount - discountAmount);
 
   return {
-    id: createMikaId("cart_template"),
+    id: createCartId("cart_template"),
     status: "open",
     currency: defaultCurrency,
     items,
@@ -1156,7 +1176,10 @@ function cartLine(item: SessionCartItem): CartLineDTO | undefined {
 }
 
 function cartQuote(cart: CartDTO, couponCode?: string): CartQuoteDTO {
-  const discountAmount = couponCode && !cart.discount ? Math.round(cart.subtotal.amount * 0.1) : (cart.discount?.amount ?? 0);
+  const discountAmount =
+    couponCode && !cart.discount
+      ? Math.round(cart.subtotal.amount * 0.1)
+      : (cart.discount?.amount ?? 0);
   return {
     id: createMikaId("quote_template"),
     cartId: cart.id,
@@ -1179,7 +1202,9 @@ function cartQuote(cart: CartDTO, couponCode?: string): CartQuoteDTO {
 function wishlistFor(state: TemplateSessionState): WishlistDTO {
   return {
     id: createMikaId("wishlist_template"),
-    items: [...state.wishlistItems.values()].map(wishlistItem).filter((item): item is WishlistItemDTO => Boolean(item)),
+    items: [...state.wishlistItems.values()]
+      .map(wishlistItem)
+      .filter((item): item is WishlistItemDTO => Boolean(item)),
   };
 }
 
@@ -1201,8 +1226,8 @@ function wishlistItem(item: SessionWishlistItem): WishlistItemDTO | undefined {
 
 function checkoutLines(
   state: TemplateSessionState,
-  sellableId?: MikaId,
-  priceId?: MikaId,
+  sellableId?: SellableId,
+  priceId?: PriceId,
   quantity?: number,
 ): readonly SessionCartItem[] {
   if (sellableId) {
@@ -1219,7 +1244,7 @@ function checkoutLines(
   return [...state.cartItems.values()];
 }
 
-function maxPerOrderFor(sellableId: MikaId): number | undefined {
+function maxPerOrderFor(sellableId: SellableId): number | undefined {
   const max = availabilityFor(sellableId).maxPerOrder;
   return typeof max === "number" && max > 0 ? max : undefined;
 }
@@ -1232,7 +1257,9 @@ function isCheckoutLineBlocked(line: SessionCartItem): boolean {
 }
 
 function checkoutMode(lines: readonly SessionCartItem[]): PurchaseMode {
-  return lines.some((line) => findVariantBySellable(line.sellableId, line.priceId)?.mode === "subscription")
+  return lines.some(
+    (line) => findVariantBySellable(line.sellableId, line.priceId)?.mode === "subscription",
+  )
     ? "subscription"
     : "payment";
 }
@@ -1305,7 +1332,7 @@ function licenseSummary(entry: SeedEntry): TemplateAccountLicenseDTO {
     title: stringValue(entry.data?.["title"], entry.slug),
     status,
     displayKeySuffix: displayKeySuffix || undefined,
-    orderId: orderId ? createMikaId(orderId) : undefined,
+    orderId: orderId ? createOrderId(orderId) : undefined,
     downloadHref: downloadToken ? `/download/${downloadToken}` : undefined,
   };
 }
@@ -1343,7 +1370,7 @@ function orderSummary(entry: SeedEntry): OrderSummaryDTO {
   const fixtureStatus = stringValue(entry.data?.["fixture_status"], "");
   const paymentStatus = stringValue(entry.data?.["payment_status"], "");
   return {
-    id: createMikaId(stringValue(ref["orderId"], entry.id)),
+    id: createOrderId(stringValue(ref["orderId"], entry.id)),
     orderNumber: stringValue(ref["orderNumber"], entry.slug),
     status:
       fixtureStatus === "cancelled"
@@ -1365,7 +1392,7 @@ function orderSummary(entry: SeedEntry): OrderSummaryDTO {
 }
 
 function checkoutOrderSummary(
-  orderId: MikaId,
+  orderId: OrderId,
   lines: readonly SessionCartItem[],
   couponCode?: string,
 ): OrderSummaryDTO {
@@ -1397,16 +1424,16 @@ function seededCheckout(checkoutId: string): CheckoutSessionDTO | undefined {
   const paid = entry.data?.["provider_status"] === "paid";
   const orderId = stringValue(ref["orderId"], "");
   return {
-    id: createMikaId(stringValue(ref["checkoutId"], checkoutId)),
+    id: createCheckoutSessionId(stringValue(ref["checkoutId"], checkoutId)),
     status: paid ? "completed" : "pending",
     mode: "payment",
     provider: createProviderName(stringValue(ref["provider"], "template")),
     redirectUrl: stringValue(entry.data?.["redirect_url"], ""),
-    ...(orderId ? { orderId: createMikaId(orderId) } : {}),
+    ...(orderId ? { orderId: createOrderId(orderId) } : {}),
   };
 }
 
-function checkoutRedirectUrl(path: string, checkoutId: MikaId, token: string): string {
+function checkoutRedirectUrl(path: string, checkoutId: CheckoutSessionId, token: string): string {
   const separator = path.includes("?") ? "&" : "?";
   const search = new URLSearchParams({ checkoutId, token });
 
@@ -1518,7 +1545,10 @@ function resolveTemplateDownload(token: string): MikaApiResult<DownloadResolutio
   } satisfies DownloadResolutionDTO);
 }
 
-function findVariantBySellable(sellableId: MikaId, priceId?: MikaId): ProductVariant | undefined {
+function findVariantBySellable(
+  sellableId: SellableId,
+  priceId?: PriceId,
+): ProductVariant | undefined {
   for (const product of products()) {
     const variant = productVariants(product).find(
       (candidate) =>
@@ -1556,7 +1586,9 @@ function priceRangeLabel(variants: readonly ProductVariant[]): string {
   const prices = variants.map((variant) => variant.amount);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
-  return min === max ? formatMoney(min, currency) : `${formatMoney(min, currency)} - ${formatMoney(max, currency)}`;
+  return min === max
+    ? formatMoney(min, currency)
+    : `${formatMoney(min, currency)} - ${formatMoney(max, currency)}`;
 }
 
 function formatMoney(amount: number, currency: CurrencyCode): string {
@@ -1567,11 +1599,11 @@ function money(amount: number, currency: CurrencyCode = defaultCurrency): MoneyD
   return { amount, currency };
 }
 
-function cartLineId(sellableId: MikaId, priceId?: MikaId): string {
+function cartLineId(sellableId: SellableId, priceId?: PriceId): string {
   return `line_${sellableId}_${priceId ?? "default"}`;
 }
 
-function wishlistItemId(sellableId: MikaId, priceId?: MikaId): string {
+function wishlistItemId(sellableId: SellableId, priceId?: PriceId): string {
   return `wish_${sellableId}_${priceId ?? "default"}`;
 }
 
