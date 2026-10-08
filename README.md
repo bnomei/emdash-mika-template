@@ -137,6 +137,23 @@ npm run build
 Use `npm run fixture:reset` whenever you want to recreate the local SQLite
 database from the seed.
 
+## Amp Orbs
+
+`.agents/setup` installs Node 24 from `.nvmrc`, the npm version in
+`package.json`, and locked dependencies, then seeds the local SQLite database
+only if it does not exist. It preserves existing `.env` files and fixture data.
+No production credentials are required or generated. The toolchain is available
+in new login shells, including supervised services.
+
+Amp snapshots the prepared environment. When setup runs again, it reuses
+dependencies if the manifests, vendored packages, install patch, setup script,
+and runtime still match. Delete `node_modules/.amp-setup-key` to force a clean
+install on the next setup run. `.agents/resume` performs no installation or reset.
+
+Run `amp orb services ensure` to start the supervised development server and
+print its portal URL. Services are declared in `.amp/services.yaml`; setup does
+not start background processes.
+
 ## Railway Deployment
 
 The checked-in `Dockerfile` and `railway.json` deploy the Node 24/Astro variant.

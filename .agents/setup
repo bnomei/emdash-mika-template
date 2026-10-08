@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+TIMEFORMAT='Step finished in %R seconds'
+
+echo 'Preparing the Node/npm toolchain'
+node_major="$(tr -d '[:space:]' < .nvmrc)"
+npm_version="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+toolchain="$HOME/.local/share/emdash-mika-node"
+if [[ ! -x "$toolchain/bin/node" ]] ||
+  [[ "$("$toolchain/bin/node" -p 'process.versions.node.split(".")[0]')" != "$node_major" ]] ||
+  [[ ! -f "$toolchain/lib/node_modules/npm/package.json" ]]; then
+  time npm install --global --prefix "$toolchain" "node@$node_major" "npm@$npm_version" --no-audit --no-fund
+fi
+export PATH="$toolchain/bin:$PATH"
+if [[ "$(npm --version)" != "$npm_version" ]]; then
+  time npm install --global --prefix "$toolchain" "npm@$npm_version" --no-audit --no-fund
+fi
+
+# Amp and supervised services start in separate non-interactive login shells.
+marker='# emdash-mika-template orb toolchain'
+if ! grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<EOF
+
+$marker
+case "\$PWD/" in
+  "$repo_root/"*)
+    case ":\$PATH:" in
+      *":$toolchain/bin:"*) ;;
+      *) export PATH="$toolchain/bin:\$PATH" ;;
+    esac
+    ;;
+esac
+EOF
+fi
+node --version
+npm --version
+
+echo 'Checking locked dependencies'
+# A warm npm ci still reinstalls the whole tree (~18 seconds). Cache only a
+# successful install, keyed by its inputs and the runtime used by native addons.
+dependency_key="$(
+  {
+    sha256sum package.json package-lock.json .agents/setup scripts/patch-emdash-dev-bypass.mjs vendor/*.tgz
+    node --version
+    npm --version
+    uname -sm
+  } | sha256sum | cut -d ' ' -f1
+)"
+stamp=node_modules/.amp-setup-key
+if [[ ! -f "$stamp" ]] || [[ "$(cat "$stamp")" != "$dependency_key" ]] ||
+  [[ ! -x node_modules/.bin/astro ]] || [[ ! -x node_modules/.bin/tsc ]]; then
+  time npm ci --include=dev --prefer-offline --no-audit --no-fund
+  printf '%s\n' "$dependency_key" > "$stamp"
+else
+  echo 'Reusing installed dependencies'
+fi
+
+echo 'Preparing local development data'
+[[ -f .env ]] || cp -- .env.example .env
+if [[ ! -f .emdash/mika-template.sqlite ]]; then
+  # Never seed an externally configured database or upload directory during setup.
+  time EMDASH_DATA_DIR="$repo_root/.emdash" \
+    EMDASH_MIKA_TEMPLATE_DB="$repo_root/.emdash/mika-template.sqlite" \
+    EMDASH_STORAGE_DIRECTORY="$repo_root/.emdash/uploads" npm run seed:apply
+else
+  echo 'Keeping the existing SQLite fixture'
+fi
+echo 'Orb setup ready'

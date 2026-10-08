@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SQLite and local uploads survive snapshots; no daemon or authentication is needed.
+# Keep dependency installation and fixture seeding in setup, never on wake.
+echo 'Local SQLite development environment ready; run npm run dev to start Astro.'

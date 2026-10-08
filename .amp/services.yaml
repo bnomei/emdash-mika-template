@@ -1,0 +1,7 @@
+services:
+  web:
+    command: 'EMDASH_SITE_URL="$PUBLIC_URL" npm run dev -- --host 0.0.0.0 --port "$PORT"'
+    health: /
+    portal:
+      title: Mika storefront
+      description: Local development storefront with the seeded demo catalog.
