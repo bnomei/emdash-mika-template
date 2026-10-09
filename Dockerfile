@@ -1,5 +1,10 @@
 FROM node:24-bookworm-slim AS build
 
+# better-sqlite3 13 builds its native addon from source.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY vendor ./vendor
