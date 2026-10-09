@@ -11,21 +11,26 @@ import {
 } from "@bnomei/emdash-mika/astro";
 import AddToCartForm from "./AddToCartForm.astro";
 import BuyNowForm from "./BuyNowForm.astro";
-import PurchaseOptionsSelect from "./PurchaseOptionsSelect.tsx";
 import ProductPurchaseSync from "./ProductPurchaseSync.astro";
-import VariantOptionGroups from "./VariantOptionGroups.tsx";
+import VariantOptionGroups from "./VariantOptionGroups.astro";
 import WishlistForm from "./WishlistForm.astro";
 
 interface Props {
   sellables: readonly SellableDTO[];
+  id?: string;
   returnTo?: string;
+  annotationLabel?: string;
+  annotationMetadata?: Record<string, string | number | boolean | null>;
   class?: string;
   [attribute: string]: unknown;
 }
 
 const {
   sellables,
+  id = "mika-product-purchase",
   returnTo = mikaReturnTo(Astro.url),
+  annotationLabel = "Product purchase",
+  annotationMetadata,
   class: className,
   ...attrs
 } = Astro.props;
@@ -38,31 +43,33 @@ const needsPurchaseSync = purchase.useGroupedVariantControls || purchase.options
 <mika-product-purchase
   {...attrs}
   data-mika-product-purchase
+  id={id}
+  data-mika-annotation={annotationLabel}
+  data-mika-annotation-metadata={annotationMetadata ? JSON.stringify(annotationMetadata) : undefined}
   class:list={["mika-kumo-purchase", className]}
 >
   {purchase.useGroupedVariantControls ? (
     <VariantOptionGroups
-      client:load
       variantGroups={purchase.variantGroups}
       variantOptionMap={purchase.variantOptionMap}
       selectedSellableId={purchase.selectedSellable?.id}
       includePriceId
     />
   ) : purchase.options.length > 1 ? (
-    <PurchaseOptionsSelect
-      client:load
-      label="Purchase"
-      name="mikaPurchase"
-      selectedValue={purchase.options[purchase.selectedOptionIndex]?.fields.purchase}
-      options={purchase.options.map((option) => ({
-        label: option.label,
-        value: option.fields.purchase,
-        sellableId: option.fields.sellableId,
-        priceId: option.fields.priceId,
-        maxQuantity: mikaMaxPurchaseQuantity(option.sellable.availability),
-        disabled: option.disabled,
-      }))}
-    />
+    <fieldset class="mika-kumo-fieldset" data-mika-shared-purchase-options>
+      <legend class="mika-kumo-legend">Purchase</legend>
+      {purchase.options.map((option, index) => (
+        <label class="mika-kumo-choice">
+          <input type="radio" name="mikaPurchase" value={option.fields.purchase}
+            data-mika-purchase-option
+            data-mika-purchase-sellable-id={option.fields.sellableId}
+            data-mika-purchase-price-id={option.fields.priceId}
+            data-mika-purchase-max-quantity={mikaMaxPurchaseQuantity(option.sellable.availability) ?? ""}
+            checked={index === purchase.selectedOptionIndex} disabled={option.disabled} />
+          <span>{option.label}</span>
+        </label>
+      ))}
+    </fieldset>
   ) : null}
 
   <AddToCartForm
@@ -92,4 +99,5 @@ const needsPurchaseSync = purchase.useGroupedVariantControls || purchase.options
     </div>
   )}
   {needsPurchaseSync && <ProductPurchaseSync />}
+  <button type="button" hidden data-mika-annotation-prompt="Explain the available purchase options and availability.">Explain purchase options</button>
 </mika-product-purchase>

@@ -5,87 +5,133 @@
  */
 ---
 <script>
-  for (const form of document.querySelectorAll("[data-mika-add-to-cart]")) {
-    const groups = form.querySelector("[data-mika-variant-groups]");
-    if (!groups) continue;
-
-    const sync = (detail = {}) => {
-      const sellableId =
-        detail.sellableId ?? groups.dataset.mikaSelectedSellableId ?? "";
-      const maxQuantity =
-        detail.maxQuantity === undefined
-          ? groups.dataset.mikaSelectedMaxQuantity ?? ""
-          : String(detail.maxQuantity);
-
-      for (const button of form.querySelectorAll("[data-mika-purchase-submit]")) {
-        button.disabled =
-          sellableId === "" || button.dataset.mikaInitialDisabled === "true";
-        if (button.dataset.mikaEnabledLabel && button.dataset.mikaDisabledLabel) {
-          button.textContent = button.disabled
-            ? button.dataset.mikaDisabledLabel
-            : button.dataset.mikaEnabledLabel;
-        }
-      }
-
-      for (const input of form.querySelectorAll("[data-mika-purchase-quantity]")) {
-        input.disabled =
-          sellableId === "" || input.dataset.mikaInitialDisabled === "true";
-        if (maxQuantity === "") {
-          input.removeAttribute("max");
-        } else {
-          input.setAttribute("max", maxQuantity);
-          if (Number(input.value) > Number(maxQuantity)) input.value = maxQuantity;
-        }
-      }
-
-      for (const panel of form.querySelectorAll("[data-mika-availability-for]")) {
-        panel.hidden = panel.dataset.mikaAvailabilityFor !== sellableId;
-      }
-    };
-
-    groups.addEventListener("mika:variant-change", (event) => sync(event.detail));
-    sync();
+  interface MikaPurchaseChangeDetail {
+    sellableId?: string;
+    priceId?: string;
+    maxQuantity?: number;
   }
 
-  for (const form of document.querySelectorAll("[data-mika-add-to-cart]")) {
-    const select = form.querySelector("[data-mika-purchase-select]");
-    if (!select) continue;
+  const bound = new WeakSet<Element>();
+  function bindForms() {
+    for (const form of document.querySelectorAll<HTMLFormElement>(
+      "[data-mika-add-to-cart]"
+    )) {
+      const groups = form.querySelector<HTMLElement>(
+        "[data-mika-variant-groups]"
+      );
+      if (!groups || bound.has(groups)) continue;
+      bound.add(groups);
 
-    const syncFromSelect = (detail = {}) => {
-      const sellableId =
-        detail.sellableId ?? select.dataset.mikaPurchaseSellableId ?? "";
-      const maxQuantity =
-        detail.maxQuantity === undefined
-          ? select.dataset.mikaPurchaseMaxQuantity ?? ""
-          : String(detail.maxQuantity);
+      const sync = (detail: MikaPurchaseChangeDetail = {}) => {
+        const sellableId =
+          detail.sellableId ?? groups.dataset.mikaSelectedSellableId ?? "";
+        const maxQuantity =
+          detail.maxQuantity === undefined
+            ? (groups.dataset.mikaSelectedMaxQuantity ?? "")
+            : String(detail.maxQuantity);
 
-      for (const button of form.querySelectorAll("[data-mika-purchase-submit]")) {
-        button.disabled =
-          sellableId === "" || button.dataset.mikaInitialDisabled === "true";
-        if (button.dataset.mikaEnabledLabel && button.dataset.mikaDisabledLabel) {
-          button.textContent = button.disabled
-            ? button.dataset.mikaDisabledLabel
-            : button.dataset.mikaEnabledLabel;
+        for (const button of form.querySelectorAll<HTMLButtonElement>(
+          "[data-mika-purchase-submit]"
+        )) {
+          button.disabled =
+            sellableId === "" || button.dataset.mikaInitialDisabled === "true";
+          if (
+            button.dataset.mikaEnabledLabel &&
+            button.dataset.mikaDisabledLabel
+          ) {
+            button.textContent = button.disabled
+              ? button.dataset.mikaDisabledLabel
+              : button.dataset.mikaEnabledLabel;
+          }
         }
-      }
 
-      for (const input of form.querySelectorAll("[data-mika-purchase-quantity]")) {
-        input.disabled =
-          sellableId === "" || input.dataset.mikaInitialDisabled === "true";
-        if (maxQuantity === "") {
-          input.removeAttribute("max");
-        } else {
-          input.setAttribute("max", maxQuantity);
-          if (Number(input.value) > Number(maxQuantity)) input.value = maxQuantity;
+        for (const input of form.querySelectorAll<HTMLInputElement>(
+          "[data-mika-purchase-quantity]"
+        )) {
+          input.disabled =
+            sellableId === "" || input.dataset.mikaInitialDisabled === "true";
+          if (maxQuantity === "") {
+            input.removeAttribute("max");
+          } else {
+            input.setAttribute("max", maxQuantity);
+            if (Number(input.value) > Number(maxQuantity))
+              input.value = maxQuantity;
+          }
         }
-      }
 
-      for (const panel of form.querySelectorAll("[data-mika-availability-for]")) {
-        panel.hidden = panel.dataset.mikaAvailabilityFor !== sellableId;
-      }
-    };
+        for (const panel of form.querySelectorAll<HTMLElement>(
+          "[data-mika-availability-for]"
+        )) {
+          panel.hidden = panel.dataset.mikaAvailabilityFor !== sellableId;
+        }
+      };
 
-    select.addEventListener("mika:purchase-change", (event) => syncFromSelect(event.detail));
-    syncFromSelect();
+      groups.addEventListener("mika:variant-change", (event) =>
+        sync((event as CustomEvent<MikaPurchaseChangeDetail>).detail)
+      );
+      sync();
+    }
+
+    for (const form of document.querySelectorAll<HTMLFormElement>(
+      "[data-mika-add-to-cart]"
+    )) {
+      const select = form.querySelector<HTMLElement>(
+        "[data-mika-purchase-select]"
+      );
+      if (!select || bound.has(select)) continue;
+      bound.add(select);
+
+      const syncFromSelect = (detail: MikaPurchaseChangeDetail = {}) => {
+        const sellableId =
+          detail.sellableId ?? select.dataset.mikaPurchaseSellableId ?? "";
+        const maxQuantity =
+          detail.maxQuantity === undefined
+            ? (select.dataset.mikaPurchaseMaxQuantity ?? "")
+            : String(detail.maxQuantity);
+
+        for (const button of form.querySelectorAll<HTMLButtonElement>(
+          "[data-mika-purchase-submit]"
+        )) {
+          button.disabled =
+            sellableId === "" || button.dataset.mikaInitialDisabled === "true";
+          if (
+            button.dataset.mikaEnabledLabel &&
+            button.dataset.mikaDisabledLabel
+          ) {
+            button.textContent = button.disabled
+              ? button.dataset.mikaDisabledLabel
+              : button.dataset.mikaEnabledLabel;
+          }
+        }
+
+        for (const input of form.querySelectorAll<HTMLInputElement>(
+          "[data-mika-purchase-quantity]"
+        )) {
+          input.disabled =
+            sellableId === "" || input.dataset.mikaInitialDisabled === "true";
+          if (maxQuantity === "") {
+            input.removeAttribute("max");
+          } else {
+            input.setAttribute("max", maxQuantity);
+            if (Number(input.value) > Number(maxQuantity))
+              input.value = maxQuantity;
+          }
+        }
+
+        for (const panel of form.querySelectorAll<HTMLElement>(
+          "[data-mika-availability-for]"
+        )) {
+          panel.hidden = panel.dataset.mikaAvailabilityFor !== sellableId;
+        }
+      };
+
+      select.addEventListener("mika:purchase-change", (event) =>
+        syncFromSelect((event as CustomEvent<MikaPurchaseChangeDetail>).detail)
+      );
+      syncFromSelect();
+    }
   }
+  bindForms();
+  document.addEventListener("mika:storefront-refresh", bindForms);
+  document.addEventListener("astro:page-load", bindForms);
 </script>

@@ -1,0 +1,95 @@
+---
+// mika-template-version: 0.2.0
+/** WebMCP requires host Actions; annotations work independently without a backend. */
+interface Props {
+  enabled?: boolean;
+  webmcp?: boolean;
+  annotations?: boolean;
+}
+const { enabled = true, webmcp = true, annotations = true } = Astro.props;
+---
+
+{enabled && (
+  <span
+    data-mika-storefront-mount
+    data-webmcp={String(webmcp)}
+    data-annotations={String(annotations)}
+    hidden
+  />
+)}
+<script>
+  import { actions } from "astro:actions";
+  import { mountMikaStorefrontUI } from "@bnomei/emdash-mika/storefront-ui";
+  import type { MikaStorefrontTransport } from "@bnomei/emdash-mika/webmcp";
+  let runtime: { dispose(): void } | undefined;
+  const mount = () => {
+    runtime?.dispose();
+    runtime = undefined;
+    const marker = document.querySelector<HTMLElement>("[data-mika-storefront-mount]");
+    if (!marker) return;
+    const requestedWebMCP = marker.dataset["webmcp"] === "true";
+    const server = requestedWebMCP ? actions.mikaStorefront : undefined;
+    const transport: MikaStorefrontTransport | undefined = server
+      ? {
+          describe: () => server.describe.orThrow({}),
+          invoke: (request) => server.invoke.orThrow(request),
+          confirm: (reviewId) => server.confirm.orThrow({ reviewId }),
+        }
+      : undefined;
+    const mounted = mountMikaStorefrontUI(document.body, transport, {
+      webmcp: requestedWebMCP && !!server,
+      annotations: marker.dataset["annotations"] === "true",
+    });
+    runtime = mounted;
+    void mounted.ready.catch(() => {});
+  };
+  mount();
+  document.addEventListener("astro:page-load", mount);
+  document.addEventListener("astro:before-swap", () => {
+    runtime?.dispose();
+    runtime = undefined;
+  });
+</script>
+<style is:global>
+  body > section[aria-label="Review storefront action"],
+  body > section[aria-label="Continue storefront action"] {
+    position: fixed;
+    inset: auto 1rem 1rem auto;
+    z-index: 100;
+    max-width: min(32rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: var(--color-kumo-base);
+    color: var(--text-color-kumo-default);
+    box-shadow: 0 4px 24px #0003;
+  }
+  body > section[aria-label="Review storefront action"] dl {
+    max-height: 50dvh;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    margin-block: 1rem;
+  }
+  body > section[aria-label="Review storefront action"] dt {
+    font-weight: 600;
+  }
+  body > section[aria-label="Review storefront action"] dd {
+    margin: 0 0 0.5rem;
+  }
+  body > section[aria-label="Continue storefront action"] a {
+    display: inline-block;
+    text-decoration: underline;
+    font-weight: 600;
+    margin-block-end: 0.5rem;
+  }
+  body > section[aria-label="Review storefront action"] button,
+  body > section[aria-label="Continue storefront action"] button {
+    margin-inline-end: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--color-kumo-canvas);
+    color: var(--text-color-kumo-default);
+    cursor: pointer;
+  }
+</style>

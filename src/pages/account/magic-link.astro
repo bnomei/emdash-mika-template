@@ -6,6 +6,7 @@
  */
 import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 import { actions, isInputError } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { Button, Text } from "@cloudflare/kumo";
 import MagicLinkForm from "../../components/MagicLinkForm.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
@@ -15,8 +16,8 @@ import { mikaTemplateRoutes } from "../../lib/routes";
 
 export const prerender = false;
 
-const requestResult = Astro.getActionResult(actions.mika.magicLink.request);
-const verifyResult = Astro.getActionResult(actions.mika.magicLink.verify);
+const requestResult = mikaActionResult(Astro.getActionResult(actions.mika.magicLink.request));
+const verifyResult = mikaActionResult(Astro.getActionResult(actions.mika.magicLink.verify));
 const requestInputErrors = isInputError(requestResult?.error)
   ? requestResult.error.fields
   : {};
@@ -37,7 +38,8 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 
 <MikaKumoPage title="Account" pageSize="narrow" cartItemCount={cartItemCount} data-mika-magic-link-page>
   <section class="mika-kumo-panel mika-kumo-stack">
-  {requestResult?.data?.sent && <Text as="p" variant="success" role="status">Email sent.</Text>}
+  <Text as="p">Demo sign-in: any email opens the same seeded customer account. No email is sent; this is not production authentication.</Text>
+  {requestResult?.data?.sent && <p role="status">Demo link ready. <a href={`/account/magic-link?token=template-login&returnTo=${encodeURIComponent(returnTo)}`}>Open simulated sign-in link</a></p>}
   {requestError && <Text as="p" variant="error" role="alert">{requestError}</Text>}
   {verifyResult?.error && <Text as="p" variant="error" role="alert">{verifyResult.error.message}</Text>}
 

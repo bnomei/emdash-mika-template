@@ -82,21 +82,18 @@ For local browser testing, use
 `/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` to create a dev admin
 session.
 
-## Local Mika Development Link
+## Mika Integration Package
 
-The template currently uses one path dependency for local development:
+The template uses the supplied integration archive, not a registry release:
 
-- `@bnomei/emdash-mika` -> `../emdash-mika`
+- `@bnomei/emdash-mika` -> `vendor/bnomei-emdash-mika-0.2.0.tgz`
 
 `@bnomei/emdash-actions` is installed from the public npm package.
 
-The template lifecycle scripts run `npm run local:build` before dev, build,
-typecheck, test, preview, and seed commands so clean local checkouts do not
-depend on stale ignored `dist` folders.
+The lifecycle helper skips sibling builds for this self-contained archive.
+See the README's Browser Agent Testbed section for WebMCP/annotation toggles,
+same-session integration, and explicit simulated payment completion.
 
-This sibling link is intentional for Mika development and does not block using
-this repository as a minimal runnable starter. Mika's release proof installs the
-candidate tarball into a disposable copy of the starter. Broader contract and
-edge-case coverage belongs to Mika's package tests and public docs. A downstream application should
-choose a published Mika version or its own workspace link and only keep the
-local build workaround when it uses sibling development.
+Broader contract and edge-case coverage belongs to Mika's package tests and
+public docs. A downstream application should choose a published Mika version
+or its own workspace link and replace the fixture backend with production services.

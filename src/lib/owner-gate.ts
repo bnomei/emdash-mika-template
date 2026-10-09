@@ -4,12 +4,13 @@ import { createHash, timingSafeEqual } from "node:crypto";
 export type OwnerGatePolicy = "public" | "owner" | "emdash";
 
 /**
- * EmDash media files are part of the public storefront. Every other EmDash
- * route is management/API surface and must pass the owner gate. EmDash Bearer
- * credentials are accepted there because EmDash validates and scopes them.
+ * Media files and the exact customer export endpoint bypass the owner gate;
+ * Mika owns export session/token checks. Other EmDash routes are management/API
+ * surfaces. EmDash validates and scopes Bearer credentials accepted there.
  */
 export function ownerGatePolicy(pathname: string): OwnerGatePolicy {
   if (pathname.startsWith("/_emdash/api/media/file/")) return "public";
+  if (pathname === "/_emdash/api/plugins/mika/account/export/download") return "public";
   if (pathname === "/_emdash" || pathname.startsWith("/_emdash/")) return "emdash";
 
   if (pathname === "/api/mika-action-contract.json") return "owner";

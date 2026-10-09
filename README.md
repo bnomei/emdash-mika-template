@@ -33,10 +33,9 @@ and CSRF checks. Public storefront pages and EmDash media files do not pass
 through the owner gate. If either owner-gate variable is missing, protected
 routes fail closed with `503`.
 
-The currently unpatched `image-size` ICNS, JXL, and HEIF denial-of-service
-advisories are mitigated at runtime by disabling those metadata parsers before
-EmDash handles a media request. Remove the mitigation only after EmDash ships a
-fixed `image-size` release.
+`image-size` is updated to the patched 2.0.4 release. ICNS, JXL, and HEIF metadata
+parsers remain disabled before EmDash handles media requests as defense in depth;
+the dependency upgrade does not expand the template's accepted image formats.
 
 ## Template Shape
 
@@ -76,7 +75,7 @@ options.
 
 This deployable template carries Mika as a vendored npm package archive:
 
-- `@bnomei/emdash-mika` -> `vendor/bnomei-emdash-mika-0.1.0.tgz`
+- `@bnomei/emdash-mika` -> `vendor/bnomei-emdash-mika-0.2.0.tgz`
 
 `@bnomei/emdash-actions` is installed from the public npm package.
 
@@ -85,6 +84,35 @@ and private Git credentials. Refresh the archive from a local Mika checkout with
 the command in `vendor/README.md`. A downstream application can instead use a
 published Mika version or its own workspace link; the lifecycle helper only
 builds Mika when the dependency points to a sibling `file:../` path.
+
+## Browser Agent Testbed
+
+The shared page shell enables WebMCP and optional ChatGPT annotations independently.
+Use `<MikaKumoPage webmcp={false}>` for annotations only,
+`annotations={false}` for WebMCP only, or `storefront={false}` for ordinary forms.
+WebMCP uses async `document.modelContext.registerTool`; ChatGPT does not support
+declarative HTML tools or iframe tools. Unsupported browsers keep human forms.
+Annotation previews never submit forms or mutate the cart.
+
+`src/lib/mika-storefront.ts` connects tools to the same fixture API as forms,
+with atomic SQLite run claims in `mika_storefront_runs`. Checkout and subscription
+reviews are rechecked against the original approved terms at the fixture mutation
+boundary. Human confirmation is not an agent tool. Sign-in enables account tools
+only after the explicit fixture magic-link POST (`template-login` after requesting
+a link). `/account` shows an explicit guest form before that POST and exposes the
+simulated link after requesting it. Any email opens the same seeded customer;
+the other human account fixture pages remain demo data, not an authentication
+boundary. This is not production authentication or email delivery.
+
+Checkout status is passive. The success page offers an explicit **Simulate
+payment — no charge** POST for the current session. A return URL does not prove
+payment, and this fixture does not contact a payment provider. Production needs
+durable commerce repositories, real authentication and verified provider events;
+SQLite tool-run persistence does not make session snapshots atomic with provider
+effects or concurrent webhooks. The production owner gate is unchanged.
+
+The vendored 0.2.0 archive is an integration artifact supplied from uncommitted
+Mika work, not a registry release. See `docs/testbed.md` for validation boundaries.
 
 ## Experimental Cloudflare Variant Files
 
@@ -102,6 +130,11 @@ tree:
   bindings.
 - `worker.cf.ts` exports the Astro Cloudflare handler and EmDash plugin
   bridge.
+
+The experimental Cloudflare manifest uses Kumo 2.6.0 because
+`@emdash-cms/cloudflare@1.2.0` requires that exact peer version; the validated
+Node storefront uses Kumo 2.14.0. Cloudflare runtime compatibility is not implied
+by the Node build or its dependency audit.
 
 To try the Cloudflare variant manually:
 

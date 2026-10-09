@@ -63,7 +63,7 @@ const filterHref = (next: { readonly category?: string | null; readonly tag?: st
       </div>
     </div>
 
-    {hasActiveFilters && <Link href="/" class="mika-kumo-filter-clear">Clear filters</Link>}
+    {hasActiveFilters && <Link href="/" className="mika-kumo-filter-clear">Clear filters</Link>}
   </section>
 
   {products.length ? (
@@ -84,7 +84,7 @@ const filterHref = (next: { readonly category?: string | null; readonly tag?: st
               </div>
             )}
             <Text as="h2" variant="heading3">
-              <Link href={product.href} class="mika-kumo-card-link">{product.title}</Link>
+              <Link href={product.href} className="mika-kumo-card-link">{product.title}</Link>
             </Text>
             <Text as="p" variant="secondary">{product.description}</Text>
             {product.tags.length > 0 && (

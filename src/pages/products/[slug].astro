@@ -6,6 +6,7 @@
  */
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import { actions } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
 import ProductPurchase from "../../components/ProductPurchase.astro";
@@ -27,7 +28,7 @@ import { mikaTemplateRoutes } from "../../lib/routes";
 
 export const prerender = false;
 
-const checkoutResult = Astro.getActionResult(actions.mika.checkout.start);
+const checkoutResult = mikaActionResult(Astro.getActionResult(actions.mika.checkout.start));
 if (checkoutResult?.data?.redirectUrl) {
   return Astro.redirect(checkoutResult.data.redirectUrl);
 }
@@ -41,8 +42,8 @@ if (!product) return Astro.redirect("/");
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 const sellablesResult = await Mika.catalog.sellables("products", product.id);
 const sellables = sellablesResult.ok ? sellablesResult.data : product.sellables;
-const addResult = Astro.getActionResult(actions.mika.cart.add);
-const wishlistResult = Astro.getActionResult(actions.mika.wishlist.add);
+const addResult = mikaActionResult(Astro.getActionResult(actions.mika.cart.add));
+const wishlistResult = mikaActionResult(Astro.getActionResult(actions.mika.wishlist.add));
 const formError = checkoutResult?.error?.message ?? addResult?.error?.message ?? wishlistResult?.error?.message;
 const productSellableIds = new Set(sellables.map((sellable) => sellable.id));
 const cartProductQuantity =
@@ -159,7 +160,10 @@ const variantDisplays = mikaTemplateProductVariantDisplays(sellables);
             </Badge>
           </div>
         </div>
-        <ProductPurchase sellables={sellables} />
+        <ProductPurchase
+          sellables={sellables}
+          annotationMetadata={{ title: product.title.slice(0, 256), availability: availabilityStatus }}
+        />
         <div class="mika-kumo-trust-notes">
           {trustNotes.map((note) => <Text as="p" variant="secondary" size="sm">{note}</Text>)}
         </div>

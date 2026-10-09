@@ -2,7 +2,7 @@
  * Kumo sidebar application chrome for the template storefront: shop and account
  * navigation, responsive mobile top bar, and cart item count in labels.
  */
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button, Link, Sidebar, Text, useSidebar } from "@cloudflare/kumo";
 import {
   BagIcon,
@@ -32,7 +32,17 @@ export default function MikaKumoAppFrame({
   children,
 }: AppFrameProps) {
   const productsActive = currentPath === "/" || currentPath.startsWith("/products/");
-  const visibleCartItemCount = Math.max(0, cartItemCount);
+  const [visibleCartItemCount, setCartItemCount] = useState(Math.max(0, cartItemCount));
+  useEffect(() => {
+    const sync = () => {
+      const page = document.querySelector<HTMLElement>("[data-mika-storefront-view='page']");
+      const count = Number(page?.dataset.mikaCartItemCount);
+      if (Number.isFinite(count) && count >= 0) setCartItemCount(count);
+    };
+    sync();
+    document.addEventListener("mika:storefront-refresh", sync);
+    return () => document.removeEventListener("mika:storefront-refresh", sync);
+  }, []);
   const cartLabel = visibleCartItemCount > 0 ? `Cart (${visibleCartItemCount})` : "Cart";
   const cartAriaLabel =
     visibleCartItemCount === 1
@@ -91,7 +101,7 @@ export default function MikaKumoAppFrame({
                 icon={ShoppingCartSimpleIcon}
                 tooltip="Cart"
               >
-                {cartLabel}
+                <span data-mika-cart-badge="sidebar">{cartLabel}</span>
               </Sidebar.MenuButton>
               <Sidebar.MenuButton
                 active={isActive(currentPath, "/wishlist")}
@@ -169,9 +179,9 @@ export default function MikaKumoAppFrame({
           <nav aria-label="Quick links" className="mika-kumo-mobile-actions">
             <Link href="/cart" variant="plain" aria-label={cartAriaLabel}>
               <ShoppingCartSimpleIcon size={18} aria-hidden="true" />
-              {visibleCartItemCount > 0 && (
-                <span className="mika-kumo-mobile-count">({visibleCartItemCount})</span>
-              )}
+              <span className="mika-kumo-mobile-count" data-mika-cart-badge="mobile">
+                {visibleCartItemCount > 0 ? `(${visibleCartItemCount})` : ""}
+              </span>
             </Link>
             <Link href="/account" variant="plain" aria-label="Account">
               <UserCircleIcon size={18} aria-hidden="true" />

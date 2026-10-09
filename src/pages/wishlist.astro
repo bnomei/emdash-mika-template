@@ -5,6 +5,7 @@
  * Boundary: session-scoped Mika wishlist; no checkout on this page.
  */
 import { actions } from "astro:actions";
+import { mikaActionResult } from "../components/mikaActionResult";
 import { Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../components/MikaKumoPage.astro";
@@ -17,8 +18,8 @@ export const prerender = false;
 
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 
-const removeResult = Astro.getActionResult(actions.mika.wishlist.remove);
-const moveToCartResult = Astro.getActionResult(actions.mika.wishlist.moveToCart);
+const removeResult = mikaActionResult(Astro.getActionResult(actions.mika.wishlist.remove));
+const moveToCartResult = mikaActionResult(Astro.getActionResult(actions.mika.wishlist.moveToCart));
 const actionError = removeResult?.error?.message ?? moveToCartResult?.error?.message;
 const wishlistResult = await Mika.wishlist.get();
 const wishlist = wishlistResult.ok ? wishlistResult.data : null;

@@ -5,6 +5,7 @@
  * Boundary: Mika session required; account data passed through template sanitizer.
  */
 import { actions, isInputError } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountLicenses from "../../components/AccountLicenses.astro";
 import AccountSignInPanel from "../../components/AccountSignInPanel.astro";
@@ -17,7 +18,7 @@ import { mikaTemplateRoutes } from "../../lib/routes";
 export const prerender = false;
 
 const Mika = createMika(Astro, { api: mikaApiOverrides });
-const magicLinkResult = Astro.getActionResult(actions.mika.magicLink.request);
+const magicLinkResult = mikaActionResult(Astro.getActionResult(actions.mika.magicLink.request));
 const magicLinkInputErrors = isInputError(magicLinkResult?.error)
   ? magicLinkResult.error.fields
   : {};

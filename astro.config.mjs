@@ -5,9 +5,11 @@
  */
 import node from "@astrojs/node";
 import react from "@astrojs/react";
+import { fileURLToPath } from "node:url";
 import { actionsPlugin } from "@bnomei/emdash-actions";
 import { createMikaActionsProviderConfig } from "@bnomei/emdash-mika/admin";
 import { mikaPlugin } from "@bnomei/emdash-mika";
+import { mikaAccountExportIntegration } from "@bnomei/emdash-mika/astro";
 import { defineConfig, sessionDrivers } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
@@ -35,6 +37,9 @@ export default defineConfig({
   },
   integrations: [
     react(),
+    mikaAccountExportIntegration({
+      entrypoint: fileURLToPath(new URL("./src/lib/mika-api.ts", import.meta.url)),
+    }),
     emdash({
       mcp: true,
       database: sqlite({

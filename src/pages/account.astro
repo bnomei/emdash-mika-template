@@ -5,6 +5,7 @@
  * Boundary: Mika session required; magic-link sign-in when unauthenticated; portal action may redirect off-site.
  */
 import { actions, isInputError } from "astro:actions";
+import { mikaActionResult } from "../components/mikaActionResult";
 import { Button, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountOverview from "../components/AccountOverview.astro";
@@ -19,14 +20,14 @@ export const prerender = false;
 
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 
-const portalResult = Astro.getActionResult(actions.mika.account.portal);
+const portalResult = mikaActionResult(Astro.getActionResult(actions.mika.account.portal));
 if (portalResult?.data?.redirectUrl) {
   return Astro.redirect(portalResult.data.redirectUrl);
 }
 
-const magicLinkResult = Astro.getActionResult(actions.mika.magicLink.request);
-const exportResult = Astro.getActionResult(actions.mika.account["export"]);
-const deleteResult = Astro.getActionResult(actions.mika.account["delete"]);
+const magicLinkResult = mikaActionResult(Astro.getActionResult(actions.mika.magicLink.request));
+const exportResult = mikaActionResult(Astro.getActionResult(actions.mika.account["export"]));
+const deleteResult = mikaActionResult(Astro.getActionResult(actions.mika.account["delete"]));
 const magicLinkInputErrors = isInputError(magicLinkResult?.error)
   ? magicLinkResult.error.fields
   : {};
@@ -37,7 +38,8 @@ const accountActionError = portalResult?.error?.message;
 const accountExportError = exportResult?.error?.message;
 const accountDeleteError = deleteResult?.error?.message;
 const accountResult = await Mika.account.get();
-const account = accountResult.ok ? accountResult.data : null;
+const fixtureSignedIn = Boolean(await Astro.session?.get("mika.customerId"));
+const account = fixtureSignedIn && accountResult.ok ? accountResult.data : null;
 const accountLoadError =
   !accountResult.ok && accountResult.error.code !== "AUTH_REQUIRED"
     ? accountResult.error.message
@@ -45,53 +47,107 @@ const accountLoadError =
 const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 ---
 
-<MikaKumoPage title="Account" pageSize="narrow" cartItemCount={cartItemCount} data-mika-account-page>
+<MikaKumoPage
+  title="Account"
+  pageSize="narrow"
+  cartItemCount={cartItemCount}
+  data-mika-account-page
+>
   {!account && (
-    <AccountSignInPanel
-      returnTo={mikaTemplateRoutes.account}
-      accountLoadError={accountLoadError}
-      magicLinkSent={magicLinkResult?.data?.sent}
-      magicLinkError={magicLinkError}
-      emailError={magicLinkInputErrors.email?.join(", ")}
-    />
+    <>
+      <Text as="p">
+        Demo sign-in: any email opens the same seeded customer account. No email is sent; this is
+        not production authentication.
+      </Text>
+      <AccountSignInPanel
+        returnTo={mikaTemplateRoutes.account}
+        accountLoadError={accountLoadError}
+        magicLinkError={magicLinkError}
+        emailError={magicLinkInputErrors.email?.join(", ")}
+      />
+      {magicLinkResult?.data?.sent && (
+        <p role="status">
+          Demo link ready.{" "}
+          <a href="/account/magic-link?token=template-login">Open simulated sign-in link</a>
+        </p>
+      )}
+    </>
   )}
 
   {account && (
     <>
-    <section class="mika-kumo-panel mika-kumo-stack">
-      <AccountOverview account={account} />
-    </section>
+      <section class="mika-kumo-panel mika-kumo-stack">
+        <AccountOverview account={account} />
+      </section>
 
-    <section class="mika-kumo-panel mika-kumo-stack">
-      <Text as="h2" variant="heading2">Profile</Text>
-      {account.customer?.email && <Text as="p" variant="secondary">{account.customer.email}</Text>}
-      {(accountActionError || accountLoadError) && (
-        <Text as="p" variant="error" role="alert">{accountActionError ?? accountLoadError}</Text>
-      )}
-      {accountExportError && <Text as="p" variant="error" role="alert">{accountExportError}</Text>}
-      {accountDeleteError && <Text as="p" variant="error" role="alert">{accountDeleteError}</Text>}
-      {exportResult?.data?.status && (
-        <Text as="p" variant="success" role="status">Export {exportResult.data.status}.</Text>
-      )}
-      {deleteResult?.data?.requested && (
-        <Text as="p" variant="success" role="status">Account deletion requested.</Text>
-      )}
+      <section class="mika-kumo-panel mika-kumo-stack">
+        <Text as="h2" variant="heading2">
+          Profile
+        </Text>
+        {account.customer?.email && (
+          <Text as="p" variant="secondary">
+            {account.customer.email}
+          </Text>
+        )}
+        {(accountActionError || accountLoadError) && (
+          <Text as="p" variant="error" role="alert">
+            {accountActionError ?? accountLoadError}
+          </Text>
+        )}
+        {accountExportError && (
+          <Text as="p" variant="error" role="alert">
+            {accountExportError}
+          </Text>
+        )}
+        {accountDeleteError && (
+          <Text as="p" variant="error" role="alert">
+            {accountDeleteError}
+          </Text>
+        )}
+        {exportResult?.data?.status && (
+          <Text as="p" variant="success" role="status">
+            Export {exportResult.data.status}.
+          </Text>
+        )}
+        {deleteResult?.data?.requested && (
+          <Text as="p" variant="success" role="status">
+            Account deletion requested.
+          </Text>
+        )}
 
-      <div class="mika-kumo-actions">
-      <form class="mika-kumo-form" action={actions.mika.account.portal.queryString} method="post">
-        <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
-        <Button type="submit" variant="secondary">Manage billing in portal</Button>
-      </form>
-      <form class="mika-kumo-form" action={actions.mika.account["export"].queryString} method="post">
-        <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
-        <Button type="submit" variant="secondary">Export account data</Button>
-      </form>
-      <form class="mika-kumo-form" action={actions.mika.account["delete"].queryString} method="post">
-        <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
-        <Button type="submit" variant="secondary-destructive">Delete account</Button>
-      </form>
-      </div>
-    </section>
+        <div class="mika-kumo-actions">
+          <form
+            class="mika-kumo-form"
+            action={actions.mika.account.portal.queryString}
+            method="post"
+          >
+            <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
+            <Button type="submit" variant="secondary">
+              Manage billing in portal
+            </Button>
+          </form>
+          <form
+            class="mika-kumo-form"
+            action={actions.mika.account["export"].queryString}
+            method="post"
+          >
+            <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
+            <Button type="submit" variant="secondary">
+              Export account data
+            </Button>
+          </form>
+          <form
+            class="mika-kumo-form"
+            action={actions.mika.account["delete"].queryString}
+            method="post"
+          >
+            <input type="hidden" {...mikaReturnToInput(mikaTemplateRoutes.account)} />
+            <Button type="submit" variant="secondary-destructive">
+              Delete account
+            </Button>
+          </form>
+        </div>
+      </section>
     </>
   )}
 </MikaKumoPage>

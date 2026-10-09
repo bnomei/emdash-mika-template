@@ -18,7 +18,7 @@ import LowStockNotice from "./LowStockNotice.astro";
 import PurchaseOptionsSelect from "./PurchaseOptionsSelect.tsx";
 import StockBadge from "./StockBadge.astro";
 import UnavailableNotice from "./UnavailableNotice.astro";
-import VariantOptionGroups from "./VariantOptionGroups.tsx";
+import VariantOptionGroups from "./VariantOptionGroups.astro";
 import VariantSelector from "./VariantSelector.astro";
 
 interface Props {
@@ -59,7 +59,7 @@ const syncAvailabilityPanels =
   !showPurchaseControls || purchase.useGroupedVariantControls || purchase.options.length > 1;
 const needsAddToCartSync =
   showPurchaseControls && (purchase.useGroupedVariantControls || purchase.options.length > 1);
-const selectedAvailabilityStatus = purchase.selectedSellable?.availability.status;
+const selectedAvailabilityStatus = purchase.selectedSellable?.availability?.status;
 const disabledButtonLabel = purchase.missingActivePrice
   ? unavailableLabel
   : selectedAvailabilityStatus === "out_of_stock"
@@ -96,7 +96,6 @@ const resolvedButtonLabel = purchase.unavailable ? disabledButtonLabel : buttonL
   {showPurchaseControls && purchase.useGroupedVariantControls ? (
     <>
       <VariantOptionGroups
-        client:load
         variantGroups={purchase.variantGroups}
         variantOptionMap={purchase.variantOptionMap}
         selectedSellableId={purchase.selectedSellable?.id}

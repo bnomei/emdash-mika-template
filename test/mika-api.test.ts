@@ -630,7 +630,10 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
     assert.equal(cartAfterStart.ok, true);
     assert.equal(cartAfterStart.data.items.length, 1);
 
-    const confirmed = await api.checkout.status({ checkoutId, token });
+    const passive = await api.checkout.status({ checkoutId, token });
+    assert.equal(passive.data.status, "redirected");
+    const { simulateTemplatePayment } = await import("../src/lib/mika-fixture-storefront.ts");
+    const confirmed = await simulateTemplatePayment(ctx, checkoutId);
     assert.equal(confirmed.ok, true);
     assert.equal(confirmed.data.status, "completed");
     assert.ok(confirmed.data.orderId);
@@ -829,7 +832,7 @@ describe("Mika template storefront overrides", { concurrency: false }, () => {
 
     const owner = await api.checkout.status(sessionA, { checkoutId });
     assert.equal(owner.ok, true);
-    assert.equal(owner.data.status, "completed");
+    assert.equal(owner.data.status, "redirected");
   });
 
   it("rejects checkout when a cart line is out of stock", async () => {

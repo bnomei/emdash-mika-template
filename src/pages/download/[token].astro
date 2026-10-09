@@ -4,7 +4,8 @@
  * GET renders a user-confirmed download interstitial; POST resolves the token via
  * `actions.mika.download.confirm` so scanners and previews do not consume links.
  */
-import { actions, isInputError } from "astro:actions";
+import { actions } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { Button, Text } from "@cloudflare/kumo";
 import { mikaHiddenInput } from "@bnomei/emdash-mika/astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
@@ -14,16 +15,13 @@ import { mikaTemplateCurrentCartItemCount } from "../../lib/cart";
 export const prerender = false;
 
 const token = Astro.params.token;
-const confirmResult = Astro.getActionResult(actions.mika.download.confirm);
+const confirmResult = mikaActionResult(Astro.getActionResult(actions.mika.download.confirm));
 
 if (confirmResult?.data?.redirectUrl) {
   return Astro.redirect(confirmResult.data.redirectUrl);
 }
 
-const confirmError =
-  confirmResult?.error && !isInputError(confirmResult.error)
-    ? confirmResult.error.message
-    : null;
+const confirmError = confirmResult?.error?.message ?? null;
 const resolution = token ? await api.download.resolve({ token }) : undefined;
 const deliveryReady = resolution?.ok === true && Boolean(resolution.data.redirectUrl);
 const deliveryError =

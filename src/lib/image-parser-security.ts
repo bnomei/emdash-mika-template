@@ -1,9 +1,9 @@
 import { disableTypes } from "image-size";
 
 /**
- * image-size 2.0.2 has unpatched infinite-loop advisories in these parsers.
- * EmDash uses image-size for media metadata, so disable the affected formats
- * process-wide until upstream publishes a fixed release.
+ * Keep the restricted media format policy after upgrading to patched image-size.
+ * These parsers were disabled for the 2.0.2 infinite-loop advisories; retaining
+ * the restriction avoids expanding accepted formats during a security update.
  *
  * GHSA-w3rx-r6r6-pgpr: ICNS
  * GHSA-5p2g-fcmc-qvqq: JXL and HEIF

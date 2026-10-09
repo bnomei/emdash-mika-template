@@ -5,6 +5,7 @@
  */
 import { Badge, Link, Text } from "@cloudflare/kumo";
 import MikaKumoAppFrame from "./MikaKumoAppFrame";
+import MikaStorefront from "./MikaStorefront.astro";
 import "../styles/kumo.css";
 
 interface Props {
@@ -16,6 +17,9 @@ interface Props {
   backLabel?: string;
   pageSize?: "default" | "narrow";
   cartItemCount?: number;
+  storefront?: boolean;
+  webmcp?: boolean;
+  annotations?: boolean;
   class?: string;
   [attribute: string]: unknown;
 }
@@ -29,6 +33,9 @@ const {
   backLabel = "Back",
   pageSize = "default",
   cartItemCount = 0,
+  storefront = true,
+  webmcp = storefront,
+  annotations = storefront,
   class: className,
   ...attrs
 } = Astro.props;
@@ -54,6 +61,8 @@ const cartLabel = cartItemCount > 0 ? `Cart (${cartItemCount})` : "Cart";
       <main
         {...attrs}
         data-mika-kumo-page
+        data-mika-storefront-view="page"
+        data-mika-cart-item-count={cartItemCount}
         data-mika-page-size={pageSize}
         class:list={["mika-kumo-page", className]}
       >
@@ -64,7 +73,7 @@ const cartLabel = cartItemCount > 0 ? `Cart (${cartItemCount})` : "Cart";
               {eyebrow && <Badge variant="secondary">{eyebrow}</Badge>}
             </div>
             <nav class="mika-kumo-header-actions" aria-label="Page shortcuts">
-              <Link href="/cart" variant="plain">{cartLabel}</Link>
+              <Link href="/cart" variant="plain" data-mika-cart-badge="header">{cartLabel}</Link>
               <Link href="/account" variant="plain">Account</Link>
             </nav>
           </div>
@@ -77,5 +86,6 @@ const cartLabel = cartItemCount > 0 ? `Cart (${cartItemCount})` : "Cart";
         <slot />
       </main>
     </MikaKumoAppFrame>
+    <MikaStorefront enabled={webmcp || annotations} webmcp={webmcp} annotations={annotations} />
   </body>
 </html>

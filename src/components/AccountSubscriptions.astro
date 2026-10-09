@@ -27,6 +27,9 @@ interface Props {
   subscriptionLabel?: string;
   periodEndLabel?: string;
   statusLabel?: string;
+  annotationLabel?: string;
+  explainLabel?: string;
+  annotationPrompt?: string;
   showChangeAction?: boolean;
   changePriceIds?: Readonly<Record<string, string>>;
   class?: string;
@@ -46,6 +49,9 @@ const {
   subscriptionLabel = "Subscription",
   periodEndLabel = "Renewal",
   statusLabel = "Status",
+  annotationLabel = "Subscription plan terms",
+  explainLabel = "Explain plan terms",
+  annotationPrompt = "Explain these general subscription management terms without including private account data or assuming a plan's billing policy.",
   showChangeAction = false,
   changePriceIds = {},
   class: className,
@@ -60,6 +66,12 @@ const hasEmptySlot = Astro.slots.has("empty");
     <Text as="p" variant="secondary">Review renewal state and use the billing portal or available subscription actions.</Text>
   </div>
   {error && <Banner variant="error" title="Subscription action failed" description={error} role="alert" />}
+  {subscriptions.length > 0 && (
+    <div data-mika-subscription-plan-terms data-mika-annotation={annotationLabel} class="mika-kumo-stack mika-kumo-stack-tight">
+      <Text as="p">Subscription status and the scheduled renewal or end date are shown below. Available actions depend on the plan and payment provider. Review the plan's billing and cancellation terms before cancelling, renewing or changing it.</Text>
+      <button type="button" class="mika-kumo-muted" hidden data-mika-annotation-prompt={annotationPrompt}>{explainLabel}</button>
+    </div>
+  )}
   {subscriptions.length ? (
     <div class="mika-kumo-table-scroll">
       <Table>

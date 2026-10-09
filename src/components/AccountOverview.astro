@@ -4,23 +4,19 @@
  * subscriptions; each links to the matching account sub-page.
  */
 import { Badge, Link, Text } from "@cloudflare/kumo";
+import type { AccountDTO } from "@bnomei/emdash-mika/types";
 import { mikaTemplateRoutes } from "../lib/routes";
 
-interface AccountOverviewDTO {
-  readonly orders?: readonly unknown[];
-  readonly downloads?: readonly { readonly status?: string }[];
-  readonly licenses?: readonly { readonly status?: string }[];
-  readonly subscriptions?: readonly { readonly status?: string }[];
-}
-
 interface Props {
-  account: AccountOverviewDTO;
+  account: Pick<AccountDTO, "orders" | "downloads" | "subscriptions"> & {
+    readonly licenses?: readonly { readonly status: string }[];
+  };
   class?: string;
   [attribute: string]: unknown;
 }
 
 const { account, class: className, ...attrs } = Astro.props;
-const readyDownloads = account.downloads?.filter((download) => download.status !== "expired").length ?? 0;
+const readyDownloads = account.downloads.length;
 const activeLicenses = account.licenses?.filter((license) => license.status === "active").length ?? 0;
 const activeSubscriptions = account.subscriptions?.filter((subscription) => subscription.status === "active").length ?? 0;
 const cards = [
@@ -38,7 +34,7 @@ const cards = [
   </div>
   <div class="mika-kumo-task-grid">
     {cards.map((card) => (
-      <Link href={card.href} class="mika-kumo-task-card">
+      <Link href={card.href} className="mika-kumo-task-card">
         <span class="mika-kumo-task-card-title">
           <Text as="strong">{card.label}</Text>
           <Badge variant="secondary">{card.count}</Badge>

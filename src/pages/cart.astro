@@ -5,6 +5,7 @@
  * Boundary: Mika cart state; checkout-start action may redirect to payment provider.
  */
 import { actions, isInputError } from "astro:actions";
+import { mikaActionResult } from "../components/mikaActionResult";
 import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import BuyerAssurance from "../components/BuyerAssurance.astro";
@@ -22,16 +23,16 @@ export const prerender = false;
 
 const Mika = createMika(Astro, { api: mikaApiOverrides });
 
-const checkoutResult = Astro.getActionResult(actions.mika.checkout.start);
+const checkoutResult = mikaActionResult(Astro.getActionResult(actions.mika.checkout.start));
 if (checkoutResult?.data?.redirectUrl) {
   return Astro.redirect(checkoutResult.data.redirectUrl);
 }
 
-const updateResult = Astro.getActionResult(actions.mika.cart.update);
-const removeResult = Astro.getActionResult(actions.mika.cart.remove);
-const couponApplyResult = Astro.getActionResult(actions.mika.cart.applyCoupon);
-const couponRemoveResult = Astro.getActionResult(actions.mika.cart.removeCoupon);
-const saveForLaterResult = Astro.getActionResult(actions.mika.wishlist.saveForLater);
+const updateResult = mikaActionResult(Astro.getActionResult(actions.mika.cart.update));
+const removeResult = mikaActionResult(Astro.getActionResult(actions.mika.cart.remove));
+const couponApplyResult = mikaActionResult(Astro.getActionResult(actions.mika.cart.applyCoupon));
+const couponRemoveResult = mikaActionResult(Astro.getActionResult(actions.mika.cart.removeCoupon));
+const saveForLaterResult = mikaActionResult(Astro.getActionResult(actions.mika.wishlist.saveForLater));
 const checkoutInputErrors = isInputError(checkoutResult?.error) ? checkoutResult.error.fields : {};
 const checkoutError = isInputError(checkoutResult?.error) ? null : checkoutResult?.error?.message;
 const actionError =

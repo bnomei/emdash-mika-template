@@ -4,9 +4,11 @@
  * Exported overrides plug into `mika-api.ts`; catalog helpers feed product listing and detail pages.
  */
 import { readFileSync, statSync } from "node:fs";
+import { isDeepStrictEqual } from "node:util";
 import { join } from "node:path";
 import { mikaSafeReturnTo } from "@bnomei/emdash-mika/astro";
 import type { MikaApiOverrides, MikaRequestContext } from "@bnomei/emdash-mika/server";
+import type { LicenseDocument } from "@bnomei/emdash-mika/types/documents";
 import {
   mikaTemplateAvailabilityLabel,
   mikaTemplateAvailabilityStatus,
@@ -37,8 +39,6 @@ import {
 } from "@bnomei/emdash-mika/types";
 import type {
   AccountDTO,
-  AccountExportDTO,
-  AccountExportDownloadDTO,
   AvailabilityDTO,
   CartDTO,
   CartLineDTO,
@@ -206,6 +206,7 @@ interface TemplateSessionState {
   accountEmail?: string;
   pendingEmail?: string;
   subscriptionStatus?: SubscriptionDTO["status"];
+  subscriptionPriceId?: string;
 }
 
 interface TemplateSessionStateSnapshot {
@@ -218,6 +219,7 @@ interface TemplateSessionStateSnapshot {
   readonly accountEmail?: string;
   readonly pendingEmail?: string;
   readonly subscriptionStatus?: SubscriptionDTO["status"];
+  readonly subscriptionPriceId?: string;
 }
 
 const sessionStates = new Map<string, TemplateSessionState>();
@@ -417,6 +419,9 @@ export const mikaStorefrontApiOverrides = {
   checkout: {
     async start(ctx, input = {}) {
       const state = await sessionState(ctx);
+      if (ctx.storefrontReview && !sameReview(ctx.storefrontReview, checkoutReview(state, input))) {
+        return fail("REVIEW_CHANGED", "Checkout terms changed. Review again.", 409);
+      }
       const lines = checkoutLines(state, input.sellableId, input.priceId, input.quantity);
       if (lines.length === 0) return fail("CHECKOUT_EMPTY", "Template checkout is empty.", 400);
       if (lines.some((line) => !findVariantBySellable(line.sellableId, line.priceId))) {
@@ -482,15 +487,11 @@ export const mikaStorefrontApiOverrides = {
       if (isRequestContextInput(ctxOrInput)) {
         const state = await sessionState(ctxOrInput);
         const checkout = state.checkouts.get(checkoutId);
-        if (checkout) {
-          const completed = await completeCheckout(ctxOrInput, state, checkout);
-          return ok(completed);
-        }
+        if (checkout) return ok(checkout);
       }
 
       const tokenMatch = token ? findCheckoutState(checkoutId, token) : undefined;
-      if (tokenMatch)
-        return ok(await completeCheckout(undefined, tokenMatch.state, tokenMatch.checkout));
+      if (tokenMatch) return ok(tokenMatch.checkout);
 
       return fail("CHECKOUT_EXPIRED", "Template checkout not found.", 404);
     },
@@ -531,6 +532,7 @@ export const mikaStorefrontApiOverrides = {
       state.accountEmail = state.pendingEmail;
       state.pendingEmail = undefined;
       await persistSessionState(ctx, state);
+      await ctx.session?.set("mika.customerId", defaultCustomer().id);
       return ok(accountFor(state));
     },
   },
@@ -539,30 +541,13 @@ export const mikaStorefrontApiOverrides = {
       return ok(accountFor(await sessionState(ctx)));
     },
     async export() {
-      const requestedAt = nowIso();
-      return ok({
-        id: createMikaId("export_template"),
-        status: "ready",
-        requestedAt,
-        expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
-        downloadHref: "/download/download_panel_pack_mira",
-      } satisfies AccountExportDTO);
+      return fail("NOT_IMPLEMENTED", "Account exports require a real export backend; this fixture does not generate artifacts.", 501);
     },
     async exportStatus() {
-      return ok({
-        id: createMikaId("export_template"),
-        status: "ready",
-        requestedAt: nowIso(),
-        expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
-        downloadHref: "/download/download_panel_pack_mira",
-      } satisfies AccountExportDTO);
+      return fail("NOT_IMPLEMENTED", "Account export status is unavailable in this fixture.", 501);
     },
     async exportDownload() {
-      return ok({
-        id: createMikaId("export_template"),
-        href: "/download/download_panel_pack_mira",
-        expiresAt: createISODateTime("2026-07-20T12:00:00.000Z"),
-      } satisfies AccountExportDownloadDTO);
+      return fail("NOT_IMPLEMENTED", "Account export delivery is unavailable in this fixture.", 501);
     },
     async delete() {
       return ok({ requested: true });
@@ -572,18 +557,25 @@ export const mikaStorefrontApiOverrides = {
     },
   },
   subscription: {
-    async cancel(ctx) {
+    async cancel(ctx, input) {
       const state = await sessionState(ctx);
+      if (!validSubscriptionReview(ctx, state, "cancel", input)) return fail("REVIEW_CHANGED", "Subscription terms changed. Review again.", 409);
       state.subscriptionStatus = "cancel_at_period_end";
       await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
-    async change(ctx) {
+    async change(ctx, input) {
       const state = await sessionState(ctx);
+      if (!validSubscriptionReview(ctx, state, "change", input)) return fail("REVIEW_CHANGED", "Subscription terms changed. Review again.", 409);
+      const target = products().flatMap(productVariants).find((variant) => variant.priceId === input.priceId && variant.mode === "subscription");
+      if (!target) return fail("PRICE_NOT_FOUND", "Subscription price unavailable.", 404);
+      state.subscriptionPriceId = target.priceId;
+      await persistSessionState(ctx, state);
       return ok(accountFor(state));
     },
-    async renew(ctx) {
+    async renew(ctx, input) {
       const state = await sessionState(ctx);
+      if (!validSubscriptionReview(ctx, state, "renew", input)) return fail("REVIEW_CHANGED", "Subscription terms changed. Review again.", 409);
       state.subscriptionStatus = "active";
       await persistSessionState(ctx, state);
       return ok(accountFor(state));
@@ -973,6 +965,178 @@ function defaultCustomer(): { readonly id: MikaId; readonly email: string; reado
   };
 }
 
+export function templateCustomer() {
+  return defaultCustomer();
+}
+
+export function templateLicenseDocuments(customerId: MikaId): LicenseDocument[] {
+  if (customerId !== defaultCustomer().id) return [];
+  return licenses().map((entry) => {
+    const summary = licenseSummary(entry);
+    const timestamp = createISODateTime("2026-01-01T00:00:00.000Z");
+    return {
+      id: summary.id,
+      type: "license",
+      schemaVersion: 1,
+      customerId,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      status: summary.status as "active" | "revoked",
+      record: {
+        id: summary.id,
+        licenseKeyHash: "fixture-no-key",
+        displayKeySuffix: summary.displayKeySuffix ?? "",
+        status: summary.status as "active" | "revoked",
+        createdAt: timestamp,
+      },
+    };
+  });
+}
+
+/** Deliberate fixture-only human POST effect. A return URL or a status read never proves payment. */
+export async function simulateTemplatePayment(ctx: MikaRequestContext, checkoutId: string) {
+  const state = await sessionState(ctx);
+  const checkout = state.checkouts.get(createCheckoutSessionId(checkoutId));
+  if (!checkout) return fail("CHECKOUT_EXPIRED", "Checkout does not belong to this session.", 404);
+  return ok(await completeCheckout(ctx, state, checkout));
+}
+
+type Review = NonNullable<MikaRequestContext["storefrontReview"]>;
+
+/** Capture and enforce against the same fixture state; never replace the approved terms. */
+export async function captureTemplateReview(
+  ctx: MikaRequestContext,
+  tool: string,
+  input: Record<string, unknown>,
+): Promise<Review> {
+  const state = await sessionState(ctx);
+  if (tool === "checkout.start") return checkoutReview(state, input);
+  return subscriptionReview(state, tool.split(".")[1] as "cancel" | "change" | "renew", input);
+}
+
+function checkoutReview(state: TemplateSessionState, input: Record<string, unknown>): Review {
+  const lines = checkoutLines(
+    state,
+    input.sellableId as SellableId | undefined,
+    input.priceId as PriceId | undefined,
+    input.quantity as number | undefined,
+  );
+  const cart = cartFromLines(lines, input.sellableId ? undefined : state.couponCode);
+  return {
+    kind: "checkout",
+    provider: createProviderName(String(input.provider ?? templateProvider)),
+    mode: checkoutMode(lines),
+    lines: lines.map((line) => {
+      const variant = findVariantBySellable(line.sellableId, line.priceId);
+      const product = products().find((product) =>
+        productVariants(product).some((item) => item.sellableId === line.sellableId),
+      );
+      if (!variant || !product) throw new Error("Unavailable checkout line");
+      return {
+        sellableId: line.sellableId,
+        priceId: line.priceId,
+        contentRef: { collection: "products", id: product.id },
+        title: productVariantTitle(variant),
+        quantity: line.quantity,
+        unitAmount: variant.amount,
+        currency: createCurrencyCode(variant.currency),
+        mode: variant.mode ?? "payment",
+        fulfillmentKind: fulfillmentKind(variant.fulfillmentKind),
+        ...(variant.providerPriceId ? { providerPriceId: variant.providerPriceId } : {}),
+        ...(variant.interval
+          ? { interval: variant.interval, intervalCount: variant.intervalCount ?? 1 }
+          : {}),
+      };
+    }),
+    subtotal: cart.subtotal,
+    total: cart.total,
+    ...(cart.discount ? { discount: cart.discount } : {}),
+    ...(state.couponCode && !input.sellableId
+      ? { coupon: { label: state.couponCode, rate: 0.1 } }
+      : {}),
+  };
+}
+
+function subscriptionReview(
+  state: TemplateSessionState,
+  action: "cancel" | "change" | "renew",
+  input: Record<string, unknown>,
+): Review {
+  const subscription = accountFor(state).subscriptions.find(
+    (item) => item.id === input.subscriptionId,
+  );
+  const matchesCurrent = (variant: ProductVariant) =>
+    variant.mode === "subscription" &&
+    (!state.subscriptionPriceId || variant.priceId === state.subscriptionPriceId);
+  const product = products().find((product) => productVariants(product).some(matchesCurrent));
+  const variant = product && productVariants(product).find(matchesCurrent);
+  if (!subscription || !product || !variant) throw new Error("Subscription unavailable");
+  const snapshot = (variant: ProductVariant, product: SeedEntry) => ({
+    content: { collection: "products", id: product.id },
+    sellableId: createSellableId(variant.sellableId),
+    priceId: createPriceId(variant.priceId),
+    titleSnapshot: productVariantTitle(variant),
+    variantOptions: [],
+    unitAmount: variant.amount,
+    currency: createCurrencyCode(variant.currency),
+    mode: variant.mode ?? ("payment" as PurchaseMode),
+    fulfillmentKind: fulfillmentKind(variant.fulfillmentKind),
+    ...(variant.interval
+      ? { interval: variant.interval, intervalCount: variant.intervalCount ?? 1 }
+      : {}),
+  });
+  const targetProduct =
+    action === "change"
+      ? products().find((product) =>
+          productVariants(product).some(
+            (variant) => variant.priceId === input.priceId && variant.mode === "subscription",
+          ),
+        )
+      : undefined;
+  const target =
+    targetProduct &&
+    productVariants(targetProduct).find((variant) => variant.priceId === input.priceId);
+  if (action === "change" && !target) throw new Error("Subscription price unavailable");
+  return {
+    kind: "subscription",
+    action,
+    subscription: {
+      id: subscription.id,
+      customerId: defaultCustomer().id,
+      provider: templateProvider,
+      providerSubscriptionId: undefined,
+      providerPriceId: variant.providerPriceId,
+      status: subscription.status,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+      sellable: snapshot(variant, product),
+    },
+    ...(target && targetProduct
+      ? { target: snapshot(target, targetProduct), providerPriceId: target.providerPriceId }
+      : {}),
+  };
+}
+
+function validSubscriptionReview(
+  ctx: MikaRequestContext,
+  state: TemplateSessionState,
+  action: "cancel" | "change" | "renew",
+  input: Record<string, unknown>,
+): boolean {
+  return (
+    !ctx.storefrontReview ||
+    sameReview(ctx.storefrontReview, subscriptionReview(state, action, input))
+  );
+}
+
+function sameReview(approved: Review, current: Review): boolean {
+  // Session serialization drops undefined optional fields; compare the persisted representation.
+  return isDeepStrictEqual(
+    JSON.parse(JSON.stringify(approved)),
+    JSON.parse(JSON.stringify(current)),
+  );
+}
+
 async function sessionState(ctx: MikaRequestContext): Promise<TemplateSessionState> {
   const key = templateSessionKey(ctx);
   const stored = await readStoredSessionState(ctx);
@@ -1062,6 +1226,7 @@ function stateFromSnapshot(snapshot: TemplateSessionStateSnapshot): TemplateSess
     accountEmail: snapshot.accountEmail ?? defaultCustomer().email,
     pendingEmail: snapshot.pendingEmail,
     subscriptionStatus: snapshot.subscriptionStatus,
+    subscriptionPriceId: snapshot.subscriptionPriceId,
   };
 }
 
@@ -1076,6 +1241,7 @@ function snapshotFromState(state: TemplateSessionState): TemplateSessionStateSna
     accountEmail: state.accountEmail,
     pendingEmail: state.pendingEmail,
     subscriptionStatus: state.subscriptionStatus,
+    subscriptionPriceId: state.subscriptionPriceId,
   };
 }
 
@@ -1281,7 +1447,9 @@ function accountFor(
     subscriptions: [
       {
         id: createMikaId("sub_template_buttonwood_club"),
-        title: "Buttonwood Sunday Strip Club",
+        title: state.subscriptionPriceId
+          ? products().flatMap(productVariants).find((variant) => variant.priceId === state.subscriptionPriceId)?.label ?? "Buttonwood Sunday Strip Club"
+          : "Buttonwood Sunday Strip Club",
         status: subscriptionStatus,
         currentPeriodEnd: createISODateTime("2026-07-20T12:00:00.000Z"),
         cancelAtPeriodEnd: subscriptionStatus === "cancel_at_period_end",
@@ -1406,8 +1574,8 @@ function checkoutOrderSummary(
   return {
     id: orderId,
     orderNumber: orderId.replace(/^order_checkout_template_/, "TEMPLATE-").toUpperCase(),
-    status: "paid",
-    paymentStatus: "paid",
+    status: "pending",
+    paymentStatus: "unpaid",
     total: money(totalAmount),
     createdAt: nowIso(),
   };
@@ -1477,6 +1645,8 @@ async function completeCheckout(
 
   const completed: CheckoutSessionDTO = { ...checkout, status: "completed" };
   state.checkouts.set(completed.id, completed);
+  const order = completed.orderId ? state.checkoutOrders.get(completed.orderId) : undefined;
+  if (order) state.checkoutOrders.set(order.id, { ...order, status: "paid", paymentStatus: "paid" });
   if (state.pendingCartCheckouts.delete(completed.id)) {
     state.cartItems.clear();
     state.couponCode = undefined;

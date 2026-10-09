@@ -8,6 +8,8 @@ import { formatMikaMoney } from "@bnomei/emdash-mika/astro";
 
 interface Props {
   cart?: CartDTO | null;
+  annotationLabel?: string;
+  annotationMetadata?: Record<string, string | number | boolean | null>;
   subtotalLabel?: string;
   discountLabel?: string;
   taxLabel?: string;
@@ -19,6 +21,8 @@ interface Props {
 
 const {
   cart,
+  annotationLabel = "Cart totals",
+  annotationMetadata = { itemCount: cart?.items.reduce((count, line) => count + line.quantity, 0) ?? 0 },
   subtotalLabel = "Subtotal",
   discountLabel = "Discount",
   taxLabel = "Tax",
@@ -29,7 +33,7 @@ const {
 } = Astro.props;
 ---
 
-<dl {...attrs} data-mika-cart-summary class:list={["mika-kumo-summary", className]}>
+<dl {...attrs} data-mika-cart-summary data-mika-annotation={annotationLabel} data-mika-annotation-metadata={annotationMetadata ? JSON.stringify(annotationMetadata) : undefined} class:list={["mika-kumo-summary", className]}>
   <div>
     <dt>{subtotalLabel}</dt>
     <dd>{formatMikaMoney(cart?.subtotal)}</dd>
@@ -56,4 +60,5 @@ const {
     <dt>{totalLabel}</dt>
     <dd>{formatMikaMoney(cart?.total)}</dd>
   </div>
+  <div><dt class="mika-kumo-sr-only">Explanation</dt><dd><button type="button" hidden data-mika-annotation-prompt="Explain these cart totals, discounts and any missing checkout costs.">Explain totals</button></dd></div>
 </dl>

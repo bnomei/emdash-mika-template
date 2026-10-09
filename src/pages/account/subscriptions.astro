@@ -5,6 +5,7 @@
  * Boundary: Mika session required; mutations via Astro Actions form posts.
  */
 import { actions, isInputError } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { createMika } from "@bnomei/emdash-mika/astro";
 import AccountSignInPanel from "../../components/AccountSignInPanel.astro";
 import AccountSubscriptions from "../../components/AccountSubscriptions.astro";
@@ -16,10 +17,10 @@ import { mikaTemplateRoutes } from "../../lib/routes";
 export const prerender = false;
 
 const Mika = createMika(Astro, { api: mikaApiOverrides });
-const magicLinkResult = Astro.getActionResult(actions.mika.magicLink.request);
-const cancelResult = Astro.getActionResult(actions.mika.subscription.cancel);
-const renewResult = Astro.getActionResult(actions.mika.subscription.renew);
-const changeResult = Astro.getActionResult(actions.mika.subscription.change);
+const magicLinkResult = mikaActionResult(Astro.getActionResult(actions.mika.magicLink.request));
+const cancelResult = mikaActionResult(Astro.getActionResult(actions.mika.subscription.cancel));
+const renewResult = mikaActionResult(Astro.getActionResult(actions.mika.subscription.renew));
+const changeResult = mikaActionResult(Astro.getActionResult(actions.mika.subscription.change));
 const magicLinkInputErrors = isInputError(magicLinkResult?.error)
   ? magicLinkResult.error.fields
   : {};

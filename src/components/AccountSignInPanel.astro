@@ -13,6 +13,8 @@ interface Props {
   magicLinkError?: string | null;
   emailError?: string;
   headingLabel?: string;
+  annotationLabel?: string;
+  annotationMetadata?: Record<string, string | number | boolean | null>;
   class?: string;
   [attribute: string]: unknown;
 }
@@ -24,6 +26,8 @@ const {
   magicLinkError,
   emailError,
   headingLabel = "Sign in",
+  annotationLabel = "Account sign in",
+  annotationMetadata,
   class: className,
   ...attrs
 } = Astro.props;
@@ -31,6 +35,10 @@ const {
 
 <section {...attrs} class:list={["mika-kumo-panel mika-kumo-stack", className]}>
   <Text as="h2" variant="heading2">{headingLabel}</Text>
+  <div data-mika-annotation={annotationLabel} data-mika-annotation-metadata={annotationMetadata ? JSON.stringify(annotationMetadata) : undefined}>
+    <Text as="p">Enter your email to request a sign-in link. Open the link in your email to confirm access to your account.</Text>
+    <button type="button" class="mika-kumo-muted" hidden data-mika-annotation-prompt="Explain how account sign in works without including private account data.">Explain sign in</button>
+  </div>
   {accountLoadError && <Text as="p" variant="error" role="alert">{accountLoadError}</Text>}
   {magicLinkSent && <Text as="p" variant="success" role="status">Email sent.</Text>}
   {magicLinkError && <Text as="p" variant="error" role="alert">{magicLinkError}</Text>}

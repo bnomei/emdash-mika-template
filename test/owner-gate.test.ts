@@ -19,6 +19,12 @@ describe("production owner gate", () => {
     assert.equal(ownerGatePolicy("/_emdash/api/media/file/products/clipboard.webp"), "public");
   });
 
+  it("leaves only the exact customer export endpoint to its session/token authorization", () => {
+    assert.equal(ownerGatePolicy("/_emdash/api/plugins/mika/account/export/download"), "public");
+    assert.equal(ownerGatePolicy("/_emdash/api/plugins/mika/account/export/download/extra"), "emdash");
+    assert.equal(ownerGatePolicy("/_emdash/api/plugins/mika/account/export"), "emdash");
+  });
+
   it("protects EmDash and Mika management routes", () => {
     assert.equal(ownerGatePolicy("/_emdash/admin"), "emdash");
     assert.equal(ownerGatePolicy("/_emdash/admin/setup"), "emdash");
@@ -58,7 +64,7 @@ describe("production owner gate", () => {
 });
 
 describe("image parser hardening", () => {
-  it("disables every parser named by the unpatched image-size advisories", () => {
+  it("retains the restricted formats after upgrading image-size", () => {
     assert.deepEqual(DISABLED_IMAGE_TYPES, ["heif", "icns", "jxl", "jxl-stream"]);
     disableUnsafeImageParsers();
 

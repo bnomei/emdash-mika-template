@@ -15,32 +15,33 @@
     "preview": "astro preview",
     "astro": "astro",
     "pretypecheck": "npm run local:build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "astro check && tsc --noEmit",
     "pretest": "npm run local:build",
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "postinstall": "node scripts/patch-emdash-dev-bypass.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.0.0",
-    "@astrojs/react": "^6.0.0",
-    "@bnomei/emdash-actions": "^0.4.0",
-    "@bnomei/emdash-mika": "file:../emdash-mika",
-    "@cloudflare/kumo": "^2.5.2",
-    "@emdash-cms/cloudflare": "^0.31.1",
+    "@astrojs/cloudflare": "^14.3.4",
+    "@astrojs/react": "^7.0.1",
+    "@bnomei/emdash-actions": "^0.4.1",
+    "@bnomei/emdash-mika": "file:vendor/bnomei-emdash-mika-0.2.0.tgz",
+    "@cloudflare/kumo": "2.6.0",
+    "@emdash-cms/cloudflare": "^1.2.0",
     "@phosphor-icons/react": "^2.1.10",
-    "astro": "^7.0.0",
-    "emdash": "^0.32.0",
-    "image-size": "2.0.2",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "astro": "^7.3.8",
+    "emdash": "^1.2.0",
+    "image-size": "^2.0.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260305.1",
-    "@types/node": "^26.0.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20261008.1",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "typescript": "^6.0.3",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.149.0"
   },
   "engines": {
     "node": ">=24.0.0"

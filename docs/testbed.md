@@ -20,13 +20,39 @@ The storefront reads product, variant, and stock data from the seed:
 - `webhooks`: fixture webhook references for admin replay and webhook smoke tests.
 
 The fixture storefront API keeps cart, wishlist, checkout, coupon, and magic-link
-state in memory per session. It is deliberately small and replaceable; real apps
+state in Astro session snapshots with an in-process cache. Browser tools and forms
+use this same state. Tool-run claims and recovery tombstones are persisted
+atomically in the fixture SQLite database's `mika_storefront_runs` table.
+Checkout status reads never complete payment; the human success page has an
+explicit session-owned simulation POST. It is deliberately small and replaceable; real apps
 should wire `createMikaBackendApi()` or explicit `MikaApi` overrides to durable
 repositories and provider adapters.
 
 The webhook route is a signed-webhook mock boundary: it preserves provider
 metadata and raw-body hash for smoke tests, but it does not verify provider
 signatures or implement a real adapter.
+
+## Browser Integration Checks
+
+`test/storefront.test.ts` covers mixed human/tool cart state, retry deduplication,
+session isolation, account-tool authentication, stale checkout/subscription
+reviews at the mutation boundary, passive status/cancellation preparation,
+explicit simulated completion, and nested Action errors.
+
+Native WebMCP requires a supporting browser; optional annotations require ChatGPT's
+`document.oai.annotation`. Use the shared shell's independent `webmcp` and
+`annotations` props to exercise each capability and the ordinary form fallback.
+Preview/reset must never change submitted purchase controls or invoke mutations.
+Real ChatGPT behavior cannot be inferred from an annotation API mock.
+
+The fixture's session snapshots are not a transactional production commerce store.
+Durable tool-run claims do not provide atomicity with provider calls, concurrent
+webhooks, or overlapping session writes. No real money or email is involved.
+
+Account export creation, polling, and downloading return `NOT_IMPLEMENTED` (501).
+The package-owned HTTP download route is mounted against the live API, but this
+fixture has no export artifact store or token issuer. It cannot validate a real
+export-download journey; returning a sample file would misrepresent authorization.
 
 ## Admin Collections
 

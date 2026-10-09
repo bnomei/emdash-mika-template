@@ -4,8 +4,11 @@
  * Post-checkout status page keyed by `checkoutId`.
  * Boundary: Mika checkout and account reads; links to orders, downloads, and licenses on completion.
  */
-import { Badge, Banner, Link, Text } from "@cloudflare/kumo";
+import { Badge, Banner, Button, Link, Text } from "@cloudflare/kumo";
+import { actions } from "astro:actions";
+import { mikaActionResult } from "../../components/mikaActionResult";
 import { createMika } from "@bnomei/emdash-mika/astro";
+import { createCheckoutSessionId } from "@bnomei/emdash-mika/types";
 import BuyerAssurance from "../../components/BuyerAssurance.astro";
 import CheckoutSteps from "../../components/CheckoutSteps.astro";
 import MikaKumoPage from "../../components/MikaKumoPage.astro";
@@ -21,8 +24,13 @@ export const prerender = false;
 
 const checkoutId = Astro.url.searchParams.get("checkoutId");
 const token = Astro.url.searchParams.get("token") ?? undefined;
+const simulation = mikaActionResult(Astro.getActionResult(actions.simulatePayment));
+const simulationQuery = new URLSearchParams(Astro.url.search);
+for (const [key, value] of new URLSearchParams(actions.simulatePayment.queryString)) simulationQuery.set(key, value);
 const Mika = createMika(Astro, { api: mikaApiOverrides });
-const result = checkoutId ? await Mika.checkout.status({ checkoutId, token }) : null;
+const result = checkoutId
+  ? await Mika.checkout.status({ checkoutId: createCheckoutSessionId(checkoutId), token })
+  : null;
 const checkout = result?.ok ? result.data : null;
 const lookupError = result && !result.ok ? result.error.message : null;
 const status = !checkoutId
@@ -38,7 +46,7 @@ const messageByStatus: Record<string, string> = {
   created: "Checkout was created and is waiting for the payment handoff.",
   redirected: "Checkout was opened with the provider and is waiting for a final result.",
   pending: "Checkout is still being confirmed. Refresh this page in a moment for the latest status.",
-  completed: "Payment is confirmed. Your order and fulfillment details are ready in your account.",
+  completed: "Simulated payment is complete. No money was charged. Fixture order details are ready in your account.",
   cancelled: "Checkout was cancelled. No payment was completed.",
   expired: "Checkout could not be found or expired before payment was completed.",
   failed: "Checkout failed. Return to the cart to review your items or try again.",
@@ -50,6 +58,16 @@ const cartItemCount = await mikaTemplateCurrentCartItemCount(Astro);
 
 <MikaKumoPage title="Checkout status" pageSize="narrow" cartItemCount={cartItemCount} data-mika-checkout-success>
   <CheckoutSteps current={progressStep} />
+  <section class="mika-kumo-panel mika-kumo-stack">
+    <Text as="p">Demo payment simulation. This return page does not verify payment with a provider.</Text>
+    {simulation?.error && <Text as="p" role="alert">{simulation.error.message}</Text>}
+    {checkoutId && ["created", "redirected", "pending"].includes(status) && (
+      <form method="post" action={`?${simulationQuery}`}>
+        <input type="hidden" name="checkoutId" value={checkoutId} />
+        <Button type="submit">Simulate payment — no charge</Button>
+      </form>
+    )}
+  </section>
 
   <section class="mika-kumo-panel mika-kumo-stack">
     <div class="mika-kumo-title-row">
